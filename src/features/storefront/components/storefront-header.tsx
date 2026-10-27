@@ -17,7 +17,7 @@ type StorefrontHeaderProps = {
 
 export function StorefrontHeader({ shop, cartCount, query = "", account }: StorefrontHeaderProps) {
   return (
-    <header className="sticky top-0 z-40 border-b bg-background/90 backdrop-blur supports-backdrop-filter:bg-background/75">
+    <header className="sticky top-0 z-40 border-b bg-background/90 backdrop-blur supports-backdrop-filter:bg-background/75 print:hidden">
       <div className="mx-auto flex h-16 max-w-6xl items-center gap-2 px-4 sm:gap-4">
         <Link
           href={routes.storefront(shop.slug)}

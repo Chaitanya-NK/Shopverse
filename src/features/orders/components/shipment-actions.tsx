@@ -60,7 +60,7 @@ const ACTION: Record<
   out_for_delivery: {
     label: "Out for delivery",
     title: "Send out for delivery",
-    hint: "A new 6-digit delivery code is created. Share it with the customer; the courier enters it at the door.",
+    hint: "A new 6-digit delivery code is created and emailed to the customer (you can also share it on WhatsApp). The courier enters it at the door.",
   },
   failed_attempt: {
     label: "Delivery failed",

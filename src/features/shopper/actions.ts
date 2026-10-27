@@ -26,7 +26,6 @@ import {
   signInCookie,
 } from "@/features/shopper/session";
 import { clearCart, readCartLines, writeCartLines } from "@/features/storefront/cart-cookie";
-import { sendOrderConfirmation } from "@/features/storefront/confirmation";
 import { signInCodeEmail } from "@/features/storefront/emails";
 import { getCart, getStorefrontShop } from "@/features/storefront/queries";
 import {
@@ -36,6 +35,7 @@ import {
   setCartLine,
   toIndianE164,
 } from "@/features/storefront/schemas";
+import { notifyOrder } from "@/features/notifications/order-notifier";
 import { createAction } from "@/lib/actions/create-action";
 import { type AppError, Errors, fromPostgrestError } from "@/lib/errors";
 import { sendMail } from "@/lib/mail";
@@ -285,6 +285,13 @@ export const cancelMyOrder = createAction({
       p_reason: input.reason || undefined,
     });
     if (error) throw await shopperError(shop.slug, error);
+
+    const { data: order } = await createAdminClient()
+      .from("orders")
+      .select("id")
+      .eq("public_token", input.orderToken)
+      .maybeSingle();
+    if (order) notifyOrder(order.id, { type: "cancelled", byCustomer: true });
     refresh();
     return null;
   },
@@ -397,12 +404,7 @@ export const placeSignedInOrder = createAction({
       grand_total: number;
     };
     await clearCart(shop.slug);
-    await sendOrderConfirmation(shop, {
-      orderId: order.order_id,
-      number: order.order_number,
-      token: order.public_token,
-      total: Number(order.grand_total),
-    });
+    notifyOrder(order.order_id, { type: "confirmed" });
     return { token: order.public_token, number: order.order_number };
   },
 });

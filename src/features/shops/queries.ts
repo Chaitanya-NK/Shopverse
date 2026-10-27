@@ -40,3 +40,10 @@ export const listShops = cache(async (organizationId: string): Promise<ShopSumma
     settings: readStorefrontSettings(s.settings),
   }));
 });
+
+export const getShop = cache(
+  async (organizationId: string, shopId: string): Promise<ShopSummary | null> => {
+    const shops = await listShops(organizationId);
+    return shops.find((s) => s.id === shopId) ?? null;
+  },
+);

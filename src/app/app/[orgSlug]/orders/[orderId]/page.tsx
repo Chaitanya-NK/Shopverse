@@ -1,4 +1,4 @@
-import { ArrowLeftIcon } from "lucide-react";
+import { ArrowLeftIcon, FileTextIcon } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -133,22 +133,32 @@ async function OrderContent({ params }: Pick<Props, "params">) {
               {order.paymentMethod && ` · ${PAYMENT_METHOD_LABELS[order.paymentMethod]}`}
             </p>
           </div>
-          {canManage && (
-            <OrderActions
-              organizationSlug={orgSlug}
-              canCancel={can(role, "orders.cancel")}
-              order={{
-                id: order.id,
-                number: order.number,
-                status: order.status,
-                paymentStatus: order.paymentStatus,
-                paymentMethod: order.paymentMethod,
-                hasLiveShipments: order.shipments.some((s) =>
-                  [...ACTIVE_SHIPMENT_STATUSES, "delivered"].includes(s.status),
-                ),
-              }}
-            />
-          )}
+          <div className="flex flex-wrap items-center gap-2">
+            {order.invoiceNumber && (
+              <Button asChild variant="outline">
+                <Link href={routes.orgOrderInvoice(orgSlug, order.id)}>
+                  <FileTextIcon />
+                  Invoice {order.invoiceNumber}
+                </Link>
+              </Button>
+            )}
+            {canManage && (
+              <OrderActions
+                organizationSlug={orgSlug}
+                canCancel={can(role, "orders.cancel")}
+                order={{
+                  id: order.id,
+                  number: order.number,
+                  status: order.status,
+                  paymentStatus: order.paymentStatus,
+                  paymentMethod: order.paymentMethod,
+                  hasLiveShipments: order.shipments.some((s) =>
+                    [...ACTIVE_SHIPMENT_STATUSES, "delivered"].includes(s.status),
+                  ),
+                }}
+              />
+            )}
+          </div>
         </div>
         {order.status === "cancelled" && order.cancelReason && (
           <p className="text-sm text-muted-foreground">Cancelled: {order.cancelReason}</p>

@@ -26,7 +26,7 @@ export default function OrganizationLayout({ children, params }: LayoutProps<"/a
         <SidebarLoader params={params} />
       </Suspense>
       <SidebarInset>
-        <header className="sticky top-0 z-10 flex h-14 shrink-0 items-center gap-2 border-b bg-background/95 px-4 backdrop-blur supports-[backdrop-filter]:bg-background/70">
+        <header className="sticky top-0 z-10 flex h-14 shrink-0 items-center gap-2 border-b bg-background/95 px-4 backdrop-blur supports-[backdrop-filter]:bg-background/70 print:hidden">
           <SidebarTrigger className="-ml-1" />
           <Separator orientation="vertical" className="mr-2 data-[orientation=vertical]:h-4" />
           <div className="ml-auto flex items-center gap-2">
@@ -39,7 +39,7 @@ export default function OrganizationLayout({ children, params }: LayoutProps<"/a
         <Suspense>
           <TrialBanner params={params} />
         </Suspense>
-        <div className="flex flex-1 flex-col gap-6 p-4 md:p-8">{children}</div>
+        <div className="flex flex-1 flex-col gap-6 p-4 md:p-8 print:p-0">{children}</div>
       </SidebarInset>
     </SidebarProvider>
   );
@@ -89,7 +89,7 @@ async function TrialBanner({ params }: Pick<LayoutProps<"/app/[orgSlug]">, "para
   return (
     <Link
       href={routes.orgBilling(orgSlug)}
-      className="flex items-center justify-center gap-2 bg-warning px-4 py-2 text-center text-sm text-warning-foreground hover:underline"
+      className="flex items-center justify-center gap-2 bg-warning px-4 py-2 text-center text-sm text-warning-foreground hover:underline print:hidden"
     >
       <ClockAlertIcon className="size-4 shrink-0" aria-hidden />
       {days <= 0

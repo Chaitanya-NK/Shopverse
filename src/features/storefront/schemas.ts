@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 import { productImageObjectSchema, productImageSchema } from "@/features/products/images";
+import { ORDER_STAGES } from "@/features/shopper/stages";
 import { Constants } from "@/types/database.types";
 
 const money = z.coerce.number();
@@ -169,6 +170,8 @@ export type CartVariant = z.output<typeof cartVariantsSchema>[number];
 
 export const customerOrderSchema = z.object({
   number: z.string(),
+  stage: z.enum(ORDER_STAGES).optional().default("placed"),
+  invoice_number: z.string().nullable().optional(),
   placed_at: z.string(),
   status: z.enum(Constants.public.Enums.order_status),
   payment_method: z.enum(Constants.public.Enums.payment_method).nullable(),
@@ -193,7 +196,13 @@ export const customerOrderSchema = z.object({
     support_phone: z.string().nullable(),
   }),
   items: z.array(
-    z.object({ title: z.string(), quantity: z.number(), unit_price: money, total: money }),
+    z.object({
+      title: z.string(),
+      quantity: z.number(),
+      unit_price: money,
+      total: money,
+      image: productImageSchema,
+    }),
   ),
   shipments: z.array(
     z.object({

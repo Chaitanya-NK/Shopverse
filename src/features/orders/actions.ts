@@ -13,6 +13,7 @@ import {
   updateShipmentStatusSchema,
 } from "@/features/orders/schemas";
 import { type Tracking } from "@/features/inventory/schemas";
+import { notifyOrder, notifyShipment } from "@/features/notifications/order-notifier";
 import { authorizeOrganization } from "@/features/organizations/server";
 import { createAction } from "@/lib/actions/create-action";
 import { Errors, fromPostgrestError } from "@/lib/errors";
@@ -63,6 +64,8 @@ export const createOrder = createAction({
     });
     if (error) throw fromPostgrestError(error);
 
+    // Phone and counter orders with an email get the same confirmation.
+    if (input.confirm) notifyOrder(data, { type: "confirmed" });
     refresh();
     return { id: data };
   },
@@ -81,6 +84,7 @@ export const confirmOrder = createAction({
     );
     const { error } = await supabase.rpc("confirm_order", { p_order_id: input.orderId });
     if (error) throw fromPostgrestError(error);
+    notifyOrder(input.orderId, { type: "confirmed" });
     refresh();
     return { ok: true };
   },
@@ -102,6 +106,7 @@ export const cancelOrder = createAction({
       p_reason: input.reason || undefined,
     });
     if (error) throw fromPostgrestError(error);
+    notifyOrder(input.orderId, { type: "cancelled", byCustomer: false });
     refresh();
     return { ok: true };
   },
@@ -201,8 +206,14 @@ export const updateShipmentStatus = createAction({
       p_location: input.location || undefined,
     });
     if (error) throw fromPostgrestError(error);
+
+    // The delivery OTP is returned exactly once, when the parcel goes out; the
+    // customer gets it by email (staff can also share it on WhatsApp).
+    if (input.status === "picked_up") notifyShipment(input.shipmentId, "shipped");
+    else if (input.status === "out_for_delivery")
+      notifyShipment(input.shipmentId, "out_for_delivery", data);
+    else if (input.status === "failed_attempt") notifyShipment(input.shipmentId, "delivery_failed");
     refresh();
-    // The delivery OTP is returned exactly once, when the parcel goes out.
     return { otp: data ?? null };
   },
 });
@@ -237,6 +248,7 @@ export const confirmDelivery = createAction({
         ],
       });
     }
+    notifyShipment(input.shipmentId, "delivered");
     refresh();
     return { ok: true };
   },

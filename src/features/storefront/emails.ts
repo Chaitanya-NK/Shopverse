@@ -38,36 +38,6 @@ export function checkoutCodeEmail(input: {
   };
 }
 
-export function orderConfirmationEmail(input: {
-  to: string;
-  shopName: string;
-  orderNumber: string;
-  total: number;
-  currency: string;
-  orderUrl: string;
-  replyTo: string | null;
-}): Mail {
-  const total = formatMoney(input.total, input.currency);
-  return {
-    to: input.to,
-    replyTo: input.replyTo,
-    subject: `Order ${input.orderNumber} confirmed · ${input.shopName}`,
-    text:
-      `Thanks for your order! ${input.orderNumber} (${total}, cash on delivery) is confirmed.\n` +
-      `Follow it here: ${input.orderUrl}\n` +
-      `When it's out for delivery we'll share a delivery code. Give it to the courier only when you have your parcel.`,
-    html: wrap(
-      `Thanks for your order!`,
-      `<p style="margin:0 0 8px;color:#444">Order <b>${escapeHtml(input.orderNumber)}</b> at ${escapeHtml(
-        input.shopName,
-      )} is confirmed.</p>
-       <p style="margin:0 0 20px;color:#444">Total <b>${escapeHtml(total)}</b>, paid in cash on delivery.</p>
-       <p style="margin:0 0 20px"><a href="${escapeHtml(input.orderUrl)}" style="background:#1d6b5c;color:#fff;padding:12px 20px;border-radius:10px;text-decoration:none;display:inline-block">View your order</a></p>
-       <p style="margin:0;color:#666;font-size:13px">When it's out for delivery you'll get a delivery code. Share it with the courier only once you have your parcel.</p>`,
-    ),
-  };
-}
-
 export function signInCodeEmail(input: { to: string; shopName: string; code: string }): Mail {
   const shop = escapeHtml(input.shopName);
   return {

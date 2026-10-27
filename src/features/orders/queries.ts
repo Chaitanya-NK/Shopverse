@@ -193,6 +193,8 @@ export type OrderDetail = {
   address: OrderAddress;
   notes: string | null;
   cancelReason: string | null;
+  /** Set once the order has shipped (or completed). */
+  invoiceNumber: string | null;
   placedAt: string;
   updatedAt: string;
   customer: { id: string; name: string | null; email: string | null; phone: string | null } | null;
@@ -223,7 +225,7 @@ export const getOrder = cache(
       .select(
         `id, number, shop_id, status, payment_status, payment_method, fulfillment_status, currency,
        subtotal, discount_total, shipping_total, tax_total, grand_total, shipping_address, notes,
-       cancel_reason, placed_at, updated_at,
+       cancel_reason, placed_at, updated_at, invoice_number,
        shop:shops!orders_organization_id_shop_id_fkey (name),
        customer:customers (id, full_name, email, phone),
        order_items (id, variant_id, title, sku, tracking, quantity, fulfilled_quantity, unit_price, total, gst_rate, tax_amount, created_at,
@@ -296,6 +298,7 @@ export const getOrder = cache(
       address: toAddress(order.shipping_address),
       notes: order.notes,
       cancelReason: order.cancel_reason,
+      invoiceNumber: order.invoice_number,
       placedAt: order.placed_at,
       updatedAt: order.updated_at,
       customer: order.customer

@@ -146,3 +146,19 @@
     @apply bg-background text-foreground antialiased;
   }
 }
+
+/* Printing (invoices): only the document, on A4. */
+@media print {
+  @page {
+    size: A4;
+    margin: 12mm;
+  }
+  [data-slot="sidebar"],
+  [data-sonner-toaster],
+  nextjs-portal {
+    display: none !important;
+  }
+  body {
+    background: white !important;
+  }
+}

@@ -4,7 +4,6 @@ import { cookies } from "next/headers";
 
 import { env } from "@/env";
 import { routes } from "@/config/routes";
-import { sendOrderConfirmation } from "@/features/storefront/confirmation";
 import { checkoutCodeEmail } from "@/features/storefront/emails";
 import { clearCart } from "@/features/storefront/cart-cookie";
 import { getCart, getStorefrontShop } from "@/features/storefront/queries";
@@ -15,6 +14,7 @@ import {
   maskEmailAddress,
   toIndianE164,
 } from "@/features/storefront/schemas";
+import { notifyOrder } from "@/features/notifications/order-notifier";
 import { createAction } from "@/lib/actions/create-action";
 import { Errors, fromPostgrestError } from "@/lib/errors";
 import { sendMail } from "@/lib/mail";
@@ -178,12 +178,7 @@ export const confirmCheckout = createAction({
 
     await cookie.clear();
 
-    await sendOrderConfirmation(shop, {
-      orderId: result.order_id!,
-      number: result.order_number!,
-      token: result.public_token!,
-      total: Number(result.grand_total),
-    });
+    notifyOrder(result.order_id!, { type: "confirmed" });
 
     return { token: result.public_token!, number: result.order_number! };
   },

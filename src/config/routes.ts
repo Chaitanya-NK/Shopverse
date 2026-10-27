@@ -12,6 +12,7 @@ export const routes = {
   app: "/app",
   org: (orgSlug: string) => `/app/${orgSlug}`,
   orgShops: (orgSlug: string) => `/app/${orgSlug}/shops`,
+  orgShop: (orgSlug: string, shopId: string) => `/app/${orgSlug}/shops/${shopId}`,
   orgCategories: (orgSlug: string) => `/app/${orgSlug}/categories`,
   orgWarehouses: (orgSlug: string) => `/app/${orgSlug}/warehouses`,
   orgProducts: (orgSlug: string) => `/app/${orgSlug}/products`,
@@ -21,6 +22,8 @@ export const routes = {
   orgOrders: (orgSlug: string) => `/app/${orgSlug}/orders`,
   orgNewOrder: (orgSlug: string) => `/app/${orgSlug}/orders/new`,
   orgOrder: (orgSlug: string, orderId: string) => `/app/${orgSlug}/orders/${orderId}`,
+  orgOrderInvoice: (orgSlug: string, orderId: string) =>
+    `/app/${orgSlug}/orders/${orderId}/invoice`,
   orgDeliveries: (orgSlug: string) => `/app/${orgSlug}/deliveries`,
   // Public storefront (no sign-in)
   storefront: (shopSlug: string) => `/s/${shopSlug}`,
@@ -32,6 +35,7 @@ export const routes = {
   storefrontCart: (shopSlug: string) => `/s/${shopSlug}/cart`,
   storefrontCheckout: (shopSlug: string) => `/s/${shopSlug}/checkout`,
   storefrontOrder: (shopSlug: string, token: string) => `/s/${shopSlug}/orders/${token}`,
+  storefrontInvoice: (shopSlug: string, token: string) => `/s/${shopSlug}/orders/${token}/invoice`,
   // Shopper accounts (separate from staff sign-in)
   storefrontSignIn: (shopSlug: string, returnTo?: string) =>
     withReturnTo(`/s/${shopSlug}/account/sign-in`, returnTo),

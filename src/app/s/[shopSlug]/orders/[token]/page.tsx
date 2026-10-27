@@ -1,5 +1,6 @@
 import {
   CheckCircle2Icon,
+  FileTextIcon,
   MailIcon,
   PackageIcon,
   PhoneIcon,
@@ -16,6 +17,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Skeleton } from "@/components/ui/skeleton";
 import { routes } from "@/config/routes";
 import { SHIPMENT_STATUS_LABELS } from "@/features/orders/schemas";
+import { OrderProgress } from "@/features/shopper/components/order-progress";
+import { type OrderStage } from "@/features/shopper/stages";
+import { ProductVisual } from "@/features/storefront/components/product-visual";
 import { OrderActions } from "@/features/shopper/components/order-actions";
 import { getOrderAccess } from "@/features/shopper/queries";
 import { getShopper } from "@/features/shopper/session";
@@ -37,12 +41,16 @@ const dateFormat = new Intl.DateTimeFormat("en-IN", {
   timeZone: "Asia/Kolkata",
 });
 
-const HEADLINE = {
-  pending: "Order received",
+const HEADLINE: Record<OrderStage, string> = {
+  placed: "Order received",
   confirmed: "Order confirmed",
-  completed: "Delivered",
+  packed: "Packed and ready to ship",
+  shipped: "On its way",
+  out_for_delivery: "Out for delivery today",
+  delivered: "Delivered",
+  returned: "Returned to the shop",
   cancelled: "Order cancelled",
-} as const;
+};
 
 export default function CustomerOrderPage({ params }: Props) {
   return (
@@ -70,11 +78,21 @@ async function CustomerOrder({ params }: Pick<Props, "params">) {
         ) : (
           <CheckCircle2Icon className="mx-auto size-12 text-emerald-600" aria-hidden />
         )}
-        <h1 className="text-2xl font-semibold tracking-tight">{HEADLINE[order.status]}</h1>
+        <h1 className="text-2xl font-semibold tracking-tight">{HEADLINE[order.stage]}</h1>
         <p className="text-muted-foreground">
           Order <span className="font-mono font-medium text-foreground">{order.number}</span> ·
           placed {dateFormat.format(new Date(order.placed_at))}
         </p>
+        {order.invoice_number && (
+          <div className="flex justify-center pt-2">
+            <Button asChild variant="outline" size="sm">
+              <Link href={routes.storefrontInvoice(shop.slug, token)}>
+                <FileTextIcon />
+                Invoice {order.invoice_number}
+              </Link>
+            </Button>
+          </div>
+        )}
         {access ? (
           <div className="flex justify-center pt-2">
             <OrderActions
@@ -100,6 +118,14 @@ async function CustomerOrder({ params }: Pick<Props, "params">) {
         )}
       </div>
 
+      {order.stage !== "cancelled" && order.stage !== "returned" && (
+        <Card>
+          <CardContent>
+            <OrderProgress stage={order.stage} />
+          </CardContent>
+        </Card>
+      )}
+
       {order.shipments.length > 0 && (
         <Card>
           <CardHeader>
@@ -107,9 +133,12 @@ async function CustomerOrder({ params }: Pick<Props, "params">) {
               <TruckIcon className="size-5" aria-hidden />
               Delivery
             </CardTitle>
-            <CardDescription>
-              Keep your delivery code handy. Share it only when you have the parcel.
-            </CardDescription>
+            {order.stage === "out_for_delivery" && (
+              <CardDescription>
+                We&apos;ve emailed your delivery code. Share it with the courier only once you have
+                the parcel.
+              </CardDescription>
+            )}
           </CardHeader>
           <CardContent className="space-y-2">
             {order.shipments.map((s) => (
@@ -139,8 +168,16 @@ async function CustomerOrder({ params }: Pick<Props, "params">) {
         <CardContent className="space-y-4">
           <ul className="space-y-2 text-sm">
             {order.items.map((item, i) => (
-              <li key={i} className="flex justify-between gap-3">
-                <span>
+              <li key={i} className="flex items-center gap-3">
+                <ProductVisual
+                  image={item.image}
+                  alt={item.title}
+                  seed={item.title}
+                  industry={null}
+                  sizes="48px"
+                  className="size-12 shrink-0 rounded-lg [&_svg]:size-5"
+                />
+                <span className="min-w-0 flex-1">
                   {item.quantity} × {item.title}
                 </span>
                 <span className="tabular-nums">{money(item.total)}</span>

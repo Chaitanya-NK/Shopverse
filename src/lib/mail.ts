@@ -65,10 +65,4 @@ export async function sendMail(mail: Mail): Promise<void> {
   }
 }
 
-/** Escape text for safe interpolation into an HTML email. */
-export function escapeHtml(value: string): string {
-  return value.replace(
-    /[&<>"']/g,
-    (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!,
-  );
-}
+export { escapeHtml } from "@/lib/html";

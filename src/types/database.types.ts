@@ -674,6 +674,7 @@ export type Database = {
           created_at: string;
           fulfilled_quantity: number;
           gst_rate: number;
+          hsn_code: string | null;
           id: string;
           order_id: string;
           organization_id: string;
@@ -691,6 +692,7 @@ export type Database = {
           created_at?: string;
           fulfilled_quantity?: number;
           gst_rate?: number;
+          hsn_code?: string | null;
           id?: string;
           order_id: string;
           organization_id: string;
@@ -707,6 +709,7 @@ export type Database = {
           created_at?: string;
           fulfilled_quantity?: number;
           gst_rate?: number;
+          hsn_code?: string | null;
           id?: string;
           order_id?: string;
           organization_id?: string;
@@ -763,6 +766,9 @@ export type Database = {
           fulfillment_status: Database["public"]["Enums"]["fulfillment_status"];
           grand_total: number;
           id: string;
+          invoice_details: Json | null;
+          invoice_number: string | null;
+          invoiced_at: string | null;
           notes: string | null;
           number: string;
           organization_id: string;
@@ -793,6 +799,9 @@ export type Database = {
           fulfillment_status?: Database["public"]["Enums"]["fulfillment_status"];
           grand_total?: number;
           id?: string;
+          invoice_details?: Json | null;
+          invoice_number?: string | null;
+          invoiced_at?: string | null;
           notes?: string | null;
           number: string;
           organization_id: string;
@@ -822,6 +831,9 @@ export type Database = {
           fulfillment_status?: Database["public"]["Enums"]["fulfillment_status"];
           grand_total?: number;
           id?: string;
+          invoice_details?: Json | null;
+          invoice_number?: string | null;
+          invoiced_at?: string | null;
           notes?: string | null;
           number?: string;
           organization_id?: string;
@@ -2210,6 +2222,7 @@ export type Database = {
         Returns: Json;
       };
       mark_order_paid: { Args: { p_order_id: string }; Returns: undefined };
+      order_invoice: { Args: { p_order_id: string }; Returns: Json };
       receive_stock: {
         Args: {
           p_batch_code?: string;
@@ -2356,6 +2369,7 @@ export type Database = {
         };
         Returns: Json;
       };
+      storefront_invoice: { Args: { p_full_buyer?: boolean; p_token: string }; Returns: Json };
       storefront_order: { Args: { p_token: string }; Returns: Json };
       storefront_product: { Args: { p_shop_id: string; p_slug: string }; Returns: Json };
       storefront_shop: { Args: { p_slug: string }; Returns: Json };

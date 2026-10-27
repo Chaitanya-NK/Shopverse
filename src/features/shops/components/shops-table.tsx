@@ -1,4 +1,4 @@
-import { ExternalLinkIcon } from "lucide-react";
+import { ExternalLinkIcon, Settings2Icon } from "lucide-react";
 import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
@@ -11,7 +11,6 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { routes } from "@/config/routes";
-import { ShopSettingsDialog } from "@/features/shops/components/shop-settings-dialog";
 import { ShopStatusBadge } from "@/features/shops/components/shop-status-badge";
 import { type ShopSummary } from "@/features/shops/queries";
 import { initials } from "@/lib/format";
@@ -83,7 +82,16 @@ export function ShopsTable({
                     </Link>
                   </Button>
                   {canManage && organizationSlug && (
-                    <ShopSettingsDialog organizationSlug={organizationSlug} shop={shop} />
+                    <Button
+                      asChild
+                      variant="ghost"
+                      size="icon"
+                      aria-label={`${shop.name} settings`}
+                    >
+                      <Link href={routes.orgShop(organizationSlug, shop.id)}>
+                        <Settings2Icon />
+                      </Link>
+                    </Button>
                   )}
                 </div>
               </TableCell>
