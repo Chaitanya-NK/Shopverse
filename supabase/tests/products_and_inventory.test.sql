@@ -258,5 +258,75 @@ select pg_temp.assert(
   (select not (attributes ? 'warranty_months') from public.products where id = (select id from phone)),
   'deleting a product detail field strips its values');
 
+-- ---------------------------------------------------------------------------
+-- update_product, set_warehouse_shops, warehouse_overview
+-- ---------------------------------------------------------------------------
+select pg_temp.act_as('00000000-0000-0000-0000-0000000000a1');
+
+-- Keep the 128 GB variant (new price), drop the 256 GB one, add a 512 GB one, unpublish.
+select public.update_product(
+  (select id from phone),
+  jsonb_build_object('title', 'Acme X1 (2026)', 'slug', 'acme-x1', 'status', 'draft',
+                     'attributes', '{"brand":"Acme","model":"X1"}'::jsonb),
+  jsonb_build_array(
+    jsonb_build_object('id', (select phone_variant from v), 'sku', 'X1-128-BLK', 'price', 18999,
+                       'title', '128 GB / Black'),
+    jsonb_build_object('sku', 'X1-512-BLK', 'title', '512 GB / Black', 'price', 27999,
+                       'options', '{"storage":"512 GB","colour":"Black"}'::jsonb)
+  ),
+  '{}'::uuid[]
+);
+select pg_temp.assert((select title = 'Acme X1 (2026)' from public.products where id = (select id from phone)), 'product renamed');
+select pg_temp.assert(
+  (select array_agg(sku order by sku) = array['X1-128-BLK', 'X1-512-BLK'] from public.product_variants
+    where product_id = (select id from phone) and is_active),
+  'variants kept, added and deactivated as listed');
+select pg_temp.assert((select price = 18999 from public.product_variants where sku = 'X1-128-BLK'), 'price updated');
+select pg_temp.assert((select count(*) = 0 from public.shop_products where product_id = (select id from phone)),
+  'unselected shops are unpublished');
+
+-- Re-adding a previously removed combination works (inactive rows don't block it)
+select public.update_product(
+  (select id from phone),
+  jsonb_build_object('title', 'Acme X1 (2026)', 'slug', 'acme-x1', 'status', 'active',
+                     'attributes', '{"brand":"Acme","model":"X1"}'::jsonb),
+  jsonb_build_array(
+    jsonb_build_object('id', (select phone_variant from v), 'sku', 'X1-128-BLK', 'price', 18999),
+    jsonb_build_object('id', (select id from public.product_variants where sku = 'X1-512-BLK'), 'sku', 'X1-512-BLK', 'price', 27999),
+    jsonb_build_object('sku', 'X1-256-BLK-2', 'price', 22999, 'options', '{"storage":"256 GB","colour":"Black"}'::jsonb)
+  ),
+  array[(select shop from ids)]
+);
+select pg_temp.assert((select count(*) = 3 from public.product_variants where product_id = (select id from phone) and is_active),
+  're-adding a removed combination creates a fresh active variant');
+select pg_temp.assert((select is_published from public.shop_products where product_id = (select id from phone)),
+  'activating republishes to selected shops');
+
+select pg_temp.expect_error(format($q$select public.update_product(%L, '{"title":"X","slug":"acme-x1","attributes":{}}',
+  '[{"sku":"X1-128-BLK","price":1}]')$q$, (select id from phone)), '23514', 'required details are re-validated on update');
+
+-- Warehouse routing and overview
+select public.set_warehouse_shops((select wh2 from ids), array[(select shop from ids)]);
+select pg_temp.assert(
+  (select priority = 2 from public.shop_warehouses where warehouse_id = (select wh2 from ids)),
+  'a newly linked warehouse becomes the next priority for the shop');
+select public.set_warehouse_shops((select wh2 from ids), '{}'::uuid[]);
+select pg_temp.assert((select count(*) = 0 from public.shop_warehouses where warehouse_id = (select wh2 from ids)),
+  'routing can be cleared');
+select pg_temp.assert(
+  (select units_on_hand > 0 and skus_in_stock = 3 from public.warehouse_overview where id = (select wh1 from ids)),
+  'warehouse overview summarises stock');
+
+update public.warehouses set is_active = false where id = (select wh2 from ids);
+select pg_temp.expect_error(format($q$select public.receive_stock(%L, %L, 1)$q$,
+  (select id from public.product_variants where sku = 'TEE-M'), (select wh2 from ids)), '23514', 'inactive warehouses take in no new stock');
+update public.warehouses set is_active = true where id = (select wh2 from ids);
+
+select pg_temp.act_as('00000000-0000-0000-0000-0000000000b1');
+select pg_temp.expect_error(format($q$select public.set_warehouse_shops(%L, '{}')$q$, (select wh1 from ids)),
+  '42501', 'another tenant cannot change routing');
+select pg_temp.expect_error(format($q$select public.update_product(%L, '{"title":"X","slug":"x"}', '[{"sku":"Z-1","price":1}]')$q$,
+  (select id from phone)), '42501', 'another tenant cannot edit products');
+
 select 'ALL PRODUCT & INVENTORY TESTS PASSED' as result;
 rollback;

@@ -271,6 +271,13 @@ export type Database = {
             foreignKeyName: "inventory_batches_organization_id_warehouse_id_fkey";
             columns: ["organization_id", "warehouse_id"];
             isOneToOne: false;
+            referencedRelation: "warehouse_overview";
+            referencedColumns: ["organization_id", "id"];
+          },
+          {
+            foreignKeyName: "inventory_batches_organization_id_warehouse_id_fkey";
+            columns: ["organization_id", "warehouse_id"];
+            isOneToOne: false;
             referencedRelation: "warehouses";
             referencedColumns: ["organization_id", "id"];
           },
@@ -320,6 +327,13 @@ export type Database = {
             foreignKeyName: "inventory_levels_organization_id_warehouse_id_fkey";
             columns: ["organization_id", "warehouse_id"];
             isOneToOne: false;
+            referencedRelation: "warehouse_overview";
+            referencedColumns: ["organization_id", "id"];
+          },
+          {
+            foreignKeyName: "inventory_levels_organization_id_warehouse_id_fkey";
+            columns: ["organization_id", "warehouse_id"];
+            isOneToOne: false;
             referencedRelation: "warehouses";
             referencedColumns: ["organization_id", "id"];
           },
@@ -363,6 +377,13 @@ export type Database = {
             columns: ["organization_id", "variant_id"];
             isOneToOne: false;
             referencedRelation: "product_variants";
+            referencedColumns: ["organization_id", "id"];
+          },
+          {
+            foreignKeyName: "inventory_serials_organization_id_warehouse_id_fkey";
+            columns: ["organization_id", "warehouse_id"];
+            isOneToOne: false;
+            referencedRelation: "warehouse_overview";
             referencedColumns: ["organization_id", "id"];
           },
           {
@@ -935,6 +956,13 @@ export type Database = {
             foreignKeyName: "shipments_organization_id_warehouse_id_fkey";
             columns: ["organization_id", "warehouse_id"];
             isOneToOne: false;
+            referencedRelation: "warehouse_overview";
+            referencedColumns: ["organization_id", "id"];
+          },
+          {
+            foreignKeyName: "shipments_organization_id_warehouse_id_fkey";
+            columns: ["organization_id", "warehouse_id"];
+            isOneToOne: false;
             referencedRelation: "warehouses";
             referencedColumns: ["organization_id", "id"];
           },
@@ -1019,6 +1047,13 @@ export type Database = {
             columns: ["organization_id", "shop_id"];
             isOneToOne: false;
             referencedRelation: "shops";
+            referencedColumns: ["organization_id", "id"];
+          },
+          {
+            foreignKeyName: "shop_warehouses_organization_id_warehouse_id_fkey";
+            columns: ["organization_id", "warehouse_id"];
+            isOneToOne: false;
+            referencedRelation: "warehouse_overview";
             referencedColumns: ["organization_id", "id"];
           },
           {
@@ -1160,6 +1195,13 @@ export type Database = {
             foreignKeyName: "stock_movements_organization_id_warehouse_id_fkey";
             columns: ["organization_id", "warehouse_id"];
             isOneToOne: false;
+            referencedRelation: "warehouse_overview";
+            referencedColumns: ["organization_id", "id"];
+          },
+          {
+            foreignKeyName: "stock_movements_organization_id_warehouse_id_fkey";
+            columns: ["organization_id", "warehouse_id"];
+            isOneToOne: false;
             referencedRelation: "warehouses";
             referencedColumns: ["organization_id", "id"];
           },
@@ -1244,6 +1286,13 @@ export type Database = {
             foreignKeyName: "inventory_levels_organization_id_warehouse_id_fkey";
             columns: ["organization_id", "warehouse_id"];
             isOneToOne: false;
+            referencedRelation: "warehouse_overview";
+            referencedColumns: ["organization_id", "id"];
+          },
+          {
+            foreignKeyName: "inventory_levels_organization_id_warehouse_id_fkey";
+            columns: ["organization_id", "warehouse_id"];
+            isOneToOne: false;
             referencedRelation: "warehouses";
             referencedColumns: ["organization_id", "id"];
           },
@@ -1279,6 +1328,31 @@ export type Database = {
           },
           {
             foreignKeyName: "products_organization_id_fkey";
+            columns: ["organization_id"];
+            isOneToOne: false;
+            referencedRelation: "organizations";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      warehouse_overview: {
+        Row: {
+          address: NonNullable<Json>;
+          code: string;
+          created_at: string;
+          id: string;
+          is_active: boolean;
+          low_stock_skus: number | null;
+          name: string;
+          organization_id: string;
+          shop_ids: string[] | null;
+          skus_in_stock: number | null;
+          units_on_hand: number | null;
+        };
+        ComputedFields: never;
+        Relationships: [
+          {
+            foreignKeyName: "warehouses_organization_id_fkey";
             columns: ["organization_id"];
             isOneToOne: false;
             referencedRelation: "organizations";
@@ -1401,6 +1475,10 @@ export type Database = {
           isSetofReturn: false;
         };
       };
+      set_warehouse_shops: {
+        Args: { p_shop_ids: string[]; p_warehouse_id: string };
+        Returns: undefined;
+      };
       transfer_stock: {
         Args: {
           p_batch_id?: string;
@@ -1412,6 +1490,10 @@ export type Database = {
           p_variant_id: string;
         };
         Returns: string;
+      };
+      update_product: {
+        Args: { p_product: Json; p_product_id: string; p_shop_ids?: string[]; p_variants: Json };
+        Returns: undefined;
       };
     };
     Enums: {
