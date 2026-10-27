@@ -32,6 +32,21 @@ describe("fromPostgrestError", () => {
     expect(fromPostgrestError({ code: "42501", message: "denied" }).code).toBe("FORBIDDEN");
   });
 
+  it("shows our functions' permission messages but hides RLS wording", () => {
+    expect(
+      fromPostgrestError({ code: "42501", message: "Only owners can remove an owner" }).message,
+    ).toBe("Only owners can remove an owner");
+    expect(
+      fromPostgrestError({
+        code: "42501",
+        message: 'new row violates row-level security policy for table "shops"',
+      }).message,
+    ).toBe("You don't have permission to do that.");
+    expect(
+      fromPostgrestError({ code: "42501", message: "permission denied for table orders" }).message,
+    ).toBe("You don't have permission to do that.");
+  });
+
   it("never leaks unknown database messages", () => {
     const error = fromPostgrestError({ code: "XX000", message: "internal detail: table secrets" });
     expect(error.code).toBe("INTERNAL");

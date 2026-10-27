@@ -4,29 +4,32 @@ Multi-shop commerce SaaS for businesses that sell **anything**: clothing, electr
 
 **Stack:** Next.js 16 (App Router, Cache Components, Server Actions) · React 19 · TypeScript (strict) · Supabase (Postgres, Auth, RLS) · shadcn/ui + Tailwind CSS 4 · Zod 4 · React Hook Form · Vitest
 
-## Status: Phase 4 (storefront & checkout)
+## Status: Phase 5 (team, audit & billing)
 
-| Area       | What's in place                                                                                                                                                                           |
-| ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Auth       | Email OTP sign-up and sign-in (6-digit code, 10-minute expiry, resend cooldown), no passwords, no account enumeration, open-redirect protection                                           |
-| Tenancy    | Organisations → shops and warehouses, roles (owner, admin, manager, staff, support), per-shop access for restricted staff                                                                 |
-| Onboarding | One transaction creates the organisation, owner membership, first shop, first warehouse and the audit entries                                                                             |
-| App shell  | Collapsible sidebar, workspace switcher, user menu, shop switcher (`?shop=` in the URL), dark mode                                                                                        |
-| Dashboard  | Live stats from a single RLS-aware RPC, shops table, setup checklist                                                                                                                      |
-| Shops      | List and create, with field-level conflict errors                                                                                                                                         |
-| Categories | Multi-industry category tree; add, edit and delete categories and their fields (typed, with options, units, required, "creates variants")                                                 |
-| Products   | Searchable, filterable list; a form generated from the category's fields; variant matrix (e.g. Storage × Colour) with SKUs and prices; publish to shops                                   |
-| Inventory  | Receive, remove and transfer stock by quantity, serial/IMEI (scan to pick) or batch with expiry (FEFO); reorder points and low-stock alerts; movement history                             |
-| Warehouses | Create and edit, per-warehouse stock summary, which shops each one fulfils; inactive warehouses take in no new stock                                                                      |
-| Orders     | Enter phone, WhatsApp and counter orders; live GST-inclusive totals; customers matched by email or phone; confirm (reserve stock), mark paid, cancel                                      |
-| Routing    | Stock is reserved in one warehouse that can ship the whole order, or split across the shop's warehouses by priority                                                                       |
-| Shipments  | Pack per warehouse (scan IMEIs; batches picked first-expiry-first-out); picked up → in transit → out for delivery → delivered; failed attempts, returns                                   |
-| Delivery   | 6-digit delivery OTP, shown once to staff and shareable on WhatsApp; stored only as a bcrypt hash; 24-hour expiry; locked after 5 wrong tries; COD auto-paid                              |
-| Tracking   | Deliveries board by stage; a public tracking page per parcel (`/track/<token>`) with no personal details                                                                                  |
-| Storefront | Each shop at `/s/<shop-handle>`: search, categories, sorting, product pages with variant pickers and live stock, cart; drafts are staff-only previews                                     |
-| Checkout   | Cash on delivery confirmed by a 6-digit email code (hashed, 10-minute expiry, 5 tries, resend limits, per-email rate limit); shipping fee, free-shipping threshold and COD limit per shop |
-| Customers  | Customer list with orders and spend; customer page with order history; verified-email badge; customer order page by private link                                                          |
-| Quality    | Strict TypeScript, ESLint and Prettier, 130+ unit tests, four SQL test suites (RLS, stock, order flow, storefront and checkout), CI, commit hooks                                         |
+| Area       | What's in place                                                                                                                                                                                           |
+| ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Auth       | Email OTP sign-up and sign-in (6-digit code, 10-minute expiry, resend cooldown), no passwords, no account enumeration, open-redirect protection                                                           |
+| Tenancy    | Organisations → shops and warehouses, roles (owner, admin, manager, staff, support), per-shop access for restricted staff                                                                                 |
+| Onboarding | One transaction creates the organisation, owner membership, first shop, first warehouse and the audit entries                                                                                             |
+| App shell  | Collapsible sidebar, workspace switcher, user menu, shop switcher (`?shop=` in the URL), dark mode                                                                                                        |
+| Dashboard  | Live stats from a single RLS-aware RPC, shops table, setup checklist                                                                                                                                      |
+| Shops      | List and create, with field-level conflict errors                                                                                                                                                         |
+| Categories | Multi-industry category tree; add, edit and delete categories and their fields (typed, with options, units, required, "creates variants")                                                                 |
+| Products   | Searchable, filterable list; a form generated from the category's fields; variant matrix (e.g. Storage × Colour) with SKUs and prices; publish to shops                                                   |
+| Inventory  | Receive, remove and transfer stock by quantity, serial/IMEI (scan to pick) or batch with expiry (FEFO); reorder points and low-stock alerts; movement history                                             |
+| Warehouses | Create and edit, per-warehouse stock summary, which shops each one fulfils; inactive warehouses take in no new stock                                                                                      |
+| Orders     | Enter phone, WhatsApp and counter orders; live GST-inclusive totals; customers matched by email or phone; confirm (reserve stock), mark paid, cancel                                                      |
+| Routing    | Stock is reserved in one warehouse that can ship the whole order, or split across the shop's warehouses by priority                                                                                       |
+| Shipments  | Pack per warehouse (scan IMEIs; batches picked first-expiry-first-out); picked up → in transit → out for delivery → delivered; failed attempts, returns                                                   |
+| Delivery   | 6-digit delivery OTP, shown once to staff and shareable on WhatsApp; stored only as a bcrypt hash; 24-hour expiry; locked after 5 wrong tries; COD auto-paid                                              |
+| Tracking   | Deliveries board by stage; a public tracking page per parcel (`/track/<token>`) with no personal details                                                                                                  |
+| Storefront | Each shop at `/s/<shop-handle>`: search, categories, sorting, product pages with variant pickers and live stock, cart; drafts are staff-only previews                                                     |
+| Checkout   | Cash on delivery confirmed by a 6-digit email code (hashed, 10-minute expiry, 5 tries, resend limits, per-email rate limit); shipping fee, free-shipping threshold and COD limit per shop                 |
+| Customers  | Customer list with orders and spend; customer page with order history; verified-email badge; customer order page by private link                                                                          |
+| Team       | Invite by email (single-use link, 7-day expiry, token stored hashed), resend and revoke; change roles and shop access; remove members or leave; admins can't touch owners and nobody edits their own role |
+| Audit log  | Every change recorded by the database; filter by type, person and date; shows what changed in plain language                                                                                              |
+| Billing    | Plans with usage meters (shops, seats incl. pending invites, products, warehouses), limits enforced in the database, trial countdown banner; upgrades by request                                          |
+| Quality    | Strict TypeScript, ESLint and Prettier, 130+ unit tests, five SQL test suites (RLS, stock, order flow, storefront and checkout, team and billing), CI, commit hooks                                       |
 
 ## Quick start in GitHub Codespaces
 
@@ -98,6 +101,10 @@ Open port 3000 from the **Ports** tab, then create an account, read the code fro
 
 3. **Go live.** In **Shops**, open a shop's settings (gear icon), set **Storefront** to **Live**, and fill in the delivery fee, free-delivery threshold, COD limit and support contacts. Publish products to the shop from each product's **Sell in** box. The storefront is at `/s/<shop-handle>` (the open-in-new-tab icon in Shops).
 
+### Invite your team (Phase 5)
+
+Open **Team & security → Invite**. With SMTP set up (above) the invitation is emailed; either way you get a link to copy and send yourself. The person opens it, signs up or signs in with the invited email, and joins with the role and shops you chose. **Billing** shows your plan and usage. Plan prices live in `src/config/plans.ts`; card payments aren't connected yet, so **Choose plan** emails a request to your support address.
+
 ## Scripts
 
 | Command                                     | Purpose                                                          |
@@ -145,5 +152,5 @@ See **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)** for the design decisions an
 - **Phase 2 (done):** products and variants, category editor, inventory with serial/IMEI and batch/expiry tracking, transfers, reorder alerts, warehouses
 - **Phase 3 (done):** orders, fulfilment routing, shipments and tracking, delivery OTP
 - **Phase 4 (done):** storefront and checkout (COD OTP), customers
-- **Phase 5:** team invitations and roles UI, audit log viewer, billing
+- **Phase 5 (done):** team invitations and roles UI, audit log viewer, billing (plans and limits; online payments next)
 - **Phase 6:** marketing (banners, discounts, loyalty), analytics, channel sync, super-admin

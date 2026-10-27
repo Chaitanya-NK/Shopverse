@@ -33,6 +33,11 @@ export const routes = {
   storefrontCheckout: (shopSlug: string) => `/s/${shopSlug}/checkout`,
   storefrontOrder: (shopSlug: string, token: string) => `/s/${shopSlug}/orders/${token}`,
   orgCustomers: (orgSlug: string) => `/app/${orgSlug}/customers`,
+  orgTeam: (orgSlug: string) => `/app/${orgSlug}/team`,
+  orgAudit: (orgSlug: string) => `/app/${orgSlug}/team/audit`,
+  orgBilling: (orgSlug: string) => `/app/${orgSlug}/billing`,
+  /** Accept a team invitation (public; asks the visitor to sign in). */
+  invitation: (token: string) => `/invite/${token}`,
   orgCustomer: (orgSlug: string, customerId: string) => `/app/${orgSlug}/customers/${customerId}`,
   /** Public, unauthenticated parcel tracking page for customers. */
   tracking: (token: string) => `/track/${token}`,

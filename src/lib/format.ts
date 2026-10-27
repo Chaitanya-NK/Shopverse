@@ -26,3 +26,8 @@ export function formatMoney(
 export function formatNumber(value: number): string {
   return new Intl.NumberFormat("en-IN").format(value);
 }
+
+/** Whole days from now until `iso` (negative once it has passed). Server-side use. */
+export function daysUntil(iso: string, now: number = Date.now()): number {
+  return Math.ceil((new Date(iso).getTime() - now) / 86_400_000);
+}

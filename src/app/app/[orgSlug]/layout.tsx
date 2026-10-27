@@ -1,3 +1,6 @@
+import { ClockAlertIcon } from "lucide-react";
+import Link from "next/link";
+import { connection } from "next/server";
 import { Suspense } from "react";
 
 import { AppSidebar } from "@/components/app-shell/app-sidebar";
@@ -8,7 +11,9 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { ShopSwitcher } from "@/features/shops/components/shop-switcher";
 import { listShops } from "@/features/shops/queries";
 import { listMyMemberships, requireMembership } from "@/features/organizations/queries";
+import { routes } from "@/config/routes";
 import { requireUser } from "@/lib/auth/session";
+import { daysUntil } from "@/lib/format";
 
 /**
  * Workspace shell. The frame renders immediately; everything that depends on
@@ -31,6 +36,9 @@ export default function OrganizationLayout({ children, params }: LayoutProps<"/a
             <ModeToggle />
           </div>
         </header>
+        <Suspense>
+          <TrialBanner params={params} />
+        </Suspense>
         <div className="flex flex-1 flex-col gap-6 p-4 md:p-8">{children}</div>
       </SidebarInset>
     </SidebarProvider>
@@ -66,5 +74,27 @@ async function ShopSwitcherLoader({ params }: Pick<LayoutProps<"/app/[orgSlug]">
 function SidebarSkeleton() {
   return (
     <div className="hidden w-(--sidebar-width) shrink-0 bg-sidebar md:block" aria-hidden="true" />
+  );
+}
+
+/** Nudge when the free trial is about to end, or has ended. */
+async function TrialBanner({ params }: Pick<LayoutProps<"/app/[orgSlug]">, "params">) {
+  const { orgSlug } = await params;
+  const { organization } = await requireMembership(orgSlug);
+  if (organization.plan !== "trial" || !organization.trialEndsAt) return null;
+  await connection();
+  const days = daysUntil(organization.trialEndsAt);
+  if (days > 3) return null;
+
+  return (
+    <Link
+      href={routes.orgBilling(orgSlug)}
+      className="flex items-center justify-center gap-2 bg-warning px-4 py-2 text-center text-sm text-warning-foreground hover:underline"
+    >
+      <ClockAlertIcon className="size-4 shrink-0" aria-hidden />
+      {days <= 0
+        ? "Your free trial has ended. Choose a plan to keep adding products, shops and teammates."
+        : `Your free trial ends in ${days} day${days === 1 ? "" : "s"}. Choose a plan.`}
+    </Link>
   );
 }

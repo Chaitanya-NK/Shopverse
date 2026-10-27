@@ -58,6 +58,13 @@ const PG = {
 
 type PostgrestLikeError = { code?: string; message: string; details?: string | null };
 
+/** Postgres' own wording, which we never show to people. */
+const SYSTEM_MESSAGE =
+  /^(new row violates|permission denied|duplicate key|query returned no rows)/i;
+function isOwnMessage(message: string | undefined): message is string {
+  return Boolean(message) && !SYSTEM_MESSAGE.test(message!);
+}
+
 /** Map a PostgREST / Postgres error to an AppError. */
 export function fromPostgrestError(
   error: PostgrestLikeError,
@@ -76,9 +83,13 @@ export function fromPostgrestError(
       );
     }
     case PG.INSUFFICIENT_PRIVILEGE:
-      return Errors.forbidden();
+      // Our functions raise 42501 with sentences meant for people; RLS and
+      // grants produce technical text that we replace.
+      return Errors.forbidden(isOwnMessage(error.message) ? error.message : undefined);
     case PG.NO_DATA_FOUND:
-      return Errors.notFound();
+      return isOwnMessage(error.message)
+        ? new AppError("NOT_FOUND", error.message)
+        : Errors.notFound();
     case PG.CHECK_VIOLATION:
       return new AppError("VALIDATION", error.message, { cause: error });
     default:
