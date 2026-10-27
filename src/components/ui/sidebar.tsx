@@ -155,7 +155,12 @@ function Sidebar({
   variant?: "sidebar" | "floating" | "inset";
   collapsible?: "offcanvas" | "icon" | "none";
 }) {
-  const { isMobile, state, openMobile, setOpenMobile } = useSidebar();
+  const { state, openMobile, setOpenMobile } = useSidebar();
+  // Read the media query here rather than from context: this component often
+  // sits in a streamed Suspense boundary, and a context value that already
+  // flipped to "mobile" would not match the server HTML when it hydrates.
+  // useSyncExternalStore uses the server snapshot during hydration instead.
+  const isMobile = useIsMobile();
 
   if (collapsible === "none") {
     return (
@@ -488,7 +493,8 @@ function SidebarMenuButton({
   tooltip?: string | React.ComponentProps<typeof TooltipContent>;
 } & VariantProps<typeof sidebarMenuButtonVariants>) {
   const Comp = asChild ? Slot.Root : "button";
-  const { isMobile, state } = useSidebar();
+  const { state } = useSidebar();
+  const isMobile = useIsMobile();
 
   const button = (
     <Comp

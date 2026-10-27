@@ -4,7 +4,7 @@ Multi-shop commerce SaaS for businesses that sell **anything**: clothing, electr
 
 **Stack:** Next.js 16 (App Router, Cache Components, Server Actions) · React 19 · TypeScript (strict) · Supabase (Postgres, Auth, RLS) · shadcn/ui + Tailwind CSS 4 · Zod 4 · React Hook Form · Vitest
 
-## Status: Phase 2 (catalogue & inventory)
+## Status: Phase 3 (orders & deliveries)
 
 | Area       | What's in place                                                                                                                                               |
 | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -18,7 +18,12 @@ Multi-shop commerce SaaS for businesses that sell **anything**: clothing, electr
 | Products   | Searchable, filterable list; a form generated from the category's fields; variant matrix (e.g. Storage × Colour) with SKUs and prices; publish to shops       |
 | Inventory  | Receive, remove and transfer stock by quantity, serial/IMEI (scan to pick) or batch with expiry (FEFO); reorder points and low-stock alerts; movement history |
 | Warehouses | Create and edit, per-warehouse stock summary, which shops each one fulfils; inactive warehouses take in no new stock                                          |
-| Quality    | Strict TypeScript, ESLint and Prettier, 110+ unit tests, SQL test suites for RLS and stock invariants, CI, commit hooks                                       |
+| Orders     | Enter phone, WhatsApp and counter orders; live GST-inclusive totals; customers matched by email or phone; confirm (reserve stock), mark paid, cancel          |
+| Routing    | Stock is reserved in one warehouse that can ship the whole order, or split across the shop's warehouses by priority                                           |
+| Shipments  | Pack per warehouse (scan IMEIs; batches picked first-expiry-first-out); picked up → in transit → out for delivery → delivered; failed attempts, returns       |
+| Delivery   | 6-digit delivery OTP, shown once to staff and shareable on WhatsApp; stored only as a bcrypt hash; 24-hour expiry; locked after 5 wrong tries; COD auto-paid  |
+| Tracking   | Deliveries board by stage; a public tracking page per parcel (`/track/<token>`) with no personal details                                                      |
+| Quality    | Strict TypeScript, ESLint and Prettier, 120+ unit tests, SQL test suites for RLS, stock and order-flow invariants, CI, commit hooks                           |
 
 ## Quick start in GitHub Codespaces
 
@@ -118,7 +123,7 @@ See **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)** for the design decisions an
 ## Roadmap
 
 - **Phase 2 (done):** products and variants, category editor, inventory with serial/IMEI and batch/expiry tracking, transfers, reorder alerts, warehouses
-- **Phase 3:** orders, fulfilment routing, shipments and tracking, delivery OTP
+- **Phase 3 (done):** orders, fulfilment routing, shipments and tracking, delivery OTP
 - **Phase 4:** storefront and checkout (COD OTP), customers
 - **Phase 5:** team invitations and roles UI, audit log viewer, billing
 - **Phase 6:** marketing (banners, discounts, loyalty), analytics, channel sync, super-admin

@@ -17,6 +17,7 @@ const CAPABILITIES = {
   "catalog.manage": ["owner", "admin", "manager"],
   "inventory.adjust": ["owner", "admin", "manager", "staff"],
   "orders.manage": ["owner", "admin", "manager", "staff"],
+  "orders.cancel": ["owner", "admin", "manager"],
   "audit.read": ["owner", "admin"],
 } as const satisfies Record<string, readonly OrgRole[]>;
 

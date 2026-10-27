@@ -83,6 +83,16 @@ Shopverse isn't tied to one kind of product. The catalogue is data-driven:
 - Inactive warehouses take in no new stock (a trigger on `stock_movements`), but customer returns are still accepted.
 - Low stock = `available <= reorder_point` per variant and warehouse; managers edit reorder points inline.
 
+## Orders, shipments and delivery
+
+- Order tables are **read-only to clients**. Every change goes through a function (migration 010) so totals, reservations and stock can't drift: `create_order`, `confirm_order`, `cancel_order`, `mark_order_paid`, `create_shipment`, `update_shipment_status`, `confirm_delivery`. Only `orders.notes` is directly editable.
+- Prices are GST-inclusive. `create_order` stores each line's GST rate (product, else category) and the tax contained in the line; `features/orders/totals.ts` mirrors the arithmetic for the live preview, and a unit test pins both to the same numbers.
+- **Routing** (`private.route_order`): reserve everything in the first warehouse (by the shop's priority) that has every line in stock; otherwise split each line across warehouses in priority order. Reservations live in `order_allocations` and `inventory_levels.reserved`.
+- **Shipping** consumes a reservation: release it, then take stock out as a `sale` movement. Serial items must name exact in-stock units; batch items are picked FEFO, skipping expired batches, and the shipment records which batches left.
+- **Status rules** are enforced in the database (`packed → picked_up → in_transit → out_for_delivery → delivered`, plus `failed_attempt`, `returned_to_origin`, `cancelled`). A parcel cancelled before pickup goes back on the shelf and is re-reserved for the order; a returned parcel comes back as a `return`.
+- **Delivery OTP:** going out for delivery creates a 6-digit code from `gen_random_bytes`, stores only its bcrypt hash (unreadable to clients via column grants) and returns the code once. `confirm_delivery` counts wrong attempts without raising (so the count persists) and locks after five. When the last live parcel is delivered the order completes, and COD orders are marked paid.
+- **Public tracking:** each shipment has a 128-bit random `tracking_token`. `get_tracking(token)` (granted to `anon`) returns the journey, items and destination city only.
+
 Adding a new industry means one entry in `INDUSTRIES`, the CHECK constraint, `industry_templates()` and `industry_label()`, all in a new migration.
 
 ### Gotcha: `INSERT … RETURNING` and RLS

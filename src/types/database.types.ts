@@ -1751,8 +1751,10 @@ export type Database = {
       };
       variant_search: {
         Row: {
+          gst_rate: number | null;
           id: string;
           organization_id: string;
+          price: number;
           product_id: string;
           product_status: Database["public"]["Enums"]["product_status"];
           product_title: string;

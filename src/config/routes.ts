@@ -18,6 +18,12 @@ export const routes = {
   orgNewProduct: (orgSlug: string) => `/app/${orgSlug}/products/new`,
   orgProduct: (orgSlug: string, productId: string) => `/app/${orgSlug}/products/${productId}`,
   orgInventory: (orgSlug: string) => `/app/${orgSlug}/inventory`,
+  orgOrders: (orgSlug: string) => `/app/${orgSlug}/orders`,
+  orgNewOrder: (orgSlug: string) => `/app/${orgSlug}/orders/new`,
+  orgOrder: (orgSlug: string, orderId: string) => `/app/${orgSlug}/orders/${orderId}`,
+  orgDeliveries: (orgSlug: string) => `/app/${orgSlug}/deliveries`,
+  /** Public, unauthenticated parcel tracking page for customers. */
+  tracking: (token: string) => `/track/${token}`,
   orgSettings: (orgSlug: string) => `/app/${orgSlug}/settings`,
 } as const;
 
