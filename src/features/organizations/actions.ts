@@ -8,7 +8,7 @@ import { createOrganizationSchema } from "@/features/organizations/schemas";
 import { createAction } from "@/lib/actions/create-action";
 import { Errors, fromPostgrestError } from "@/lib/errors";
 import { logger } from "@/lib/logger";
-import { slugify, toWarehouseCode } from "@/lib/slug";
+import { toWarehouseCode } from "@/lib/slug";
 
 const rpcResultSchema = z.object({
   organization_id: z.uuid(),
@@ -28,7 +28,9 @@ export const createOrganization = createAction({
       p_name: input.organizationName,
       p_slug: input.organizationSlug,
       p_shop_name: input.shopName,
-      p_shop_slug: slugify(input.shopName) || "main",
+      // Shop handles are global storefront addresses; the organization slug is
+      // already unique, so the first shop takes it.
+      p_shop_slug: input.organizationSlug,
       p_currency: input.currency,
       p_warehouse_name: input.warehouseName,
       p_warehouse_code: toWarehouseCode(input.warehouseCity),

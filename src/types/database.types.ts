@@ -690,9 +690,11 @@ export type Database = {
           payment_method: Database["public"]["Enums"]["payment_method"] | null;
           payment_status: Database["public"]["Enums"]["payment_status"];
           placed_at: string;
+          public_token: string;
           shipping_address: NonNullable<Json>;
           shipping_total: number;
           shop_id: string;
+          source: string;
           status: Database["public"]["Enums"]["order_status"];
           subtotal: number;
           tax_total: number;
@@ -718,9 +720,11 @@ export type Database = {
           payment_method?: Database["public"]["Enums"]["payment_method"] | null;
           payment_status?: Database["public"]["Enums"]["payment_status"];
           placed_at?: string;
+          public_token?: string;
           shipping_address?: NonNullable<Json>;
           shipping_total?: number;
           shop_id: string;
+          source?: string;
           status?: Database["public"]["Enums"]["order_status"];
           subtotal?: number;
           tax_total?: number;
@@ -745,15 +749,24 @@ export type Database = {
           payment_method?: Database["public"]["Enums"]["payment_method"] | null;
           payment_status?: Database["public"]["Enums"]["payment_status"];
           placed_at?: string;
+          public_token?: string;
           shipping_address?: NonNullable<Json>;
           shipping_total?: number;
           shop_id?: string;
+          source?: string;
           status?: Database["public"]["Enums"]["order_status"];
           subtotal?: number;
           tax_total?: number;
           updated_at?: string;
         };
         Relationships: [
+          {
+            foreignKeyName: "orders_organization_id_customer_id_fkey";
+            columns: ["organization_id", "customer_id"];
+            isOneToOne: false;
+            referencedRelation: "customer_overview";
+            referencedColumns: ["organization_id", "id"];
+          },
           {
             foreignKeyName: "orders_organization_id_customer_id_fkey";
             columns: ["organization_id", "customer_id"];
@@ -1557,6 +1570,33 @@ export type Database = {
       };
     };
     Views: {
+      customer_overview: {
+        Row: {
+          accepts_marketing: boolean;
+          created_at: string;
+          email: string | null;
+          email_verified_at: string | null;
+          full_name: string | null;
+          id: string;
+          last_order_at: string | null;
+          orders_count: number | null;
+          organization_id: string;
+          phone: string | null;
+          search_text: string | null;
+          tags: string[];
+          total_spent: number | null;
+        };
+        ComputedFields: never;
+        Relationships: [
+          {
+            foreignKeyName: "customers_organization_id_fkey";
+            columns: ["organization_id"];
+            isOneToOne: false;
+            referencedRelation: "organizations";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       inventory_overview: {
         Row: {
           available: number | null;
@@ -1635,6 +1675,13 @@ export type Database = {
         };
         ComputedFields: never;
         Relationships: [
+          {
+            foreignKeyName: "orders_organization_id_customer_id_fkey";
+            columns: ["organization_id", "customer_id"];
+            isOneToOne: false;
+            referencedRelation: "customer_overview";
+            referencedColumns: ["organization_id", "id"];
+          },
           {
             foreignKeyName: "orders_organization_id_customer_id_fkey";
             columns: ["organization_id", "customer_id"];
@@ -1941,6 +1988,37 @@ export type Database = {
         Args: { p_shop_ids: string[]; p_warehouse_id: string };
         Returns: undefined;
       };
+      storefront_catalog: {
+        Args: {
+          p_category_id?: string;
+          p_limit?: number;
+          p_offset?: number;
+          p_search?: string;
+          p_shop_id: string;
+          p_sort?: string;
+        };
+        Returns: Json;
+      };
+      storefront_categories: { Args: { p_shop_id: string }; Returns: Json };
+      storefront_checkout_confirm: {
+        Args: { p_checkout_id: string; p_otp: string };
+        Returns: Json;
+      };
+      storefront_checkout_resend: { Args: { p_checkout_id: string }; Returns: Json };
+      storefront_checkout_start: {
+        Args: {
+          p_address: Json;
+          p_contact: Json;
+          p_lines: Json;
+          p_payment_method?: Database["public"]["Enums"]["payment_method"];
+          p_shop_id: string;
+        };
+        Returns: Json;
+      };
+      storefront_order: { Args: { p_token: string }; Returns: Json };
+      storefront_product: { Args: { p_shop_id: string; p_slug: string }; Returns: Json };
+      storefront_shop: { Args: { p_slug: string }; Returns: Json };
+      storefront_variants: { Args: { p_shop_id: string; p_variant_ids: string[] }; Returns: Json };
       transfer_stock: {
         Args: {
           p_batch_id?: string;
