@@ -217,6 +217,80 @@ select pg_temp.assert(
   (select (public.get_overview_stats((select (r ->> 'organization_id')::uuid from a_org)) ->> 'orders_24h')::int = 0),
   'another tenant gets zeros for an organization they do not belong to');
 
+-- Multi-vertical catalogue -------------------------------------------------------------
+select pg_temp.act_as('00000000-0000-0000-0000-00000000000b');
+create temp table b_multi on commit drop as
+  select public.create_organization('Gadget & Home', 'gadget-home', 'Gadget & Home', 'gadget-home',
+                                    'INR', 'Pune WH', 'PUNE', 'Pune', array['electronics', 'home_kitchen']) as r;
+grant all on b_multi to authenticated;
+
+select pg_temp.assert(
+  (select industries = array['electronics', 'home_kitchen'] from public.organizations where slug = 'gadget-home'),
+  'industries are recorded on the organization');
+select pg_temp.assert(
+  (select count(*) = 2 from public.categories c join public.organizations o on o.id = c.organization_id
+    where o.slug = 'gadget-home' and c.parent_id is null),
+  'one top-level category per industry');
+select pg_temp.assert(
+  (select tracking = 'serial' from public.categories c join public.organizations o on o.id = c.organization_id
+    where o.slug = 'gadget-home' and c.slug = 'mobile-phones'),
+  'phones are tracked by serial number');
+select pg_temp.assert(
+  (select array_agg(a.key order by a.sort_order) = array['material', 'capacity', 'induction_compatible']
+     from public.attribute_definitions a join public.categories c on c.id = a.category_id
+    where c.slug = 'cookware' and c.organization_id = (select (r ->> 'organization_id')::uuid from b_multi)),
+  'cookware gets material, capacity and induction attributes');
+select pg_temp.assert(
+  (select is_variant_option and unit = 'L' from public.attribute_definitions a join public.categories c on c.id = a.category_id
+    where c.slug = 'cookware' and a.key = 'capacity' and c.organization_id = (select (r ->> 'organization_id')::uuid from b_multi)),
+  'capacity is a variant option measured in litres');
+
+-- Products inherit tracking from their category
+insert into public.products (organization_id, title, slug, category_id)
+select (r ->> 'organization_id')::uuid, 'Phone X', 'phone-x',
+       (select id from public.categories where slug = 'mobile-phones'
+          and organization_id = (select (r ->> 'organization_id')::uuid from b_multi))
+from b_multi;
+select pg_temp.assert(
+  (select tracking = 'serial' from public.products where slug = 'phone-x'), 'product inherits serial tracking');
+
+-- Adding an industry later seeds it once (idempotent)
+select public.add_industries((select (r ->> 'organization_id')::uuid from b_multi), array['grocery']);
+select public.add_industries((select (r ->> 'organization_id')::uuid from b_multi), array['grocery']);
+select pg_temp.assert(
+  (select count(*) = 1 from public.categories where slug = 'grocery' and parent_id is null
+     and organization_id = (select (r ->> 'organization_id')::uuid from b_multi)),
+  'add_industries is idempotent');
+select pg_temp.assert(
+  (select tracking = 'batch' from public.categories where slug = 'packaged-food'
+     and organization_id = (select (r ->> 'organization_id')::uuid from b_multi)),
+  'packaged food is tracked by batch');
+
+-- Default organization gets a General category
+select pg_temp.act_as('00000000-0000-0000-0000-00000000000a');
+select pg_temp.assert(
+  (select count(*) = 2 from public.categories where organization_id = (select (r ->> 'organization_id')::uuid from a_org)),
+  'organizations without industries get Other > General');
+select pg_temp.assert(
+  (select count(*) = 0 from public.categories where slug = 'mobile-phones'),
+  'categories of other tenants are invisible');
+
+-- Unknown industries are rejected
+do $$
+begin
+  perform public.create_organization('Bad', 'bad-industry', 'Bad', 'bad', 'INR', 'W', 'W1', 'X', array['weapons']);
+  raise exception 'ASSERTION FAILED: unknown industry should be rejected';
+exception when check_violation then null;
+end $$;
+
+-- Restricted staff cannot edit categories
+select pg_temp.act_as('00000000-0000-0000-0000-00000000000c');
+do $$
+begin
+  update public.categories set name = 'Hacked' where organization_id = (select (r ->> 'organization_id')::uuid from a_org);
+  if found then raise exception 'ASSERTION FAILED: staff must not edit categories'; end if;
+end $$;
+
 -- Ownership invariant --------------------------------------------------------------------
 reset role;
 do $$

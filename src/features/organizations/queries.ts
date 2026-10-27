@@ -18,6 +18,7 @@ export type Membership = {
     slug: string;
     plan: Enums<"plan_tier">;
     trialEndsAt: string | null;
+    industries: string[];
   };
 };
 
@@ -29,7 +30,7 @@ export const listMyMemberships = cache(async (): Promise<Membership[]> => {
   const { data, error } = await supabase
     .from("organization_members")
     .select(
-      "id, role, organization:organizations!inner(id, name, slug, plan, trial_ends_at, created_at)",
+      "id, role, organization:organizations!inner(id, name, slug, plan, trial_ends_at, industries, created_at)",
     )
     .eq("user_id", user.id)
     .order("created_at", { ascending: true });
@@ -45,6 +46,7 @@ export const listMyMemberships = cache(async (): Promise<Membership[]> => {
       slug: row.organization.slug,
       plan: row.organization.plan,
       trialEndsAt: row.organization.trial_ends_at,
+      industries: row.organization.industries,
     },
   }));
 });

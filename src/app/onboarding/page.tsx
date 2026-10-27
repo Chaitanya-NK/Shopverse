@@ -21,7 +21,7 @@ export default function OnboardingPage({ searchParams }: PageProps<"/onboarding"
         <div className="space-y-2">
           <h1 className="text-3xl font-semibold tracking-tight">Set up your workspace</h1>
           <p className="text-muted-foreground">
-            Three quick details and you&apos;re in. Everything here can be changed later.
+            A few quick details and you&apos;re in. Everything here can be changed later.
           </p>
         </div>
         <Suspense fallback={<Skeleton className="h-[640px] w-full rounded-xl" />}>

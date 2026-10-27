@@ -33,6 +33,7 @@ import {
 } from "@/components/ui/select";
 import { Spinner } from "@/components/ui/spinner";
 import { createOrganization } from "@/features/organizations/actions";
+import { IndustryPicker } from "@/features/organizations/components/industry-picker";
 import {
   type CreateOrganizationInput,
   createOrganizationSchema,
@@ -56,6 +57,7 @@ export function OnboardingForm({ defaultName }: { defaultName?: string }) {
       currency: "INR",
       warehouseName: "Main warehouse",
       warehouseCity: "",
+      industries: [],
     },
   });
 
@@ -89,7 +91,7 @@ export function OnboardingForm({ defaultName }: { defaultName?: string }) {
                         {...field}
                         id="org-name"
                         autoFocus
-                        placeholder="Urban Threads Retail"
+                        placeholder="Acme Retail"
                         aria-invalid={fieldState.invalid}
                         onChange={(e) => {
                           field.onChange(e);
@@ -140,6 +142,30 @@ export function OnboardingForm({ defaultName }: { defaultName?: string }) {
 
             <FieldSeparator />
 
+            <Controller
+              name="industries"
+              control={form.control}
+              render={({ field, fieldState }) => (
+                <FieldSet data-invalid={fieldState.invalid}>
+                  <FieldLegend>What do you sell?</FieldLegend>
+                  <FieldDescription>
+                    Pick everything that applies. We&apos;ll set up categories with the right
+                    product details and stock tracking for each: sizes for clothing, IMEI numbers
+                    for phones, expiry dates for food.
+                  </FieldDescription>
+                  <IndustryPicker
+                    value={field.value}
+                    onChange={field.onChange}
+                    invalid={fieldState.invalid}
+                    disabled={isPending}
+                  />
+                  {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                </FieldSet>
+              )}
+            />
+
+            <FieldSeparator />
+
             <FieldSet>
               <FieldLegend>Your first shop</FieldLegend>
               <FieldDescription>
@@ -155,7 +181,7 @@ export function OnboardingForm({ defaultName }: { defaultName?: string }) {
                       <Input
                         {...field}
                         id="shop-name"
-                        placeholder="Urban Threads"
+                        placeholder="Acme Store"
                         aria-invalid={fieldState.invalid}
                         onChange={(e) => {
                           setShopTouched(true);

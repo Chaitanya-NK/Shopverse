@@ -10,6 +10,7 @@ export const routes = {
   app: "/app",
   org: (orgSlug: string) => `/app/${orgSlug}`,
   orgShops: (orgSlug: string) => `/app/${orgSlug}/shops`,
+  orgCategories: (orgSlug: string) => `/app/${orgSlug}/categories`,
   orgWarehouses: (orgSlug: string) => `/app/${orgSlug}/warehouses`,
   orgSettings: (orgSlug: string) => `/app/${orgSlug}/settings`,
 } as const;

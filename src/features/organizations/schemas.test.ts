@@ -9,7 +9,8 @@ const valid = {
   currency: "INR",
   warehouseName: "Bengaluru WH",
   warehouseCity: "Bengaluru",
-} as const;
+  industries: ["electronics", "home_kitchen"],
+};
 
 describe("createOrganizationSchema", () => {
   it("accepts a complete onboarding payload", () => {
@@ -28,6 +29,21 @@ describe("createOrganizationSchema", () => {
       expect(result.success).toBe(false);
     },
   );
+
+  it("requires at least one industry", () => {
+    expect(createOrganizationSchema.safeParse({ ...valid, industries: [] }).success).toBe(false);
+  });
+
+  it("rejects unknown industries", () => {
+    expect(createOrganizationSchema.safeParse({ ...valid, industries: ["weapons"] }).success).toBe(
+      false,
+    );
+  });
+
+  it("de-duplicates industries", () => {
+    const parsed = createOrganizationSchema.parse({ ...valid, industries: ["grocery", "grocery"] });
+    expect(parsed.industries).toEqual(["grocery"]);
+  });
 
   it("rejects unsupported currencies", () => {
     expect(createOrganizationSchema.safeParse({ ...valid, currency: "XYZ" }).success).toBe(false);

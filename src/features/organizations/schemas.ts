@@ -1,5 +1,6 @@
 import { z } from "zod";
 
+import { INDUSTRY_IDS } from "@/features/organizations/industries";
 import { SLUG_PATTERN } from "@/lib/slug";
 
 export const SUPPORTED_CURRENCIES = ["INR", "USD", "EUR", "GBP", "AED", "SGD"] as const;
@@ -24,6 +25,11 @@ export const createOrganizationSchema = z.object({
   currency: z.enum(SUPPORTED_CURRENCIES),
   warehouseName: nameSchema("Warehouse name"),
   warehouseCity: z.string().trim().min(2, "Enter a city").max(80),
+  industries: z
+    .array(z.enum(INDUSTRY_IDS))
+    .min(1, "Pick at least one thing you sell")
+    .max(INDUSTRY_IDS.length)
+    .transform((list) => [...new Set(list)]),
 });
 
 export type CreateOrganizationInput = z.input<typeof createOrganizationSchema>;

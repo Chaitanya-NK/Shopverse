@@ -11,13 +11,13 @@ import { siteConfig } from "@/config/site";
 const features = [
   {
     icon: StoreIcon,
-    title: "Many shops, one login",
-    body: "Separate storefronts, catalogues and prices under one organisation.",
+    title: "Sell anything, in many shops",
+    body: "Clothing, electronics, kitchenware, groceries and more: separate storefronts under one organisation.",
   },
   {
     icon: BoxesIcon,
-    title: "Real-time inventory",
-    body: "Shared stock across warehouses with a full audit ledger.",
+    title: "Inventory that fits the product",
+    body: "Count units, track serial/IMEI numbers or manage batches with expiry, across every warehouse.",
   },
   {
     icon: TruckIcon,

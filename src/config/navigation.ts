@@ -3,6 +3,7 @@ import {
   BarChart3Icon,
   BoxesIcon,
   CreditCardIcon,
+  FolderTreeIcon,
   LayoutDashboardIcon,
   type LucideIcon,
   MegaphoneIcon,
@@ -33,6 +34,7 @@ export function getOrgNavigation(orgSlug: string): NavGroup[] {
       items: [
         { title: "Overview", icon: LayoutDashboardIcon, href: routes.org(orgSlug) },
         { title: "Shops", icon: StoreIcon, href: routes.orgShops(orgSlug) },
+        { title: "Categories", icon: FolderTreeIcon, href: routes.orgCategories(orgSlug) },
         { title: "Products", icon: PackageIcon },
         { title: "Inventory", icon: BoxesIcon },
         { title: "Orders", icon: ShoppingCartIcon },

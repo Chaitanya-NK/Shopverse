@@ -1,6 +1,6 @@
 # Tradeloom
 
-Multi-shop commerce SaaS: many storefronts, shared inventory across warehouses, delivery tracking, and email-OTP security, for brands that run more than one shop.
+Multi-shop commerce SaaS for businesses that sell **anything**: clothing, electronics, kitchenware, groceries, beauty, books and more. It runs many storefronts with shared inventory across warehouses, delivery tracking and email-OTP security.
 
 **Stack:** Next.js 16 (App Router, Cache Components, Server Actions) · React 19 · TypeScript (strict) · Supabase (Postgres, Auth, RLS) · shadcn/ui + Tailwind CSS 4 · Zod 4 · React Hook Form · Vitest
 
@@ -100,7 +100,7 @@ See **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)** for the design decisions an
 
 ## Roadmap
 
-- **Phase 2:** products and variants, inventory (stock ledger UI, transfers, reorder alerts), warehouses
+- **Phase 2:** products and variants (forms generated from category attributes), category editor, inventory with serial/IMEI and batch/expiry tracking, transfers, reorder alerts, warehouses
 - **Phase 3:** orders, fulfilment routing, shipments and tracking, delivery OTP
 - **Phase 4:** storefront and checkout (COD OTP), customers
 - **Phase 5:** team invitations and roles UI, audit log viewer, billing

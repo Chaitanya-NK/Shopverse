@@ -33,6 +33,7 @@ export const createOrganization = createAction({
       p_warehouse_name: input.warehouseName,
       p_warehouse_code: toWarehouseCode(input.warehouseCity),
       p_warehouse_city: input.warehouseCity,
+      p_industries: input.industries,
     });
 
     if (error) {

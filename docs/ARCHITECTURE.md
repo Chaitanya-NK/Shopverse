@@ -63,6 +63,18 @@ Key invariants, all covered by `supabase/tests/rls_and_invariants.test.sql`:
 - Shop, warehouse and membership changes are audited by trigger, including which columns changed.
 - RLS helper functions live in the unexposed `private` schema.
 
+## Multi-industry catalogue
+
+Tradeloom isn't tied to one kind of product. The catalogue is data-driven:
+
+- **Industries** (`organizations.industries`): what a business sells. The list lives in `features/organizations/industries.ts` and the matching CHECK constraint. Each industry has a template in `private.industry_templates()`.
+- **Categories** (`categories`): a tree per organisation (Industry › Category › optional sub-categories), seeded from the templates at onboarding or via `add_industries()`. Seeding is idempotent.
+- **Attribute definitions** (`attribute_definitions`): the fields a category needs, typed (`text`, `number`, `boolean`, `select`, `multiselect`, `date`) with units, options and a required flag. `is_variant_option` marks the fields that generate SKUs: Size × Colour for clothing, Storage × Colour for phones, Capacity for cookware, Net weight for groceries.
+- **Tracking mode** (`inventory_tracking`): `quantity` (count units), `serial` (each unit has a serial/IMEI, for phones, appliances and jewellery) or `batch` (lots with expiry, picked FEFO, for food and cosmetics). Products inherit it, plus HSN/GST defaults, from their category by trigger.
+- Products store their detail values in `products.attributes` (jsonb object), and variant values in `product_variants.options`. Phase 2 validates both against the category's definitions and generates the product form from them.
+
+Adding a new industry means one entry in `INDUSTRIES`, the CHECK constraint, `industry_templates()` and `industry_label()`, all in a new migration.
+
 ### Gotcha: `INSERT … RETURNING` and RLS
 
 PostgREST's `.insert().select()` checks the new row against the table's **SELECT** policy. A STABLE function that looks the row up by id can't see a row still being inserted. Pass the row's own columns into the policy function instead, as `can_access_shop(organization_id, id)` does. There's a regression test for this.

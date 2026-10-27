@@ -85,7 +85,7 @@ export function CreateShopDialog({ organizationSlug }: { organizationSlug: strin
                   <Input
                     {...field}
                     id="new-shop-name"
-                    placeholder="Urban Threads Kids"
+                    placeholder="Acme Electronics"
                     aria-invalid={fieldState.invalid}
                     onChange={(e) => {
                       field.onChange(e);
