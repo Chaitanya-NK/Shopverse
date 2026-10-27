@@ -22,6 +22,8 @@ export type CategoryNode = {
   hsnCode: string | null;
   gstRate: number | null;
   sortOrder: number;
+  /** Products directly in this category. */
+  productCount: number;
   attributes: CategoryAttribute[];
   children: CategoryNode[];
 };

@@ -30,3 +30,9 @@ export function toWarehouseCode(input: string): string {
     ?.slice(0, 12);
   return code && code.length >= 2 ? code : "MAIN";
 }
+
+/** Mirrors attribute_definitions.key: "Screen size (in)" -> "screen_size_in". */
+export function toAttributeKey(input: string): string {
+  const key = slugify(input, 40).replace(/-/g, "_");
+  return /^[a-z]/.test(key) ? key : `f_${key}`.slice(0, 40).replace(/_+$/, "");
+}

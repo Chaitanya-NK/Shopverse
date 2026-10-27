@@ -13,7 +13,8 @@ export const listCategoryTree = cache(async (organizationId: string): Promise<Ca
     .from("categories")
     .select(
       `id, parent_id, name, slug, industry, tracking, hsn_code, gst_rate, sort_order,
-       attribute_definitions (id, key, label, type, options, unit, is_required, is_variant_option, sort_order)`,
+       attribute_definitions (id, key, label, type, options, unit, is_required, is_variant_option, sort_order),
+       products (count)`,
     )
     .eq("organization_id", organizationId)
     .eq("is_active", true);
@@ -31,6 +32,7 @@ export const listCategoryTree = cache(async (organizationId: string): Promise<Ca
       hsnCode: c.hsn_code,
       gstRate: c.gst_rate,
       sortOrder: c.sort_order,
+      productCount: c.products[0]?.count ?? 0,
       attributes: c.attribute_definitions.map((a) => ({
         id: a.id,
         key: a.key,

@@ -10,8 +10,8 @@ type ActionError = Extract<ActionResult<unknown>, { ok: false }>["error"];
  * field errors land on their inputs, anything else becomes a root error
  * (rendered by <FormRootError />) and a toast.
  */
-export function applyActionError<T extends FieldValues>(
-  form: UseFormReturn<T>,
+export function applyActionError<T extends FieldValues, TOutput extends FieldValues = T>(
+  form: UseFormReturn<T, unknown, TOutput>,
   error: ActionError,
 ) {
   let matchedField = false;

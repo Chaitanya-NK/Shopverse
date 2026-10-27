@@ -328,5 +328,33 @@ select pg_temp.expect_error(format($q$select public.set_warehouse_shops(%L, '{}'
 select pg_temp.expect_error(format($q$select public.update_product(%L, '{"title":"X","slug":"x"}', '[{"sku":"Z-1","price":1}]')$q$,
   (select id from phone)), '42501', 'another tenant cannot edit products');
 
+-- ---------------------------------------------------------------------------
+-- Category / field editing guards
+-- ---------------------------------------------------------------------------
+select pg_temp.act_as('00000000-0000-0000-0000-0000000000a1');
+
+select pg_temp.expect_error(format($q$update public.attribute_definitions set type = 'text'
+  where category_id = %L and key = 'storage'$q$, (select phones from ids)), '23514', 'field type is fixed');
+select pg_temp.expect_error(format($q$update public.attribute_definitions set options = array_remove(options, '128 GB')
+  where category_id = %L and key = 'storage'$q$, (select phones from ids)), '23514', 'cannot drop a variant option value in use');
+
+update public.attribute_definitions set options = options || array['1 TB'], label = 'Storage size'
+  where category_id = (select phones from ids) and key = 'storage';
+select pg_temp.assert((select '1 TB' = any (options) and label = 'Storage size' from public.attribute_definitions
+  where category_id = (select phones from ids) and key = 'storage'), 'options can be added and labels renamed');
+update public.attribute_definitions set options = array_remove(options, '1 TB')
+  where category_id = (select phones from ids) and key = 'storage';
+select pg_temp.assert(true, 'unused option values can be removed');
+
+select pg_temp.expect_error(format($q$delete from public.categories where id = %L$q$, (select phones from ids)),
+  '23514', 'a category with products cannot be deleted');
+select pg_temp.expect_error(format($q$delete from public.categories where id = (select parent_id from public.categories where id = %L)$q$,
+  (select phones from ids)), '23514', 'nor can its parent');
+
+insert into public.categories (organization_id, parent_id, name, slug, tracking)
+  select org, (select parent_id from public.categories where id = (select phones from ids)), 'Drones', 'drones', 'serial' from ids;
+delete from public.categories where slug = 'drones' and organization_id = (select org from ids);
+select pg_temp.assert(not exists (select 1 from public.categories where slug = 'drones'), 'an empty category can be deleted');
+
 select 'ALL PRODUCT & INVENTORY TESTS PASSED' as result;
 rollback;

@@ -46,7 +46,11 @@ async function CategoriesContent({ params }: Pick<Props, "params">) {
           )
         }
       />
-      <CategoryTree roots={tree} />
+      <CategoryTree
+        roots={tree}
+        organizationSlug={orgSlug}
+        canManage={can(role, "catalog.manage")}
+      />
     </>
   );
 }

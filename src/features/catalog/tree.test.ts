@@ -17,6 +17,7 @@ const node = (
   hsnCode: null,
   gstRate: null,
   sortOrder,
+  productCount: 0,
   attributes: [],
   ...extra,
 });
