@@ -25,6 +25,12 @@ describe("fromAuthError", () => {
     expect(fromAuthError({ status: 429, message: "slow down" }).code).toBe("RATE_LIMITED");
   });
 
+  it("maps email delivery failures to a clear, user-safe message", () => {
+    const error = fromAuthError({ status: 500, message: "Error sending confirmation email" });
+    expect(error.code).toBe("UNAVAILABLE");
+    expect(error.message).toMatch(/couldn't send the verification email/i);
+  });
+
   it("maps expired codes to the token field", () => {
     const error = fromAuthError({ code: "otp_expired", message: "expired" });
     expect(error.fieldErrors?.token).toBeDefined();

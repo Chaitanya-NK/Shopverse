@@ -10,6 +10,7 @@ export type ErrorCode =
   | "VALIDATION"
   | "CONFLICT"
   | "RATE_LIMITED"
+  | "UNAVAILABLE"
   | "INTERNAL";
 
 export type FieldErrors = Record<string, string[] | undefined>;
@@ -92,6 +93,15 @@ export function fromAuthError(error: AuthLikeError): AppError {
   ) {
     return Errors.rateLimited(
       "Too many codes requested. Please wait a minute before trying again.",
+    );
+  }
+  // Supabase couldn't hand the email to its SMTP server (bad SMTP credentials,
+  // unverified sender, provider outage). Not the user's fault; say so plainly.
+  if ((error.status ?? 0) >= 500 && /sending .*email/i.test(error.message)) {
+    return new AppError(
+      "UNAVAILABLE",
+      "We couldn't send the verification email right now. Please try again in a few minutes.",
+      { cause: error },
     );
   }
   if (error.code === "otp_expired") {

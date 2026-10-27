@@ -72,8 +72,11 @@ function flattenIssues(error: z.ZodError) {
 function toFailure(name: string, error: unknown): ActionResult<never> {
   const appError: AppError = isAppError(error) ? error : Errors.internal(error);
 
-  if (appError.code === "INTERNAL") {
-    logger.error({ action: name, err: appError.cause ?? error }, "Server action failed");
+  if (appError.code === "INTERNAL" || appError.code === "UNAVAILABLE") {
+    logger.error(
+      { action: name, code: appError.code, err: appError.cause ?? error },
+      "Server action failed",
+    );
   } else {
     logger.info({ action: name, code: appError.code }, "Server action rejected");
   }
