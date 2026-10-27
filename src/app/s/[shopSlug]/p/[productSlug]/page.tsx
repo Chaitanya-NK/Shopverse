@@ -8,7 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { routes } from "@/config/routes";
 import { WishlistButton } from "@/features/shopper/components/wishlist-button";
 import { getShopper } from "@/features/shopper/session";
-import { ProductArt } from "@/features/storefront/components/product-art";
+import { ProductGallery } from "@/features/storefront/components/product-gallery";
 import { ProductPurchase } from "@/features/storefront/components/product-purchase";
 import { getStorefrontProduct, getStorefrontShop } from "@/features/storefront/queries";
 import { formatMoney } from "@/lib/format";
@@ -70,11 +70,11 @@ async function Product({ params }: Pick<Props, "params">) {
       </Link>
 
       <div className="grid gap-10 md:grid-cols-2">
-        <ProductArt
+        <ProductGallery
+          images={product.images}
+          title={product.title}
           seed={product.id}
           industry={product.category?.industry ?? null}
-          size="lg"
-          className="rounded-3xl"
         />
 
         <div className="space-y-6">

@@ -21,10 +21,11 @@ import { listCategoryTree } from "@/features/catalog/queries";
 import { toCategoryOptions } from "@/features/catalog/tree";
 import { can } from "@/features/organizations/permissions";
 import { requireMembership } from "@/features/organizations/queries";
+import { ProductPhotos } from "@/features/products/components/product-photos";
 import { ProductForm } from "@/features/products/components/product-form";
 import { ProductStatusBadge } from "@/features/products/components/product-status-badge";
 import { ProductStockTable } from "@/features/products/components/product-stock-table";
-import { getProduct, getProductStock } from "@/features/products/queries";
+import { getProduct, getProductStock, listProductImages } from "@/features/products/queries";
 import { listShops } from "@/features/shops/queries";
 
 export const metadata: Metadata = { title: "Product" };
@@ -55,10 +56,11 @@ async function ProductContent({ params }: Pick<Props, "params">) {
   const product = await getProduct(organization.id, productId);
   if (!product) notFound();
 
-  const [tree, shops, stock] = await Promise.all([
+  const [tree, shops, stock, photos] = await Promise.all([
     listCategoryTree(organization.id),
     listShops(organization.id),
     getProductStock(product.id),
+    listProductImages(product.id),
   ]);
   const canManage = can(role, "catalog.manage");
   const stockedVariantIds = [...new Set(stock.filter((s) => s.onHand > 0).map((s) => s.variantId))];
@@ -82,6 +84,12 @@ async function ProductContent({ params }: Pick<Props, "params">) {
       <Tabs defaultValue="product">
         <TabsList>
           <TabsTrigger value="product">Product</TabsTrigger>
+          <TabsTrigger value="photos">
+            Photos
+            {photos.length > 0 && (
+              <span className="text-xs text-muted-foreground tabular-nums">{photos.length}</span>
+            )}
+          </TabsTrigger>
           <TabsTrigger value="stock">Stock</TabsTrigger>
         </TabsList>
         <TabsContent value="product" className="pt-4">
@@ -98,6 +106,20 @@ async function ProductContent({ params }: Pick<Props, "params">) {
           ) : (
             <p className="text-sm text-muted-foreground">
               You can view this product. Ask a manager to make changes.
+            </p>
+          )}
+        </TabsContent>
+        <TabsContent value="photos" className="pt-4">
+          {canManage ? (
+            <ProductPhotos
+              organizationSlug={orgSlug}
+              productId={product.id}
+              productTitle={product.title}
+              photos={photos}
+            />
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              {photos.length} photo{photos.length === 1 ? "" : "s"}. Ask a manager to change them.
             </p>
           )}
         </TabsContent>

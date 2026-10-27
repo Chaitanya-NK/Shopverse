@@ -996,6 +996,58 @@ export type Database = {
         };
         Relationships: [];
       };
+      product_images: {
+        Row: {
+          alt: string | null;
+          created_at: string;
+          created_by: string | null;
+          height: number;
+          id: string;
+          organization_id: string;
+          product_id: string;
+          sort_order: number;
+          width: number;
+        };
+        ComputedFields: never;
+        Insert: {
+          alt?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          height: number;
+          id: string;
+          organization_id: string;
+          product_id: string;
+          sort_order?: number;
+          width: number;
+        };
+        Update: {
+          alt?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          height?: number;
+          id?: string;
+          organization_id?: string;
+          product_id?: string;
+          sort_order?: number;
+          width?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "product_images_organization_id_product_id_fkey";
+            columns: ["organization_id", "product_id"];
+            isOneToOne: false;
+            referencedRelation: "product_overview";
+            referencedColumns: ["organization_id", "id"];
+          },
+          {
+            foreignKeyName: "product_images_organization_id_product_id_fkey";
+            columns: ["organization_id", "product_id"];
+            isOneToOne: false;
+            referencedRelation: "products";
+            referencedColumns: ["organization_id", "id"];
+          },
+        ];
+      };
       product_variants: {
         Row: {
           barcode: string | null;
@@ -1895,6 +1947,7 @@ export type Database = {
           available: number | null;
           category_id: string | null;
           category_name: string | null;
+          cover_path: string | null;
           created_at: string;
           id: string;
           low_stock_locations: number | null;
@@ -2212,6 +2265,10 @@ export type Database = {
           isOneToOne: true;
           isSetofReturn: false;
         };
+      };
+      reorder_product_images: {
+        Args: { p_image_ids: string[]; p_product_id: string };
+        Returns: undefined;
       };
       revoke_invitation: { Args: { p_invitation_id: string }; Returns: undefined };
       set_warehouse_shops: {

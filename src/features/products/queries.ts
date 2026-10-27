@@ -24,6 +24,8 @@ export type ProductListItem = {
   available: number;
   lowStockLocations: number;
   updatedAt: string;
+  /** Storage path of the first photo, if any. */
+  coverPath: string | null;
 };
 
 export type ProductListFilters = {
@@ -41,7 +43,7 @@ export const listProducts = cache(async (organizationId: string, filters: Produc
   let query = supabase
     .from("product_overview")
     .select(
-      "id, title, slug, status, tracking, category_name, variant_count, min_price, max_price, on_hand, available, low_stock_locations, updated_at",
+      "id, title, slug, status, tracking, category_name, variant_count, min_price, max_price, on_hand, available, low_stock_locations, updated_at, cover_path",
       { count: "exact" },
     )
     .eq("organization_id", organizationId);
@@ -77,6 +79,7 @@ export const listProducts = cache(async (organizationId: string, filters: Produc
       available: Number(p.available ?? 0),
       lowStockLocations: Number(p.low_stock_locations ?? 0),
       updatedAt: p.updated_at,
+      coverPath: p.cover_path,
     })),
   };
 });
@@ -210,3 +213,30 @@ function toVariantOptions(value: unknown): VariantOptions {
     ),
   );
 }
+
+export type ProductPhoto = {
+  id: string;
+  path: string;
+  alt: string | null;
+  width: number;
+  height: number;
+};
+
+/** A product's photos in display order (the first is the cover). */
+export const listProductImages = cache(async (productId: string): Promise<ProductPhoto[]> => {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("product_images")
+    .select("id, organization_id, product_id, alt, width, height")
+    .eq("product_id", productId)
+    .order("sort_order")
+    .order("created_at");
+  if (error) throw fromPostgrestError(error);
+  return data.map((i) => ({
+    id: i.id,
+    path: `${i.organization_id}/${i.product_id}/${i.id}`,
+    alt: i.alt,
+    width: i.width,
+    height: i.height,
+  }));
+});

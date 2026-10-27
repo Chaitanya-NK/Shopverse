@@ -17,7 +17,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { routes } from "@/config/routes";
 import { CartLineControls } from "@/features/storefront/components/cart-line-controls";
-import { ProductArt } from "@/features/storefront/components/product-art";
+import { ProductVisual } from "@/features/storefront/components/product-visual";
 import { getCart, getStorefrontShop } from "@/features/storefront/queries";
 import { MAX_LINE_QUANTITY, shippingFor } from "@/features/storefront/schemas";
 import { formatMoney } from "@/lib/format";
@@ -82,7 +82,13 @@ async function Cart({ params }: Pick<Props, "params">) {
                   href={routes.storefrontProduct(shop.slug, item.productSlug)}
                   className="w-20 shrink-0 sm:w-24"
                 >
-                  <ProductArt seed={item.id} industry={null} />
+                  <ProductVisual
+                    image={item.image}
+                    alt={item.productTitle}
+                    seed={item.id}
+                    industry={null}
+                    sizes="96px"
+                  />
                 </Link>
                 <div className="flex min-w-0 flex-1 flex-col gap-2">
                   <div className="flex items-start justify-between gap-3">

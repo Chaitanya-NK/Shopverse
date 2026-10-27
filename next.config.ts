@@ -53,7 +53,8 @@ const nextConfig: NextConfig = {
   serverExternalPackages: ["pino"],
   allowedDevOrigins: allowedOrigins,
   experimental: {
-    serverActions: { allowedOrigins, bodySizeLimit: "1mb" },
+    // Photos are shrunk in the browser first; the limit covers the rare original upload.
+    serverActions: { allowedOrigins, bodySizeLimit: "9mb" },
   },
   turbopack: {
     rules: {

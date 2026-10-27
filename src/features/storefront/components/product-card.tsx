@@ -2,7 +2,7 @@ import Link from "next/link";
 
 import { routes } from "@/config/routes";
 import { Price } from "@/features/storefront/components/price";
-import { ProductArt } from "@/features/storefront/components/product-art";
+import { ProductVisual } from "@/features/storefront/components/product-visual";
 import { type CatalogItem } from "@/features/storefront/schemas";
 import { cn } from "@/lib/utils";
 
@@ -26,7 +26,9 @@ export function ProductCard({
         className="group flex flex-col gap-3 rounded-2xl outline-none focus-visible:ring-2 focus-visible:ring-ring"
       >
         <div className="relative">
-          <ProductArt
+          <ProductVisual
+            image={product.image}
+            alt={product.title}
             seed={product.id}
             industry={product.industry}
             className={cn(

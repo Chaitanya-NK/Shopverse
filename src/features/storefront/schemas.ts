@@ -1,5 +1,6 @@
 import { z } from "zod";
 
+import { productImageObjectSchema, productImageSchema } from "@/features/products/images";
 import { Constants } from "@/types/database.types";
 
 const money = z.coerce.number();
@@ -51,6 +52,7 @@ export const catalogSchema = z.object({
         max_price: money,
         compare_at: nullableMoney,
         in_stock: z.boolean().nullable(),
+        image: productImageSchema,
       })
       .transform((p) => ({
         id: p.id,
@@ -62,6 +64,7 @@ export const catalogSchema = z.object({
         maxPrice: p.max_price,
         compareAt: p.compare_at,
         inStock: Boolean(p.in_stock),
+        image: p.image,
       })),
   ),
 });
@@ -88,6 +91,7 @@ export const productSchema = z
     title: z.string(),
     description: z.string().nullable(),
     tracking: z.enum(Constants.public.Enums.inventory_tracking),
+    images: z.array(productImageObjectSchema).optional().default([]),
     category: z
       .object({ id: z.uuid(), name: z.string(), industry: z.string().nullable() })
       .nullable(),
@@ -146,6 +150,7 @@ export const cartVariantsSchema = z.array(
       compare_at: nullableMoney,
       available: z.coerce.number(),
       gst_rate: money,
+      image: productImageSchema,
     })
     .transform((v) => ({
       id: v.id,
@@ -157,6 +162,7 @@ export const cartVariantsSchema = z.array(
       compareAt: v.compare_at,
       available: v.available,
       gstRate: v.gst_rate,
+      image: v.image,
     })),
 );
 export type CartVariant = z.output<typeof cartVariantsSchema>[number];
