@@ -155,3 +155,28 @@ Migrations are forward-only. Never edit one that has been applied in a shared en
 - **Invitations** carry a 256-bit random token; only its sha256 is stored (`token_hash`, not selectable by clients). `invite_member` returns the plain token once so the server can email it and show a copyable link. `get_invitation` (granted to `anon`) previews an invite by token; `accept_invitation` checks the signed-in user's email matches, the invite is unrevoked and unexpired, and marks it accepted, so links are single-use.
 - **Audit log:** triggers write `audit_logs` for every tenant table; `audit_log_view` resolves actor names through `private.actor_label` so entries stay readable after someone leaves. `features/audit/describe.ts` turns a row's action and diff into a sentence. Visible only with the `audit.read` capability.
 - **Plan limits** are data (`private.plan_limits`) and enforced by `private.enforce_plan_limit` triggers on shops, products and warehouses, so no code path can bypass them. Seats count members plus pending invitations. The check is skipped for non-members so RLS still answers first with a permission error. `get_billing_overview` feeds the billing page; display prices are in `src/config/plans.ts`.
+
+## Shopper accounts
+
+- Shoppers are **not** Supabase Auth users. Signing in with an email code (migration 014, `shopper_sign_in_start/resend/verify`) opens a session in `private.shopper_sessions`. The plain 256-bit token goes once to the server, which sets it as the httpOnly `sv_shopper` cookie scoped to `/s/<shop>`. Only its sha256 is stored. Sessions last 30 days, slide forward on use, and are revoked on sign-out. A staff session and a shopper session in the same browser never interact.
+- A session belongs to an organisation and resolves to its `customers` row (matched by email), so guest orders appear after sign-in. Every `shopper_*` function takes the token, checks it, and is granted only to `service_role`. The app calls them through `features/shopper/session.ts` and `actions.ts`. An ended session (42501) clears the cookie and asks the shopper to sign in again.
+- Addresses (`customer_addresses`, max 10, one default) and the wishlist (`wishlist_items`) are readable by staff and written only through functions. `shopper_checkout` places an order without a code, because the email is already verified by the session. It is idempotent per request id (`private.shopper_checkouts`). Pricing is shared with guest checkout (`private.price_checkout`).
+- Cancelling goes through `private.cancel_order_core` for both staff and shoppers. Shoppers can cancel only while `private.order_cancellable` holds (no live shipment). `private.order_stage` gives the customer-facing stage; delivered means the order is completed (migration 016 corrected this).
+
+## Product photos
+
+- Uploads go through a server action. The browser shrinks large photos first (`lib/images/shrink.ts`). The server re-encodes with sharp to WebP at 1600px and 480px, which applies rotation and strips metadata, then uploads with the secret key to the public `product-images` bucket.
+- Files live at `<org>/<product>/<image>-{1600,480}.webp`. The path is derived from ids and never stored, so it can't point across tenants. The `product_images` row is inserted under RLS (managers) with a composite foreign key, and is audited. If the insert fails, the uploaded files are removed; deleting a photo removes them too.
+- Storefront functions return a `cover` or a `gallery`. Images use `next/image` with `unoptimized`, because they are already sized.
+
+## Invoices and order emails
+
+- `private.issue_invoice` runs once per order: when a shipment is first picked up (the GST time of supply) or when the order completes. It takes the next number from a per-shop, per-financial-year counter (`<PREFIX><YY><YY>-00001`, ≤16 characters) and snapshots seller details (shop settings: legal name, GSTIN, address) and the buyer onto the order. Order lines keep the product's HSN code from when they were ordered.
+- `order_invoice` (staff) and `storefront_invoice` (server only) return the invoice. The shopper version leaves out the street address and phone unless the signed-in owner is viewing it. `features/invoices/tax.ts` splits the GST-inclusive tax into CGST+SGST (same state) or IGST, taxes delivery at the principal (highest) item rate, and writes the amount in words. The document prints on A4.
+- `features/notifications/order-notifier.ts` sends customer emails with `after()` from `next/server`, so actions never wait on SMTP and failures are only logged. Hooks: confirmed (storefront and staff), picked up → shipped, out for delivery (includes the delivery code, which the database returns exactly once), failed attempt, delivered, cancelled. Shops can switch these off with `notify_customers: false`.
+
+## Storefront pages and SEO
+
+- Policy texts live in shop settings (`policy_*`). `storefront_shop` lists which ones exist; `storefront_policy` returns one.
+- `storefront_catalog` filters by price (a product matches if any variant is in range) and stock, and reports the price range of the selection. The filter state lives in the URL (nuqs).
+- Products have canonical URLs, Open Graph images and schema.org `Product` JSON-LD (with `<` escaped). `/s/<shop>/sitemap.xml` covers live shops only. `robots.txt` lists every live shop's sitemap and keeps admin, account, cart, checkout and order pages out of search engines. `metadataBase` is `NEXT_PUBLIC_APP_URL`.

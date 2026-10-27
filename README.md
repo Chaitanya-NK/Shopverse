@@ -2,9 +2,9 @@
 
 Multi-shop commerce SaaS for businesses that sell **anything**: clothing, electronics, kitchenware, groceries, beauty, books and more. It runs many storefronts with shared inventory across warehouses, delivery tracking and email-OTP security.
 
-**Stack:** Next.js 16 (App Router, Cache Components, Server Actions) · React 19 · TypeScript (strict) · Supabase (Postgres, Auth, RLS) · shadcn/ui + Tailwind CSS 4 · Zod 4 · React Hook Form · Vitest
+**Stack:** Next.js 16 (App Router, Cache Components, Server Actions) · React 19 · TypeScript (strict) · Supabase (Postgres, Auth, RLS, Storage) · shadcn/ui + Tailwind CSS 4 · Zod 4 · React Hook Form · Vitest
 
-## Status: Phase 5 (team, audit & billing)
+## Status: Phase 5.5 (shopper accounts & storefront essentials)
 
 | Area       | What's in place                                                                                                                                                                                           |
 | ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -29,7 +29,12 @@ Multi-shop commerce SaaS for businesses that sell **anything**: clothing, electr
 | Team       | Invite by email (single-use link, 7-day expiry, token stored hashed), resend and revoke; change roles and shop access; remove members or leave; admins can't touch owners and nobody edits their own role |
 | Audit log  | Every change recorded by the database; filter by type, person and date; shows what changed in plain language                                                                                              |
 | Billing    | Plans with usage meters (shops, seats incl. pending invites, products, warehouses), limits enforced in the database, trial countdown banner; upgrades by request                                          |
-| Quality    | Strict TypeScript, ESLint and Prettier, 130+ unit tests, five SQL test suites (RLS, stock, order flow, storefront and checkout, team and billing), CI, commit hooks                                       |
+| Shoppers   | Shopper accounts separate from staff: email-code sign-in, orders with a progress tracker, wishlist, saved addresses, profile; one-click signed-in checkout; cancel before packing; buy again              |
+| Photos     | Up to 12 photos per product, resized to WebP (1600/480px) with metadata stripped; cover, reorder, alt text; gallery on product pages                                                                      |
+| Invoices   | GST tax invoices issued at dispatch, numbered per shop per financial year; CGST/SGST or IGST by place of supply; print or save as PDF                                                                     |
+| Emails     | Order confirmed, shipped, out for delivery (with the delivery code), missed delivery, delivered, cancelled; shops can turn them off                                                                       |
+| Shop pages | Shipping/returns/privacy/terms pages, contact page, footer; price and in-stock filters; Open Graph, product JSON-LD, sitemap and robots.txt                                                               |
+| Quality    | Strict TypeScript, ESLint and Prettier, 160 unit tests, eight SQL test suites (RLS, stock, order flow, storefront and checkout, team and billing, shopper accounts, photos, invoices), CI, commit hooks   |
 
 ## Quick start in GitHub Codespaces
 
@@ -105,6 +110,16 @@ Open port 3000 from the **Ports** tab, then create an account, read the code fro
 
 Open **Team & security → Invite**. With SMTP set up (above) the invitation is emailed; either way you get a link to copy and send yourself. The person opens it, signs up or signs in with the invited email, and joins with the role and shops you chose. **Billing** shows your plan and usage. Plan prices live in `src/config/plans.ts`; card payments aren't connected yet, so **Choose plan** emails a request to your support address.
 
+### Storefront essentials (Phase 5.5)
+
+After `git pull`, run `npx supabase db push` (migrations 014–017). It also creates the public `product-images` Storage bucket. Then, in **Shops → settings** (gear icon):
+
+- **Business details**: registered name, GSTIN and address. These are printed on invoices; leave GSTIN blank if you aren't registered. Invoices are issued when a parcel is picked up.
+- **Policy pages**: write your shipping, returns, privacy and terms text; each appears in the footer once filled in.
+- **Email customers about their orders** is on by default and uses the SMTP settings above. Without SMTP, development prints emails in the terminal.
+
+Add photos from a product's **Photos** tab. Set `NEXT_PUBLIC_APP_URL` to your real public URL so links in emails, share previews and sitemaps point to it.
+
 ## Scripts
 
 | Command                                     | Purpose                                                          |
@@ -153,4 +168,5 @@ See **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)** for the design decisions an
 - **Phase 3 (done):** orders, fulfilment routing, shipments and tracking, delivery OTP
 - **Phase 4 (done):** storefront and checkout (COD OTP), customers
 - **Phase 5 (done):** team invitations and roles UI, audit log viewer, billing (plans and limits; online payments next)
+- **Phase 5.5 (done):** shopper accounts, wishlist and address book, self-service cancel and reorder, product photos, GST invoices, order emails, policy pages, filters, SEO
 - **Phase 6:** marketing (banners, discounts, loyalty), analytics, channel sync, super-admin
