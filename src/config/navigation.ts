@@ -36,7 +36,7 @@ export function getOrgNavigation(orgSlug: string): NavGroup[] {
         { title: "Shops", icon: StoreIcon, href: routes.orgShops(orgSlug) },
         { title: "Categories", icon: FolderTreeIcon, href: routes.orgCategories(orgSlug) },
         { title: "Products", icon: PackageIcon, href: routes.orgProducts(orgSlug) },
-        { title: "Inventory", icon: BoxesIcon },
+        { title: "Inventory", icon: BoxesIcon, href: routes.orgInventory(orgSlug) },
         { title: "Orders", icon: ShoppingCartIcon },
         { title: "Deliveries", icon: TruckIcon },
         { title: "Warehouses", icon: WarehouseIcon, href: routes.orgWarehouses(orgSlug) },

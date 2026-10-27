@@ -4,18 +4,21 @@ Multi-shop commerce SaaS for businesses that sell **anything**: clothing, electr
 
 **Stack:** Next.js 16 (App Router, Cache Components, Server Actions) · React 19 · TypeScript (strict) · Supabase (Postgres, Auth, RLS) · shadcn/ui + Tailwind CSS 4 · Zod 4 · React Hook Form · Vitest
 
-## Status: Phase 1 (foundation)
+## Status: Phase 2 (catalogue & inventory)
 
-| Area       | What's in place                                                                                                                                 |
-| ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
-| Auth       | Email OTP sign-up and sign-in (6-digit code, 10-minute expiry, resend cooldown), no passwords, no account enumeration, open-redirect protection |
-| Tenancy    | Organisations → shops and warehouses, roles (owner, admin, manager, staff, support), per-shop access for restricted staff                       |
-| Onboarding | One transaction creates the organisation, owner membership, first shop, first warehouse and the audit entries                                   |
-| App shell  | Collapsible sidebar, workspace switcher, user menu, shop switcher (`?shop=` in the URL), dark mode                                              |
-| Dashboard  | Live stats from a single RLS-aware RPC, shops table, setup checklist                                                                            |
-| Shops      | List and create, with field-level conflict errors                                                                                               |
-| Database   | Full schema for catalogue, inventory ledger, orders and shipments, ready for later phases                                                       |
-| Quality    | Strict TypeScript, ESLint and Prettier, 60+ unit tests, a SQL test suite for RLS and invariants, CI, commit hooks                               |
+| Area       | What's in place                                                                                                                                               |
+| ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Auth       | Email OTP sign-up and sign-in (6-digit code, 10-minute expiry, resend cooldown), no passwords, no account enumeration, open-redirect protection               |
+| Tenancy    | Organisations → shops and warehouses, roles (owner, admin, manager, staff, support), per-shop access for restricted staff                                     |
+| Onboarding | One transaction creates the organisation, owner membership, first shop, first warehouse and the audit entries                                                 |
+| App shell  | Collapsible sidebar, workspace switcher, user menu, shop switcher (`?shop=` in the URL), dark mode                                                            |
+| Dashboard  | Live stats from a single RLS-aware RPC, shops table, setup checklist                                                                                          |
+| Shops      | List and create, with field-level conflict errors                                                                                                             |
+| Categories | Multi-industry category tree; add, edit and delete categories and their fields (typed, with options, units, required, "creates variants")                     |
+| Products   | Searchable, filterable list; a form generated from the category's fields; variant matrix (e.g. Storage × Colour) with SKUs and prices; publish to shops       |
+| Inventory  | Receive, remove and transfer stock by quantity, serial/IMEI (scan to pick) or batch with expiry (FEFO); reorder points and low-stock alerts; movement history |
+| Warehouses | Create and edit, per-warehouse stock summary, which shops each one fulfils; inactive warehouses take in no new stock                                          |
+| Quality    | Strict TypeScript, ESLint and Prettier, 110+ unit tests, SQL test suites for RLS and stock invariants, CI, commit hooks                                       |
 
 ## Quick start in GitHub Codespaces
 
@@ -114,7 +117,7 @@ See **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)** for the design decisions an
 
 ## Roadmap
 
-- **Phase 2:** products and variants (forms generated from category attributes), category editor, inventory with serial/IMEI and batch/expiry tracking, transfers, reorder alerts, warehouses
+- **Phase 2 (done):** products and variants, category editor, inventory with serial/IMEI and batch/expiry tracking, transfers, reorder alerts, warehouses
 - **Phase 3:** orders, fulfilment routing, shipments and tracking, delivery OTP
 - **Phase 4:** storefront and checkout (COD OTP), customers
 - **Phase 5:** team invitations and roles UI, audit log viewer, billing

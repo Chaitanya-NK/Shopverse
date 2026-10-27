@@ -6,6 +6,7 @@ import { type ProductStatus } from "@/features/products/schemas";
 import { PRODUCTS_PAGE_SIZE } from "@/features/products/search-params";
 import { type VariantOptions } from "@/features/products/variants";
 import { fromPostgrestError } from "@/lib/errors";
+import { containsPattern } from "@/lib/postgrest";
 import { createClient } from "@/lib/supabase/server";
 import { type Enums } from "@/types/database.types";
 
@@ -32,11 +33,6 @@ export type ProductListFilters = {
   page: number;
 };
 
-/** Escape LIKE wildcards so a search for "50%" matches literally. */
-function likePattern(value: string): string {
-  return `%${value.replace(/[\\%_]/g, (c) => `\\${c}`)}%`;
-}
-
 export const listProducts = cache(async (organizationId: string, filters: ProductListFilters) => {
   const supabase = await createClient();
   const page = Math.max(1, filters.page);
@@ -51,7 +47,7 @@ export const listProducts = cache(async (organizationId: string, filters: Produc
     .eq("organization_id", organizationId);
 
   const q = filters.q.trim().slice(0, 100);
-  if (q) query = query.ilike("title", likePattern(q));
+  if (q) query = query.ilike("title", containsPattern(q));
   if (filters.status) query = query.eq("status", filters.status);
   if (filters.category) query = query.eq("category_id", filters.category);
 

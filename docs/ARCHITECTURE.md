@@ -71,7 +71,17 @@ Shopverse isn't tied to one kind of product. The catalogue is data-driven:
 - **Categories** (`categories`): a tree per organisation (Industry › Category › optional sub-categories), seeded from the templates at onboarding or via `add_industries()`. Seeding is idempotent.
 - **Attribute definitions** (`attribute_definitions`): the fields a category needs, typed (`text`, `number`, `boolean`, `select`, `multiselect`, `date`) with units, options and a required flag. `is_variant_option` marks the fields that generate SKUs: Size × Colour for clothing, Storage × Colour for phones, Capacity for cookware, Net weight for groceries.
 - **Tracking mode** (`inventory_tracking`): `quantity` (count units), `serial` (each unit has a serial/IMEI, for phones, appliances and jewellery) or `batch` (lots with expiry, picked FEFO, for food and cosmetics). Products inherit it, plus HSN/GST defaults, from their category by trigger.
-- Products store their detail values in `products.attributes` (jsonb object), and variant values in `product_variants.options`. Phase 2 validates both against the category's definitions and generates the product form from them.
+- Products store their detail values in `products.attributes` (jsonb object), and variant values in `product_variants.options`. Both are validated against the category's definitions twice: in TypeScript (`features/products/attribute-values.ts` builds a Zod schema from the definitions, shared by the form and the server action) and in Postgres (`private.validate_attribute_values()` triggers).
+- A field's key, type and variant role are fixed once it exists; option values still used by products can't be removed; a category holding products can't be deleted (migration 008 guards).
+- Products are created and edited through `create_product()` / `update_product()` so the product, its variants and its shop listings change atomically. Removed variants are deactivated, not deleted, so their stock history survives.
+
+## Inventory
+
+- Every stock change goes through a database function that locks the level row and writes the ledger: `receive_stock()`, `remove_stock()`, `transfer_stock()` (both legs share a transfer id). `adjust_stock()` remains for quantity-tracked items.
+- **Serial** products: each unit is a row in `inventory_serials` (unique per organisation). Receiving takes the list of serials; removing or transferring takes the exact serials, which must be in stock at the source.
+- **Batch** products: `inventory_batches` holds per-lot quantity and expiry. The UI offers batches in FEFO order (first expiry first out).
+- Inactive warehouses take in no new stock (a trigger on `stock_movements`), but customer returns are still accepted.
+- Low stock = `available <= reorder_point` per variant and warehouse; managers edit reorder points inline.
 
 Adding a new industry means one entry in `INDUSTRIES`, the CHECK constraint, `industry_templates()` and `industry_label()`, all in a new migration.
 

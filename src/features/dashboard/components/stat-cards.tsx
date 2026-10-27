@@ -1,13 +1,11 @@
 import { AlertTriangleIcon, PackageCheckIcon, ShoppingBagIcon, TruckIcon } from "lucide-react";
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
+import { type Stat, StatGrid, StatGridSkeleton } from "@/components/shared/stat-card";
 import { type OverviewStats } from "@/features/dashboard/queries";
 import { formatMoney, formatNumber } from "@/lib/format";
-import { cn } from "@/lib/utils";
 
 export function StatCards({ stats, currency }: { stats: OverviewStats; currency: string }) {
-  const cards = [
+  const cards: Stat[] = [
     {
       label: "Sales · last 24h",
       value: formatMoney(stats.revenue_24h, currency),
@@ -33,38 +31,11 @@ export function StatCards({ stats, currency }: { stats: OverviewStats; currency:
       icon: AlertTriangleIcon,
       tone: stats.low_stock_skus > 0 ? "warning" : undefined,
     },
-  ] as const;
+  ];
 
-  return (
-    <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-      {cards.map((card) => (
-        <Card key={card.label} className="gap-2">
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardDescription>{card.label}</CardDescription>
-            <card.icon
-              aria-hidden="true"
-              className={cn(
-                "size-4 text-muted-foreground",
-                "tone" in card && card.tone && "text-warning-foreground",
-              )}
-            />
-          </CardHeader>
-          <CardContent className="space-y-1">
-            <CardTitle className="font-mono text-2xl tabular-nums">{card.value}</CardTitle>
-            <p className="text-xs text-muted-foreground">{card.hint}</p>
-          </CardContent>
-        </Card>
-      ))}
-    </div>
-  );
+  return <StatGrid stats={cards} />;
 }
 
 export function StatCardsSkeleton() {
-  return (
-    <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-      {Array.from({ length: 4 }, (_, i) => (
-        <Skeleton key={i} className="h-[118px] rounded-xl" />
-      ))}
-    </div>
-  );
+  return <StatGridSkeleton />;
 }

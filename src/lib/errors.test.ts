@@ -4,9 +4,28 @@ import { fromAuthError, fromPostgrestError } from "./errors";
 
 describe("fromPostgrestError", () => {
   it("maps unique violations to a field-level conflict", () => {
-    const error = fromPostgrestError({ code: "23505", message: "dup" }, { conflictField: "slug" });
+    const error = fromPostgrestError(
+      { code: "23505", message: 'duplicate key value violates unique constraint "x"' },
+      { conflictField: "slug" },
+    );
     expect(error.code).toBe("CONFLICT");
     expect(error.fieldErrors?.slug?.[0]).toMatch(/already in use/i);
+  });
+
+  it("keeps messages raised by our functions but hides Postgres' own", () => {
+    expect(
+      fromPostgrestError({
+        code: "23505",
+        message: "One or more serial numbers already exist: IMEI-1",
+      }).message,
+    ).toBe("One or more serial numbers already exist: IMEI-1");
+    expect(
+      fromPostgrestError({
+        code: "23505",
+        message:
+          'duplicate key value violates unique constraint "products_organization_id_slug_key"',
+      }).message,
+    ).toBe("That value is already taken.");
   });
 
   it("maps RLS denials to FORBIDDEN", () => {

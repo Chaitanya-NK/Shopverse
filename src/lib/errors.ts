@@ -64,13 +64,17 @@ export function fromPostgrestError(
   context?: { conflictField?: string },
 ): AppError {
   switch (error.code) {
-    case PG.UNIQUE_VIOLATION:
+    case PG.UNIQUE_VIOLATION: {
+      // Messages raised by our own functions are written for people; Postgres'
+      // own "duplicate key value violates…" text is not.
+      const ours = Boolean(error.message) && !error.message.startsWith("duplicate key");
       return Errors.conflict(
-        "That value is already taken.",
+        ours ? error.message : "That value is already taken.",
         context?.conflictField
-          ? { [context.conflictField]: ["Already in use. Try another."] }
+          ? { [context.conflictField]: [ours ? error.message : "Already in use. Try another."] }
           : undefined,
       );
+    }
     case PG.INSUFFICIENT_PRIVILEGE:
       return Errors.forbidden();
     case PG.NO_DATA_FOUND:

@@ -268,6 +268,13 @@ export type Database = {
             referencedColumns: ["organization_id", "id"];
           },
           {
+            foreignKeyName: "inventory_batches_organization_id_variant_id_fkey";
+            columns: ["organization_id", "variant_id"];
+            isOneToOne: false;
+            referencedRelation: "variant_search";
+            referencedColumns: ["organization_id", "id"];
+          },
+          {
             foreignKeyName: "inventory_batches_organization_id_warehouse_id_fkey";
             columns: ["organization_id", "warehouse_id"];
             isOneToOne: false;
@@ -324,6 +331,13 @@ export type Database = {
             referencedColumns: ["organization_id", "id"];
           },
           {
+            foreignKeyName: "inventory_levels_organization_id_variant_id_fkey";
+            columns: ["organization_id", "variant_id"];
+            isOneToOne: false;
+            referencedRelation: "variant_search";
+            referencedColumns: ["organization_id", "id"];
+          },
+          {
             foreignKeyName: "inventory_levels_organization_id_warehouse_id_fkey";
             columns: ["organization_id", "warehouse_id"];
             isOneToOne: false;
@@ -377,6 +391,13 @@ export type Database = {
             columns: ["organization_id", "variant_id"];
             isOneToOne: false;
             referencedRelation: "product_variants";
+            referencedColumns: ["organization_id", "id"];
+          },
+          {
+            foreignKeyName: "inventory_serials_organization_id_variant_id_fkey";
+            columns: ["organization_id", "variant_id"];
+            isOneToOne: false;
+            referencedRelation: "variant_search";
             referencedColumns: ["organization_id", "id"];
           },
           {
@@ -480,6 +501,13 @@ export type Database = {
             columns: ["organization_id", "variant_id"];
             isOneToOne: false;
             referencedRelation: "product_variants";
+            referencedColumns: ["organization_id", "id"];
+          },
+          {
+            foreignKeyName: "order_items_organization_id_variant_id_fkey";
+            columns: ["organization_id", "variant_id"];
+            isOneToOne: false;
+            referencedRelation: "variant_search";
             referencedColumns: ["organization_id", "id"];
           },
         ];
@@ -1192,6 +1220,13 @@ export type Database = {
             referencedColumns: ["organization_id", "id"];
           },
           {
+            foreignKeyName: "stock_movements_organization_id_variant_id_fkey";
+            columns: ["organization_id", "variant_id"];
+            isOneToOne: false;
+            referencedRelation: "variant_search";
+            referencedColumns: ["organization_id", "id"];
+          },
+          {
             foreignKeyName: "stock_movements_organization_id_warehouse_id_fkey";
             columns: ["organization_id", "warehouse_id"];
             isOneToOne: false;
@@ -1283,6 +1318,13 @@ export type Database = {
             referencedColumns: ["organization_id", "id"];
           },
           {
+            foreignKeyName: "inventory_levels_organization_id_variant_id_fkey";
+            columns: ["organization_id", "variant_id"];
+            isOneToOne: false;
+            referencedRelation: "variant_search";
+            referencedColumns: ["organization_id", "id"];
+          },
+          {
             foreignKeyName: "inventory_levels_organization_id_warehouse_id_fkey";
             columns: ["organization_id", "warehouse_id"];
             isOneToOne: false;
@@ -1334,6 +1376,21 @@ export type Database = {
             referencedColumns: ["id"];
           },
         ];
+      };
+      variant_search: {
+        Row: {
+          id: string;
+          organization_id: string;
+          product_id: string;
+          product_status: Database["public"]["Enums"]["product_status"];
+          product_title: string;
+          search_text: string | null;
+          sku: string;
+          tracking: Database["public"]["Enums"]["inventory_tracking"];
+          variant_title: string;
+        };
+        ComputedFields: never;
+        Relationships: [];
       };
       warehouse_overview: {
         Row: {
