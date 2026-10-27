@@ -224,6 +224,58 @@ export type Database = {
           },
         ];
       };
+      inventory_batches: {
+        Row: {
+          batch_code: string;
+          expiry_date: string | null;
+          id: string;
+          on_hand: number;
+          organization_id: string;
+          received_at: string;
+          updated_at: string;
+          variant_id: string;
+          warehouse_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          batch_code: string;
+          expiry_date?: string | null;
+          id?: string;
+          on_hand?: number;
+          organization_id: string;
+          received_at?: string;
+          updated_at?: string;
+          variant_id: string;
+          warehouse_id: string;
+        };
+        Update: {
+          batch_code?: string;
+          expiry_date?: string | null;
+          id?: string;
+          on_hand?: number;
+          organization_id?: string;
+          received_at?: string;
+          updated_at?: string;
+          variant_id?: string;
+          warehouse_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "inventory_batches_organization_id_variant_id_fkey";
+            columns: ["organization_id", "variant_id"];
+            isOneToOne: false;
+            referencedRelation: "product_variants";
+            referencedColumns: ["organization_id", "id"];
+          },
+          {
+            foreignKeyName: "inventory_batches_organization_id_warehouse_id_fkey";
+            columns: ["organization_id", "warehouse_id"];
+            isOneToOne: false;
+            referencedRelation: "warehouses";
+            referencedColumns: ["organization_id", "id"];
+          },
+        ];
+      };
       inventory_levels: {
         Row: {
           available: number | null;
@@ -266,6 +318,55 @@ export type Database = {
           },
           {
             foreignKeyName: "inventory_levels_organization_id_warehouse_id_fkey";
+            columns: ["organization_id", "warehouse_id"];
+            isOneToOne: false;
+            referencedRelation: "warehouses";
+            referencedColumns: ["organization_id", "id"];
+          },
+        ];
+      };
+      inventory_serials: {
+        Row: {
+          id: string;
+          organization_id: string;
+          received_at: string;
+          serial_number: string;
+          status: Database["public"]["Enums"]["serial_status"];
+          updated_at: string;
+          variant_id: string;
+          warehouse_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          id?: string;
+          organization_id: string;
+          received_at?: string;
+          serial_number: string;
+          status?: Database["public"]["Enums"]["serial_status"];
+          updated_at?: string;
+          variant_id: string;
+          warehouse_id: string;
+        };
+        Update: {
+          id?: string;
+          organization_id?: string;
+          received_at?: string;
+          serial_number?: string;
+          status?: Database["public"]["Enums"]["serial_status"];
+          updated_at?: string;
+          variant_id?: string;
+          warehouse_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "inventory_serials_organization_id_variant_id_fkey";
+            columns: ["organization_id", "variant_id"];
+            isOneToOne: false;
+            referencedRelation: "product_variants";
+            referencedColumns: ["organization_id", "id"];
+          },
+          {
+            foreignKeyName: "inventory_serials_organization_id_warehouse_id_fkey";
             columns: ["organization_id", "warehouse_id"];
             isOneToOne: false;
             referencedRelation: "warehouses";
@@ -623,6 +724,13 @@ export type Database = {
             foreignKeyName: "product_variants_organization_id_product_id_fkey";
             columns: ["organization_id", "product_id"];
             isOneToOne: false;
+            referencedRelation: "product_overview";
+            referencedColumns: ["organization_id", "id"];
+          },
+          {
+            foreignKeyName: "product_variants_organization_id_product_id_fkey";
+            columns: ["organization_id", "product_id"];
+            isOneToOne: false;
             referencedRelation: "products";
             referencedColumns: ["organization_id", "id"];
           },
@@ -631,7 +739,6 @@ export type Database = {
       products: {
         Row: {
           attributes: NonNullable<Json>;
-          brand: string | null;
           category_id: string | null;
           created_at: string;
           created_by: string | null;
@@ -650,7 +757,6 @@ export type Database = {
         ComputedFields: never;
         Insert: {
           attributes?: NonNullable<Json>;
-          brand?: string | null;
           category_id?: string | null;
           created_at?: string;
           created_by?: string | null;
@@ -668,7 +774,6 @@ export type Database = {
         };
         Update: {
           attributes?: NonNullable<Json>;
-          brand?: string | null;
           category_id?: string | null;
           created_at?: string;
           created_by?: string | null;
@@ -866,6 +971,13 @@ export type Database = {
             foreignKeyName: "shop_products_organization_id_product_id_fkey";
             columns: ["organization_id", "product_id"];
             isOneToOne: false;
+            referencedRelation: "product_overview";
+            referencedColumns: ["organization_id", "id"];
+          },
+          {
+            foreignKeyName: "shop_products_organization_id_product_id_fkey";
+            columns: ["organization_id", "product_id"];
+            isOneToOne: false;
             referencedRelation: "products";
             referencedColumns: ["organization_id", "id"];
           },
@@ -975,6 +1087,7 @@ export type Database = {
       stock_movements: {
         Row: {
           balance_after: number;
+          batch_id: string | null;
           created_at: string;
           created_by: string | null;
           id: number;
@@ -983,6 +1096,7 @@ export type Database = {
           quantity: number;
           reference_id: string | null;
           reference_type: string | null;
+          serial_numbers: string[] | null;
           type: Database["public"]["Enums"]["stock_movement_type"];
           variant_id: string;
           warehouse_id: string;
@@ -990,6 +1104,7 @@ export type Database = {
         ComputedFields: never;
         Insert: {
           balance_after: number;
+          batch_id?: string | null;
           created_at?: string;
           created_by?: string | null;
           id?: never;
@@ -998,12 +1113,14 @@ export type Database = {
           quantity: number;
           reference_id?: string | null;
           reference_type?: string | null;
+          serial_numbers?: string[] | null;
           type: Database["public"]["Enums"]["stock_movement_type"];
           variant_id: string;
           warehouse_id: string;
         };
         Update: {
           balance_after?: number;
+          batch_id?: string | null;
           created_at?: string;
           created_by?: string | null;
           id?: never;
@@ -1012,11 +1129,19 @@ export type Database = {
           quantity?: number;
           reference_id?: string | null;
           reference_type?: string | null;
+          serial_numbers?: string[] | null;
           type?: Database["public"]["Enums"]["stock_movement_type"];
           variant_id?: string;
           warehouse_id?: string;
         };
         Relationships: [
+          {
+            foreignKeyName: "stock_movements_batch_fk";
+            columns: ["organization_id", "batch_id"];
+            isOneToOne: false;
+            referencedRelation: "inventory_batches";
+            referencedColumns: ["organization_id", "id"];
+          },
           {
             foreignKeyName: "stock_movements_organization_id_fkey";
             columns: ["organization_id"];
@@ -1084,7 +1209,83 @@ export type Database = {
       };
     };
     Views: {
-      [_ in never]: never;
+      inventory_overview: {
+        Row: {
+          available: number | null;
+          category_id: string | null;
+          category_name: string | null;
+          is_low: boolean | null;
+          next_expiry: string | null;
+          on_hand: number;
+          organization_id: string;
+          product_id: string;
+          product_title: string;
+          reorder_point: number;
+          reserved: number;
+          sku: string;
+          tracking: Database["public"]["Enums"]["inventory_tracking"];
+          updated_at: string;
+          variant_id: string;
+          variant_title: string;
+          warehouse_code: string;
+          warehouse_id: string;
+          warehouse_name: string;
+        };
+        ComputedFields: never;
+        Relationships: [
+          {
+            foreignKeyName: "inventory_levels_organization_id_variant_id_fkey";
+            columns: ["organization_id", "variant_id"];
+            isOneToOne: false;
+            referencedRelation: "product_variants";
+            referencedColumns: ["organization_id", "id"];
+          },
+          {
+            foreignKeyName: "inventory_levels_organization_id_warehouse_id_fkey";
+            columns: ["organization_id", "warehouse_id"];
+            isOneToOne: false;
+            referencedRelation: "warehouses";
+            referencedColumns: ["organization_id", "id"];
+          },
+        ];
+      };
+      product_overview: {
+        Row: {
+          available: number | null;
+          category_id: string | null;
+          category_name: string | null;
+          created_at: string;
+          id: string;
+          low_stock_locations: number | null;
+          max_price: number | null;
+          min_price: number | null;
+          on_hand: number | null;
+          organization_id: string;
+          slug: string;
+          status: Database["public"]["Enums"]["product_status"];
+          title: string;
+          tracking: Database["public"]["Enums"]["inventory_tracking"];
+          updated_at: string;
+          variant_count: number | null;
+        };
+        ComputedFields: never;
+        Relationships: [
+          {
+            foreignKeyName: "products_category_fk";
+            columns: ["organization_id", "category_id"];
+            isOneToOne: false;
+            referencedRelation: "categories";
+            referencedColumns: ["organization_id", "id"];
+          },
+          {
+            foreignKeyName: "products_organization_id_fkey";
+            columns: ["organization_id"];
+            isOneToOne: false;
+            referencedRelation: "organizations";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
     };
     Functions: {
       add_industries: {
@@ -1132,9 +1333,85 @@ export type Database = {
         };
         Returns: Json;
       };
+      create_product: {
+        Args: {
+          p_organization_id: string;
+          p_product: Json;
+          p_shop_ids?: string[];
+          p_variants: Json;
+        };
+        Returns: string;
+      };
       get_overview_stats: {
         Args: { p_organization_id: string; p_shop_id?: string };
         Returns: Json;
+      };
+      receive_stock: {
+        Args: {
+          p_batch_code?: string;
+          p_expiry_date?: string;
+          p_note?: string;
+          p_quantity?: number;
+          p_serials?: string[];
+          p_type?: Database["public"]["Enums"]["stock_movement_type"];
+          p_variant_id: string;
+          p_warehouse_id: string;
+        };
+        Returns: {
+          available: number | null;
+          on_hand: number;
+          organization_id: string;
+          reorder_point: number;
+          reserved: number;
+          updated_at: string;
+          variant_id: string;
+          warehouse_id: string;
+        };
+        SetofOptions: {
+          from: "*";
+          to: "inventory_levels";
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
+      remove_stock: {
+        Args: {
+          p_batch_id?: string;
+          p_note?: string;
+          p_quantity?: number;
+          p_serials?: string[];
+          p_type: Database["public"]["Enums"]["stock_movement_type"];
+          p_variant_id: string;
+          p_warehouse_id: string;
+        };
+        Returns: {
+          available: number | null;
+          on_hand: number;
+          organization_id: string;
+          reorder_point: number;
+          reserved: number;
+          updated_at: string;
+          variant_id: string;
+          warehouse_id: string;
+        };
+        SetofOptions: {
+          from: "*";
+          to: "inventory_levels";
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
+      transfer_stock: {
+        Args: {
+          p_batch_id?: string;
+          p_from_warehouse_id: string;
+          p_note?: string;
+          p_quantity?: number;
+          p_serials?: string[];
+          p_to_warehouse_id: string;
+          p_variant_id: string;
+        };
+        Returns: string;
       };
     };
     Enums: {
@@ -1148,6 +1425,7 @@ export type Database = {
         "pending" | "authorized" | "paid" | "partially_refunded" | "refunded" | "failed";
       plan_tier: "trial" | "starter" | "growth" | "scale";
       product_status: "draft" | "active" | "archived";
+      serial_status: "in_stock" | "sold" | "damaged" | "written_off";
       shipment_status:
         | "pending"
         | "packed"
@@ -1281,6 +1559,7 @@ export const Constants = {
       payment_status: ["pending", "authorized", "paid", "partially_refunded", "refunded", "failed"],
       plan_tier: ["trial", "starter", "growth", "scale"],
       product_status: ["draft", "active", "archived"],
+      serial_status: ["in_stock", "sold", "damaged", "written_off"],
       shipment_status: [
         "pending",
         "packed",

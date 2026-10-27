@@ -246,8 +246,8 @@ select pg_temp.assert(
   'capacity is a variant option measured in litres');
 
 -- Products inherit tracking from their category
-insert into public.products (organization_id, title, slug, category_id)
-select (r ->> 'organization_id')::uuid, 'Phone X', 'phone-x',
+insert into public.products (organization_id, title, slug, attributes, category_id)
+select (r ->> 'organization_id')::uuid, 'Phone X', 'phone-x', '{"brand":"Acme","model":"X"}',
        (select id from public.categories where slug = 'mobile-phones'
           and organization_id = (select (r ->> 'organization_id')::uuid from b_multi))
 from b_multi;

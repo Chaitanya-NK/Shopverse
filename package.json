@@ -19,7 +19,7 @@
     "db:start": "supabase start",
     "db:stop": "supabase stop",
     "db:reset": "supabase db reset",
-    "db:test": "psql \"$(supabase status -o env | grep '^DB_URL=' | cut -d= -f2- | tr -d '\\\"')\" -v ON_ERROR_STOP=1 -f supabase/tests/rls_and_invariants.test.sql",
+    "db:test": "for f in supabase/tests/*.test.sql; do psql \"$(supabase status -o env | grep '^DB_URL=' | cut -d= -f2- | tr -d '\\\"')\" -v ON_ERROR_STOP=1 -q -f \"$f\" || exit 1; done",
     "db:types": "supabase gen types typescript --local --schema public > src/types/database.types.ts && prettier --write src/types/database.types.ts",
     "db:types:remote": "supabase gen types typescript --project-id \"$SUPABASE_PROJECT_ID\" --schema public > src/types/database.types.ts && prettier --write src/types/database.types.ts",
     "db:migration": "supabase migration new",
