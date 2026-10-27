@@ -136,3 +136,15 @@ Migrations are forward-only. Never edit one that has been applied in a shared en
 ## Observability
 
 `lib/logger.ts` (pino) writes structured JSON with automatic redaction of email, token, phone and password fields. Server actions log rejections at `info` and unexpected failures at `error` with the action name.
+
+## Storefront and checkout
+
+- Public pages live under `/s/[shopSlug]` and never need a session. Shop handles are **globally unique** (they are addresses); onboarding gives the first shop the organisation's slug.
+- Shoppers read the catalogue through `SECURITY DEFINER` functions granted to `anon` (`storefront_shop`, `storefront_catalog`, `storefront_categories`, `storefront_product`, `storefront_variants`, `storefront_order`). They only return **live** shops' **active, published** products; staff signed in to the organisation also see draft shops (a preview banner is shown). Stock is shown capped (10 on product pages) so exact inventory isn't public.
+- The **cart** is an httpOnly cookie scoped to the shop's path, holding only variant ids and quantities. Every read re-prices and re-checks stock in the database; the client never sends prices.
+- **Checkout** (migration 012) uses three functions granted only to `service_role`, because they hand the plain one-time code to the server for emailing:
+  - `storefront_checkout_start` re-prices the cart, checks stock, applies the shop's shipping fee / free-shipping threshold / COD limit, rate-limits to 5 checkouts per email per hour, stores the session in the unexposed `private.checkout_sessions` with a **bcrypt hash** of a CSPRNG code, and returns the code to the server, which emails it (`lib/mail.ts`, any SMTP provider).
+  - `storefront_checkout_resend` allows 3 sends, 30 seconds apart.
+  - `storefront_checkout_confirm` counts wrong codes without raising (5 tries), then creates the order through the same `private.create_order_core` staff use, reserves stock immediately (`confirm_order_core`), marks the customer's email verified, and is idempotent.
+- The server talks to these with `lib/supabase/admin.ts` (secret key, server-only). The checkout id lives in an httpOnly cookie; the code never reaches the browser.
+- Customers get an order page at `/s/<shop>/orders/<token>` (128-bit random token) showing items, totals, destination city and parcel tracking links, but no contact details.

@@ -280,7 +280,16 @@ async function OrderContent({ params }: Pick<Props, "params">) {
               <CardTitle>Customer</CardTitle>
             </CardHeader>
             <CardContent className="space-y-1 text-sm">
-              <p className="font-medium">{order.customer?.name ?? a.name}</p>
+              {order.customer ? (
+                <Link
+                  href={routes.orgCustomer(orgSlug, order.customer.id)}
+                  className="font-medium hover:underline"
+                >
+                  {order.customer.name ?? a.name}
+                </Link>
+              ) : (
+                <p className="font-medium">{a.name}</p>
+              )}
               {(order.customer?.phone ?? a.phone) && (
                 <a
                   className="block text-muted-foreground hover:underline"

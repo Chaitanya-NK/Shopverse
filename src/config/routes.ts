@@ -22,6 +22,18 @@ export const routes = {
   orgNewOrder: (orgSlug: string) => `/app/${orgSlug}/orders/new`,
   orgOrder: (orgSlug: string, orderId: string) => `/app/${orgSlug}/orders/${orderId}`,
   orgDeliveries: (orgSlug: string) => `/app/${orgSlug}/deliveries`,
+  // Public storefront (no sign-in)
+  storefront: (shopSlug: string) => `/s/${shopSlug}`,
+  storefrontSearch: (shopSlug: string, query: string) =>
+    `/s/${shopSlug}?q=${encodeURIComponent(query)}`,
+  storefrontCategory: (shopSlug: string, categoryId: string) =>
+    `/s/${shopSlug}?category=${categoryId}`,
+  storefrontProduct: (shopSlug: string, productSlug: string) => `/s/${shopSlug}/p/${productSlug}`,
+  storefrontCart: (shopSlug: string) => `/s/${shopSlug}/cart`,
+  storefrontCheckout: (shopSlug: string) => `/s/${shopSlug}/checkout`,
+  storefrontOrder: (shopSlug: string, token: string) => `/s/${shopSlug}/orders/${token}`,
+  orgCustomers: (orgSlug: string) => `/app/${orgSlug}/customers`,
+  orgCustomer: (orgSlug: string, customerId: string) => `/app/${orgSlug}/customers/${customerId}`,
   /** Public, unauthenticated parcel tracking page for customers. */
   tracking: (token: string) => `/track/${token}`,
   orgSettings: (orgSlug: string) => `/app/${orgSlug}/settings`,

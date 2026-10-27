@@ -1,3 +1,7 @@
+import { ExternalLinkIcon } from "lucide-react";
+import Link from "next/link";
+
+import { Button } from "@/components/ui/button";
 import {
   Table,
   TableBody,
@@ -6,6 +10,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { routes } from "@/config/routes";
+import { ShopSettingsDialog } from "@/features/shops/components/shop-settings-dialog";
 import { ShopStatusBadge } from "@/features/shops/components/shop-status-badge";
 import { type ShopSummary } from "@/features/shops/queries";
 import { initials } from "@/lib/format";
@@ -16,7 +22,15 @@ const dateFormat = new Intl.DateTimeFormat("en-IN", {
   year: "numeric",
 });
 
-export function ShopsTable({ shops }: { shops: ShopSummary[] }) {
+export function ShopsTable({
+  shops,
+  organizationSlug,
+  canManage = false,
+}: {
+  shops: ShopSummary[];
+  organizationSlug?: string;
+  canManage?: boolean;
+}) {
   return (
     <div className="overflow-hidden rounded-xl border">
       <Table>
@@ -26,7 +40,10 @@ export function ShopsTable({ shops }: { shops: ShopSummary[] }) {
             <TableHead>Status</TableHead>
             <TableHead>Currency</TableHead>
             <TableHead className="hidden md:table-cell">Domain</TableHead>
-            <TableHead className="hidden pr-4 text-right sm:table-cell">Created</TableHead>
+            <TableHead className="hidden text-right sm:table-cell">Created</TableHead>
+            <TableHead className="w-24 pr-4">
+              <span className="sr-only">Actions</span>
+            </TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -50,8 +67,25 @@ export function ShopsTable({ shops }: { shops: ShopSummary[] }) {
               <TableCell className="hidden text-muted-foreground md:table-cell">
                 {shop.customDomain ?? "Not connected"}
               </TableCell>
-              <TableCell className="hidden pr-4 text-right text-muted-foreground sm:table-cell">
+              <TableCell className="hidden text-right text-muted-foreground sm:table-cell">
                 {dateFormat.format(new Date(shop.createdAt))}
+              </TableCell>
+              <TableCell className="pr-4">
+                <div className="flex justify-end gap-1">
+                  <Button
+                    asChild
+                    variant="ghost"
+                    size="icon"
+                    aria-label={`Open ${shop.name} storefront`}
+                  >
+                    <Link href={routes.storefront(shop.slug)} target="_blank">
+                      <ExternalLinkIcon />
+                    </Link>
+                  </Button>
+                  {canManage && organizationSlug && (
+                    <ShopSettingsDialog organizationSlug={organizationSlug} shop={shop} />
+                  )}
+                </div>
               </TableCell>
             </TableRow>
           ))}

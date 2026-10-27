@@ -484,3 +484,33 @@ export const countDeliveries = cache(
     return Object.fromEntries(entries) as Record<string, number>;
   },
 );
+
+/** A customer's orders, newest first (RLS limits them to shops the viewer can access). */
+export const listCustomerOrders = cache(async (organizationId: string, customerId: string) => {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("order_overview")
+    .select(
+      "id, number, shop_name, status, payment_status, payment_method, fulfillment_status, currency, grand_total, placed_at, customer_name, city, item_count",
+    )
+    .eq("organization_id", organizationId)
+    .eq("customer_id", customerId)
+    .order("placed_at", { ascending: false })
+    .limit(100);
+  if (error) throw fromPostgrestError(error);
+  return data.map((o): OrderListItem => ({
+    id: o.id,
+    number: o.number,
+    shopName: o.shop_name,
+    status: o.status,
+    paymentStatus: o.payment_status,
+    paymentMethod: o.payment_method,
+    fulfillmentStatus: o.fulfillment_status,
+    currency: o.currency,
+    grandTotal: o.grand_total,
+    placedAt: o.placed_at,
+    customerName: o.customer_name,
+    city: o.city,
+    itemCount: Number(o.item_count ?? 0),
+  }));
+});

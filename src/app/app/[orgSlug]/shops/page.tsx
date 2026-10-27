@@ -49,7 +49,11 @@ async function ShopsContent({ params }: Pick<PageProps<"/app/[orgSlug]/shops">, 
         actions={canCreate && <CreateShopDialog organizationSlug={orgSlug} />}
       />
       {shops.length > 0 ? (
-        <ShopsTable shops={shops} />
+        <ShopsTable
+          shops={shops}
+          organizationSlug={orgSlug}
+          canManage={can(role, "shops.update")}
+        />
       ) : (
         <Empty className="border">
           <EmptyHeader>

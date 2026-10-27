@@ -9,7 +9,7 @@ import {
   MessageCircleIcon,
   ShieldCheckIcon,
 } from "lucide-react";
-import { useRef, useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -355,6 +355,12 @@ function ConfirmDeliveryDialog({
   const [isPending, startTransition] = useTransition();
   const inputRef = useRef<HTMLInputElement>(null);
 
+  // The input is disabled while checking; once it's enabled again after a
+  // wrong code, put the cursor back for another try.
+  useEffect(() => {
+    if (!isPending && error) inputRef.current?.focus();
+  }, [isPending, error]);
+
   const submit = (value = code) =>
     startTransition(async () => {
       if (!/^\d{6}$/.test(value)) {
@@ -369,8 +375,6 @@ function ConfirmDeliveryDialog({
       if (!result.ok) {
         setError(result.error.fieldErrors?.otp?.[0] ?? result.error.message);
         setCode("");
-        // The input was disabled while checking; put the cursor back for another try.
-        requestAnimationFrame(() => inputRef.current?.focus());
         return;
       }
       toast.success(`${shipment.number} delivered`);

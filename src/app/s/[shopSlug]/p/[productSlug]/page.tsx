@@ -1,0 +1,123 @@
+import { ChevronLeftIcon, ShieldCheckIcon, TruckIcon } from "lucide-react";
+import type { Metadata } from "next";
+import Link from "next/link";
+import { notFound } from "next/navigation";
+import { Suspense } from "react";
+
+import { Skeleton } from "@/components/ui/skeleton";
+import { routes } from "@/config/routes";
+import { ProductArt } from "@/features/storefront/components/product-art";
+import { ProductPurchase } from "@/features/storefront/components/product-purchase";
+import { getStorefrontProduct, getStorefrontShop } from "@/features/storefront/queries";
+import { formatMoney } from "@/lib/format";
+
+type Props = PageProps<"/s/[shopSlug]/p/[productSlug]">;
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { shopSlug, productSlug } = await params;
+  const shop = await getStorefrontShop(shopSlug);
+  const product = shop ? await getStorefrontProduct(shop.id, productSlug) : null;
+  return product
+    ? { title: product.title, description: product.description?.slice(0, 160) }
+    : { title: "Not found" };
+}
+
+export default function ProductPage({ params }: Props) {
+  return (
+    <Suspense
+      fallback={
+        <div className="grid gap-10 md:grid-cols-2">
+          <Skeleton className="aspect-square rounded-2xl" />
+          <Skeleton className="h-96 rounded-xl" />
+        </div>
+      }
+    >
+      <Product params={params} />
+    </Suspense>
+  );
+}
+
+function formatDetail(value: unknown, unit: string | null): string {
+  if (typeof value === "boolean") return value ? "Yes" : "No";
+  if (Array.isArray(value)) return value.join(", ");
+  return `${String(value)}${unit ? ` ${unit}` : ""}`;
+}
+
+async function Product({ params }: Pick<Props, "params">) {
+  const { shopSlug, productSlug } = await params;
+  const shop = await getStorefrontShop(shopSlug);
+  if (!shop) notFound();
+  const product = await getStorefrontProduct(shop.id, productSlug);
+  if (!product) notFound();
+
+  return (
+    <div className="space-y-10">
+      <Link
+        href={
+          product.category
+            ? routes.storefrontCategory(shop.slug, product.category.id)
+            : routes.storefront(shop.slug)
+        }
+        className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+      >
+        <ChevronLeftIcon className="size-4" aria-hidden />
+        {product.category?.name ?? "All products"}
+      </Link>
+
+      <div className="grid gap-10 md:grid-cols-2">
+        <ProductArt
+          seed={product.id}
+          industry={product.category?.industry ?? null}
+          size="lg"
+          className="rounded-3xl"
+        />
+
+        <div className="space-y-6">
+          <h1 className="text-3xl font-semibold tracking-tight">{product.title}</h1>
+          <ProductPurchase shopSlug={shop.slug} product={product} currency={shop.currency} />
+
+          <ul className="space-y-2 rounded-xl border p-4 text-sm text-muted-foreground">
+            <li className="flex items-center gap-2">
+              <TruckIcon className="size-4 shrink-0" aria-hidden />
+              {shop.freeShippingOver !== null
+                ? `Free delivery on orders over ${formatMoney(shop.freeShippingOver, shop.currency)}`
+                : shop.shippingFee > 0
+                  ? `Delivery ${formatMoney(shop.shippingFee, shop.currency)}`
+                  : "Free delivery"}
+            </li>
+            <li className="flex items-center gap-2">
+              <ShieldCheckIcon className="size-4 shrink-0" aria-hidden />
+              Cash on delivery. Hand over the parcel only with your delivery code.
+            </li>
+          </ul>
+
+          {product.description && (
+            <section className="space-y-2">
+              <h2 className="font-medium">About this item</h2>
+              <p className="text-sm leading-relaxed whitespace-pre-line text-muted-foreground">
+                {product.description}
+              </p>
+            </section>
+          )}
+
+          {product.details.length > 0 && (
+            <section className="space-y-2">
+              <h2 className="font-medium">Details</h2>
+              <dl className="divide-y rounded-xl border text-sm">
+                {product.details.map((d) => (
+                  <div
+                    key={d.label}
+                    className="grid grid-cols-[minmax(0,2fr)_minmax(0,3fr)] gap-4 px-4 py-2.5"
+                  >
+                    <dt className="text-muted-foreground">{d.label}</dt>
+                    <dd>{formatDetail(d.value, d.unit)}</dd>
+                  </div>
+                ))}
+              </dl>
+            </section>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}

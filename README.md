@@ -4,26 +4,29 @@ Multi-shop commerce SaaS for businesses that sell **anything**: clothing, electr
 
 **Stack:** Next.js 16 (App Router, Cache Components, Server Actions) · React 19 · TypeScript (strict) · Supabase (Postgres, Auth, RLS) · shadcn/ui + Tailwind CSS 4 · Zod 4 · React Hook Form · Vitest
 
-## Status: Phase 3 (orders & deliveries)
+## Status: Phase 4 (storefront & checkout)
 
-| Area       | What's in place                                                                                                                                               |
-| ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Auth       | Email OTP sign-up and sign-in (6-digit code, 10-minute expiry, resend cooldown), no passwords, no account enumeration, open-redirect protection               |
-| Tenancy    | Organisations → shops and warehouses, roles (owner, admin, manager, staff, support), per-shop access for restricted staff                                     |
-| Onboarding | One transaction creates the organisation, owner membership, first shop, first warehouse and the audit entries                                                 |
-| App shell  | Collapsible sidebar, workspace switcher, user menu, shop switcher (`?shop=` in the URL), dark mode                                                            |
-| Dashboard  | Live stats from a single RLS-aware RPC, shops table, setup checklist                                                                                          |
-| Shops      | List and create, with field-level conflict errors                                                                                                             |
-| Categories | Multi-industry category tree; add, edit and delete categories and their fields (typed, with options, units, required, "creates variants")                     |
-| Products   | Searchable, filterable list; a form generated from the category's fields; variant matrix (e.g. Storage × Colour) with SKUs and prices; publish to shops       |
-| Inventory  | Receive, remove and transfer stock by quantity, serial/IMEI (scan to pick) or batch with expiry (FEFO); reorder points and low-stock alerts; movement history |
-| Warehouses | Create and edit, per-warehouse stock summary, which shops each one fulfils; inactive warehouses take in no new stock                                          |
-| Orders     | Enter phone, WhatsApp and counter orders; live GST-inclusive totals; customers matched by email or phone; confirm (reserve stock), mark paid, cancel          |
-| Routing    | Stock is reserved in one warehouse that can ship the whole order, or split across the shop's warehouses by priority                                           |
-| Shipments  | Pack per warehouse (scan IMEIs; batches picked first-expiry-first-out); picked up → in transit → out for delivery → delivered; failed attempts, returns       |
-| Delivery   | 6-digit delivery OTP, shown once to staff and shareable on WhatsApp; stored only as a bcrypt hash; 24-hour expiry; locked after 5 wrong tries; COD auto-paid  |
-| Tracking   | Deliveries board by stage; a public tracking page per parcel (`/track/<token>`) with no personal details                                                      |
-| Quality    | Strict TypeScript, ESLint and Prettier, 120+ unit tests, SQL test suites for RLS, stock and order-flow invariants, CI, commit hooks                           |
+| Area       | What's in place                                                                                                                                                                           |
+| ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Auth       | Email OTP sign-up and sign-in (6-digit code, 10-minute expiry, resend cooldown), no passwords, no account enumeration, open-redirect protection                                           |
+| Tenancy    | Organisations → shops and warehouses, roles (owner, admin, manager, staff, support), per-shop access for restricted staff                                                                 |
+| Onboarding | One transaction creates the organisation, owner membership, first shop, first warehouse and the audit entries                                                                             |
+| App shell  | Collapsible sidebar, workspace switcher, user menu, shop switcher (`?shop=` in the URL), dark mode                                                                                        |
+| Dashboard  | Live stats from a single RLS-aware RPC, shops table, setup checklist                                                                                                                      |
+| Shops      | List and create, with field-level conflict errors                                                                                                                                         |
+| Categories | Multi-industry category tree; add, edit and delete categories and their fields (typed, with options, units, required, "creates variants")                                                 |
+| Products   | Searchable, filterable list; a form generated from the category's fields; variant matrix (e.g. Storage × Colour) with SKUs and prices; publish to shops                                   |
+| Inventory  | Receive, remove and transfer stock by quantity, serial/IMEI (scan to pick) or batch with expiry (FEFO); reorder points and low-stock alerts; movement history                             |
+| Warehouses | Create and edit, per-warehouse stock summary, which shops each one fulfils; inactive warehouses take in no new stock                                                                      |
+| Orders     | Enter phone, WhatsApp and counter orders; live GST-inclusive totals; customers matched by email or phone; confirm (reserve stock), mark paid, cancel                                      |
+| Routing    | Stock is reserved in one warehouse that can ship the whole order, or split across the shop's warehouses by priority                                                                       |
+| Shipments  | Pack per warehouse (scan IMEIs; batches picked first-expiry-first-out); picked up → in transit → out for delivery → delivered; failed attempts, returns                                   |
+| Delivery   | 6-digit delivery OTP, shown once to staff and shareable on WhatsApp; stored only as a bcrypt hash; 24-hour expiry; locked after 5 wrong tries; COD auto-paid                              |
+| Tracking   | Deliveries board by stage; a public tracking page per parcel (`/track/<token>`) with no personal details                                                                                  |
+| Storefront | Each shop at `/s/<shop-handle>`: search, categories, sorting, product pages with variant pickers and live stock, cart; drafts are staff-only previews                                     |
+| Checkout   | Cash on delivery confirmed by a 6-digit email code (hashed, 10-minute expiry, 5 tries, resend limits, per-email rate limit); shipping fee, free-shipping threshold and COD limit per shop |
+| Customers  | Customer list with orders and spend; customer page with order history; verified-email badge; customer order page by private link                                                          |
+| Quality    | Strict TypeScript, ESLint and Prettier, 130+ unit tests, four SQL test suites (RLS, stock, order flow, storefront and checkout), CI, commit hooks                                         |
 
 ## Quick start in GitHub Codespaces
 
@@ -78,6 +81,23 @@ npm run dev
 
 Open port 3000 from the **Ports** tab, then create an account, read the code from your inbox (or Mailpit) and finish onboarding.
 
+### Open your storefront (Phase 4)
+
+1. **Server secret key.** Checkout runs with Supabase's secret key on the server (it handles one-time codes). In Supabase, open **Project Settings → API Keys → Secret keys**, create one, and add it to `.env.local` as `SUPABASE_SECRET_KEY`. Never prefix it with `NEXT_PUBLIC_`.
+2. **Email for shoppers.** Add the same Brevo SMTP details you gave Supabase:
+
+   ```bash
+   SMTP_HOST=smtp-relay.brevo.com
+   SMTP_PORT=587
+   SMTP_USER=<Brevo SMTP login>
+   SMTP_PASSWORD=<Brevo SMTP key>
+   MAIL_FROM="Your Shop <the-address-you-verified@example.com>"
+   ```
+
+   In development, if these are missing, the checkout code is written to the terminal running `npm run dev` instead.
+
+3. **Go live.** In **Shops**, open a shop's settings (gear icon), set **Storefront** to **Live**, and fill in the delivery fee, free-delivery threshold, COD limit and support contacts. Publish products to the shop from each product's **Sell in** box. The storefront is at `/s/<shop-handle>` (the open-in-new-tab icon in Shops).
+
 ## Scripts
 
 | Command                                     | Purpose                                                          |
@@ -124,6 +144,6 @@ See **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)** for the design decisions an
 
 - **Phase 2 (done):** products and variants, category editor, inventory with serial/IMEI and batch/expiry tracking, transfers, reorder alerts, warehouses
 - **Phase 3 (done):** orders, fulfilment routing, shipments and tracking, delivery OTP
-- **Phase 4:** storefront and checkout (COD OTP), customers
+- **Phase 4 (done):** storefront and checkout (COD OTP), customers
 - **Phase 5:** team invitations and roles UI, audit log viewer, billing
 - **Phase 6:** marketing (banners, discounts, loyalty), analytics, channel sync, super-admin
