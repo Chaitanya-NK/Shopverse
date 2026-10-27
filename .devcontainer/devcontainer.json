@@ -1,5 +1,5 @@
 {
-  "name": "Tradeloom",
+  "name": "Shopverse",
   "image": "mcr.microsoft.com/devcontainers/typescript-node:1-22-bookworm",
   "features": {
     // Needed only for the optional local Supabase stack (`npm run db:start`).
@@ -10,7 +10,7 @@
   "hostRequirements": { "cpus": 4, "memory": "8gb" },
   "forwardPorts": [3000, 54321, 54323, 54324],
   "portsAttributes": {
-    "3000": { "label": "Tradeloom app", "onAutoForward": "openBrowser" },
+    "3000": { "label": "Shopverse app", "onAutoForward": "openBrowser" },
     "54321": { "label": "Supabase API", "onAutoForward": "silent" },
     "54323": { "label": "Supabase Studio", "onAutoForward": "silent" },
     "54324": { "label": "Mailpit (OTP emails)", "onAutoForward": "silent" }

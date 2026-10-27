@@ -1,5 +1,5 @@
 -- =============================================================================
--- Tradeloom · Migration 004 · Dashboard statistics
+-- Shopverse · Migration 004 · Dashboard statistics
 -- One round trip for the overview cards. SECURITY INVOKER: every count is
 -- filtered by the caller's RLS policies, so restricted staff only see the
 -- shops they have access to.

@@ -64,7 +64,7 @@ export function SignInForm({ next }: { next?: string }) {
       </Button>
 
       <p className="text-center text-sm text-muted-foreground">
-        New to Tradeloom?{" "}
+        New to Shopverse?{" "}
         <Link
           href={routes.signUp(next)}
           className="font-medium text-primary underline-offset-4 hover:underline"

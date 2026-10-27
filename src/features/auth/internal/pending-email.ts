@@ -9,7 +9,7 @@ import { OTP_EXPIRY_MINUTES } from "@/features/auth/constants";
  * rather than the URL, so emails don't leak into browser history, analytics
  * or server logs, and the verify step can't be pointed at another address.
  */
-const COOKIE = "tl_pending_email";
+const COOKIE = "sv_pending_email";
 
 export async function setPendingEmail(email: string) {
   const store = await cookies();

@@ -60,7 +60,7 @@
   }
 }
 
-/* Tradeloom theme: neutral ink + deep teal primary (shadcn token names). */
+/* Shopverse theme: neutral ink + deep teal primary (shadcn token names). */
 :root {
   --radius: 0.625rem;
   --background: oklch(0.985 0.002 247);

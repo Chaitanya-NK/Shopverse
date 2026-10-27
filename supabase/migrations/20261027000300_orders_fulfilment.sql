@@ -1,5 +1,5 @@
 -- =============================================================================
--- Tradeloom · Migration 003 · Customers, orders & fulfilment
+-- Shopverse · Migration 003 · Customers, orders & fulfilment
 -- =============================================================================
 
 create type public.order_status as enum ('pending', 'confirmed', 'cancelled', 'completed');

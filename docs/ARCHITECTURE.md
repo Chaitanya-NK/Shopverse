@@ -65,7 +65,7 @@ Key invariants, all covered by `supabase/tests/rls_and_invariants.test.sql`:
 
 ## Multi-industry catalogue
 
-Tradeloom isn't tied to one kind of product. The catalogue is data-driven:
+Shopverse isn't tied to one kind of product. The catalogue is data-driven:
 
 - **Industries** (`organizations.industries`): what a business sells. The list lives in `features/organizations/industries.ts` and the matching CHECK constraint. Each industry has a template in `private.industry_templates()`.
 - **Categories** (`categories`): a tree per organisation (Industry › Category › optional sub-categories), seeded from the templates at onboarding or via `add_industries()`. Seeding is idempotent.

@@ -1,5 +1,5 @@
 -- =============================================================================
--- Tradeloom · Migration 005 · Multi-vertical catalogue
+-- Shopverse · Migration 005 · Multi-vertical catalogue
 -- Businesses sell anything: clothing, electronics, kitchenware, groceries…
 --  * organizations declare the industries they sell in
 --  * categories form a per-organization tree

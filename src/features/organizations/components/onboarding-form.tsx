@@ -115,7 +115,7 @@ export function OnboardingForm({ defaultName }: { defaultName?: string }) {
                       <FieldLabel htmlFor="org-slug">Workspace URL</FieldLabel>
                       <InputGroup>
                         <InputGroupAddon>
-                          <InputGroupText>tradeloom.app/</InputGroupText>
+                          <InputGroupText>shopverse.app/</InputGroupText>
                         </InputGroupAddon>
                         <InputGroupInput
                           {...field}
@@ -130,7 +130,7 @@ export function OnboardingForm({ defaultName }: { defaultName?: string }) {
                         />
                       </InputGroup>
                       <FieldDescription>
-                        Your team will sign in at tradeloom.app/
+                        Your team will sign in at shopverse.app/
                         {organizationSlug || "your-business"}.
                       </FieldDescription>
                       {fieldState.invalid && <FieldError errors={[fieldState.error]} />}

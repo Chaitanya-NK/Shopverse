@@ -1,5 +1,5 @@
 -- =============================================================================
--- Tradeloom · Migration 001 · Foundation
+-- Shopverse · Migration 001 · Foundation
 -- Tenancy model: organization -> shops / warehouses, with role-based membership.
 -- Every tenant-owned row carries organization_id and is protected by RLS.
 -- =============================================================================

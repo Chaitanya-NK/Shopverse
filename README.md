@@ -1,4 +1,4 @@
-# Tradeloom
+# Shopverse
 
 Multi-shop commerce SaaS for businesses that sell **anything**: clothing, electronics, kitchenware, groceries, beauty, books and more. It runs many storefronts with shared inventory across warehouses, delivery tracking and email-OTP security.
 

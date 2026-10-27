@@ -1,5 +1,5 @@
 export const siteConfig = {
-  name: "Tradeloom",
+  name: "Shopverse",
   description: "Run every shop, warehouse and delivery from one dashboard.",
-  supportEmail: "support@tradeloom.example",
+  supportEmail: "support@shopverse.example",
 } as const;

@@ -10,7 +10,7 @@ import { env } from "@/env";
  */
 export const logger = pino({
   level: env.LOG_LEVEL,
-  base: { service: "tradeloom-web", env: env.NODE_ENV },
+  base: { service: "shopverse-web", env: env.NODE_ENV },
   redact: {
     paths: ["*.email", "*.token", "*.password", "*.phone", "email", "token", "password", "phone"],
     censor: "[redacted]",

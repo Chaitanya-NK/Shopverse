@@ -1,5 +1,5 @@
 -- =============================================================================
--- Tradeloom · Migration 002 · Catalog & inventory
+-- Shopverse · Migration 002 · Catalog & inventory
 -- Products are organization-wide and published per shop. Stock is held per
 -- variant per warehouse; every change goes through public.adjust_stock(),
 -- which writes an append-only ledger entry in the same transaction.

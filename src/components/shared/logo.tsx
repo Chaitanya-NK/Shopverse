@@ -20,7 +20,7 @@ export function Logo({ href = "/", className, markOnly = false }: LogoProps) {
         aria-hidden="true"
         className="flex size-7 items-center justify-center rounded-md bg-primary text-sm font-bold text-primary-foreground"
       >
-        T
+        S
       </span>
       {markOnly ? (
         <span className="sr-only">{siteConfig.name}</span>
