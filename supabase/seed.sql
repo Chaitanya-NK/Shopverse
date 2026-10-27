@@ -1,0 +1,4 @@
+-- Local development seed data.
+-- Users are created through the app's email OTP flow (open Inbucket/Mailpit at
+-- http://127.0.0.1:54324 to read the codes). Onboarding then creates the
+-- organization, first shop and warehouse via public.create_organization().

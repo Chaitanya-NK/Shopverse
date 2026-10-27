@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+  <body
+    style="
+      margin: 0;
+      padding: 32px 16px;
+      background: #f5f6f8;
+      font-family:
+        system-ui,
+        -apple-system,
+        &quot;Segoe UI&quot;,
+        sans-serif;
+      color: #0e1116;
+    "
+  >
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+      <tr>
+        <td align="center">
+          <table
+            role="presentation"
+            width="440"
+            cellpadding="0"
+            cellspacing="0"
+            style="
+              background: #ffffff;
+              border: 1px solid #e4e7ec;
+              border-radius: 16px;
+              padding: 40px;
+            "
+          >
+            <tr>
+              <td>
+                <p style="margin: 0 0 24px; font-size: 18px; font-weight: 600">Tradeloom</p>
+                <h1 style="margin: 0 0 12px; font-size: 22px; font-weight: 600">
+                  Your verification code
+                </h1>
+                <p style="margin: 0 0 24px; font-size: 15px; line-height: 1.55; color: #3d4450">
+                  Enter this code to continue. It expires in 10 minutes.
+                </p>
+                <p
+                  style="
+                    margin: 0 0 24px;
+                    font-size: 34px;
+                    font-weight: 600;
+                    letter-spacing: 10px;
+                    font-family: ui-monospace, Menlo, monospace;
+                  "
+                >
+                  {{ .Token }}
+                </p>
+                <p style="margin: 0; font-size: 13px; line-height: 1.5; color: #5b6472">
+                  If you didn't try to sign in, you can ignore this email. We will never ask you for
+                  this code by phone.
+                </p>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>

@@ -1,68 +1,85 @@
-import Image from "next/image";
+import { BoxesIcon, ShieldCheckIcon, StoreIcon, TruckIcon } from "lucide-react";
+import Link from "next/link";
 
-export default function Home() {
+import { Logo } from "@/components/shared/logo";
+import { ModeToggle } from "@/components/shared/mode-toggle";
+import { Button } from "@/components/ui/button";
+import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { routes } from "@/config/routes";
+import { siteConfig } from "@/config/site";
+
+const features = [
+  {
+    icon: StoreIcon,
+    title: "Many shops, one login",
+    body: "Separate storefronts, catalogues and prices under one organisation.",
+  },
+  {
+    icon: BoxesIcon,
+    title: "Real-time inventory",
+    body: "Shared stock across warehouses with a full audit ledger.",
+  },
+  {
+    icon: TruckIcon,
+    title: "Delivery tracking",
+    body: "Every shipment tracked to the doorstep, confirmed by OTP.",
+  },
+  {
+    icon: ShieldCheckIcon,
+    title: "Secure by default",
+    body: "Email OTP sign-in, roles per shop and row-level security.",
+  },
+];
+
+export default function LandingPage() {
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
-            file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+    <div className="min-h-svh">
+      <header className="mx-auto flex max-w-6xl items-center justify-between px-6 py-5">
+        <Logo />
+        <nav className="flex items-center gap-2">
+          <ModeToggle />
+          <Button variant="ghost" asChild>
+            <Link href={routes.signIn()}>Sign in</Link>
+          </Button>
+          <Button asChild>
+            <Link href={routes.signUp()}>Start free trial</Link>
+          </Button>
+        </nav>
+      </header>
+
+      <main className="mx-auto max-w-6xl px-6">
+        <section className="max-w-3xl space-y-6 py-20 md:py-28">
+          <p className="inline-flex rounded-full bg-accent px-3 py-1 text-sm font-medium text-accent-foreground">
+            Commerce OS for brands with more than one shop
           </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
+          <h1 className="text-4xl font-semibold tracking-tight text-balance md:text-6xl">
+            {siteConfig.description}
+          </h1>
+          <p className="max-w-xl text-lg text-muted-foreground">
+            Launch storefronts, keep stock in sync across warehouses and give customers live
+            delivery tracking.
+          </p>
+          <div className="flex flex-wrap gap-3">
+            <Button size="lg" asChild>
+              <Link href={routes.signUp()}>Start 14-day free trial</Link>
+            </Button>
+            <Button size="lg" variant="outline" asChild>
+              <Link href={routes.signIn()}>Sign in</Link>
+            </Button>
+          </div>
+        </section>
+
+        <section className="grid gap-4 pb-24 sm:grid-cols-2 lg:grid-cols-4">
+          {features.map((f) => (
+            <Card key={f.title}>
+              <CardHeader>
+                <f.icon className="mb-2 size-6 text-primary" aria-hidden="true" />
+                <CardTitle>{f.title}</CardTitle>
+                <CardDescription>{f.body}</CardDescription>
+              </CardHeader>
+            </Card>
+          ))}
+        </section>
       </main>
     </div>
   );

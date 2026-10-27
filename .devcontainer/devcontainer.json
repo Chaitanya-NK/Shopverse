@@ -1,0 +1,37 @@
+{
+  "name": "Tradeloom",
+  "image": "mcr.microsoft.com/devcontainers/typescript-node:1-22-bookworm",
+  "features": {
+    // Needed only for the optional local Supabase stack (`npm run db:start`).
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {},
+    "ghcr.io/devcontainers/features/github-cli:1": {}
+  },
+  // The local Supabase stack runs ~10 containers; 4 cores / 8 GB keeps it responsive.
+  "hostRequirements": { "cpus": 4, "memory": "8gb" },
+  "forwardPorts": [3000, 54321, 54323, 54324],
+  "portsAttributes": {
+    "3000": { "label": "Tradeloom app", "onAutoForward": "openBrowser" },
+    "54321": { "label": "Supabase API", "onAutoForward": "silent" },
+    "54323": { "label": "Supabase Studio", "onAutoForward": "silent" },
+    "54324": { "label": "Mailpit (OTP emails)", "onAutoForward": "silent" }
+  },
+  "postCreateCommand": "npm ci && cp -n .env.example .env.local || true",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode",
+        "bradlc.vscode-tailwindcss",
+        "supabase.vscode-supabase-extension",
+        "vitest.explorer"
+      ],
+      "settings": {
+        "editor.formatOnSave": true,
+        "editor.defaultFormatter": "esbenp.prettier-vscode",
+        "editor.codeActionsOnSave": { "source.fixAll.eslint": "explicit" },
+        "typescript.tsdk": "node_modules/typescript/lib",
+        "files.associations": { "*.css": "tailwindcss" }
+      }
+    }
+  }
+}
