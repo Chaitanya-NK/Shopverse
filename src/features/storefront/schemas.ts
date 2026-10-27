@@ -23,6 +23,22 @@ export const storefrontShopSchema = z
     shipping_fee: money,
     free_shipping_over: nullableMoney,
     cod_limit: nullableMoney,
+    legal_name: z.string().nullable().optional().default(null),
+    gstin: z.string().nullable().optional().default(null),
+    business_address: z
+      .object({
+        line1: z.string().optional(),
+        city: z.string().optional(),
+        state: z.string().optional(),
+        postal_code: z.string().optional(),
+      })
+      .nullable()
+      .optional()
+      .default(null),
+    policies: z
+      .array(z.enum(["shipping", "returns", "privacy", "terms"]))
+      .optional()
+      .default([]),
   })
   .transform((s) => ({
     id: s.id,
@@ -36,11 +52,27 @@ export const storefrontShopSchema = z
     shippingFee: s.shipping_fee,
     freeShippingOver: s.free_shipping_over,
     codLimit: s.cod_limit,
+    legalName: s.legal_name,
+    gstin: s.gstin,
+    businessAddress: s.business_address
+      ? [
+          s.business_address.line1,
+          [s.business_address.city, s.business_address.postal_code].filter(Boolean).join(" "),
+          s.business_address.state,
+        ]
+          .filter(Boolean)
+          .join(", ")
+      : null,
+    policies: s.policies,
   }));
 export type StorefrontShop = z.output<typeof storefrontShopSchema>;
 
 export const catalogSchema = z.object({
   total: z.coerce.number(),
+  price_range: z
+    .object({ min: nullableMoney, max: nullableMoney })
+    .optional()
+    .default({ min: null, max: null }),
   items: z.array(
     z
       .object({

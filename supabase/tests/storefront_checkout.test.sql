@@ -115,6 +115,22 @@ select pg_temp.assert(
   (select (x -> 'items' -> 0 ->> 'slug') = 'acme-x1' from (select public.storefront_catalog((select shop from ids), null, null, 'price_desc') x) t),
   'sorting by price');
 select pg_temp.assert(jsonb_array_length(public.storefront_categories((select shop from ids))) = 2, 'categories with products');
+select pg_temp.assert(
+  (select (public.storefront_catalog((select shop from ids), p_min_price => 1000) ->> 'total')::int = 1),
+  'price filter: only the phone costs 1000 or more');
+select pg_temp.assert(
+  (select (public.storefront_catalog((select shop from ids), p_max_price => 520) ->> 'total')::int = 1),
+  'a product matches when any variant is in range (tee M 499 / L 549)');
+select pg_temp.assert(
+  (select (x -> 'price_range' ->> 'min')::numeric = 499 and (x -> 'price_range' ->> 'max')::numeric = 19999
+   from (select public.storefront_catalog((select shop from ids), p_max_price => 1) x) t),
+  'price range describes the selection before price filters');
+select pg_temp.assert(
+  (select (public.storefront_catalog((select shop from ids), p_in_stock => true) ->> 'total')::int = 2),
+  'in-stock filter');
+select pg_temp.assert(public.storefront_policy('mega-store', 'shipping') is null, 'empty policies are not pages');
+select pg_temp.assert(public.storefront_policy('mega-store', 'secret') is null, 'only known policy pages');
+select pg_temp.assert(jsonb_array_length(public.storefront_sitemap((select shop from ids))) = 2, 'sitemap lists sellable products');
 
 create temp table p on commit drop as select public.storefront_product((select shop from ids), 'classic-tee') as j;
 select pg_temp.assert(

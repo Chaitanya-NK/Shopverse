@@ -16,6 +16,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { routes } from "@/config/routes";
 import { WishlistButton } from "@/features/shopper/components/wishlist-button";
 import { getShopper } from "@/features/shopper/session";
+import { CatalogFilters } from "@/features/storefront/components/catalog-filters";
 import { ProductCard } from "@/features/storefront/components/product-card";
 import { SortSelect } from "@/features/storefront/components/sort-select";
 import {
@@ -50,7 +51,8 @@ async function Catalog({ params, searchParams }: Props) {
   ]);
   const saved = new Set(shopper?.wishlist);
   const activeCategory = categories.find((c) => c.id === filters.category);
-  const browsing = Boolean(filters.q || filters.category);
+  const filtered = filters.min !== null || filters.max !== null || filters.stock;
+  const browsing = Boolean(filters.q || filters.category || filtered);
   const href = (patch: Partial<typeof filters>) =>
     routes.storefront(shop.slug) + serializeCatalogParams({ ...filters, page: 1, ...patch });
 
@@ -100,7 +102,10 @@ async function Catalog({ params, searchParams }: Props) {
             {catalog.total} product{catalog.total === 1 ? "" : "s"}
           </p>
         </div>
-        <SortSelect />
+        <div className="flex flex-wrap items-center gap-2">
+          <CatalogFilters currency={shop.currency} priceRange={catalog.price_range} />
+          <SortSelect />
+        </div>
       </div>
 
       {catalog.items.length > 0 ? (
@@ -148,7 +153,7 @@ async function Catalog({ params, searchParams }: Props) {
             <EmptyTitle>{browsing ? "Nothing matches" : "New arrivals coming soon"}</EmptyTitle>
             <EmptyDescription>
               {browsing
-                ? "Try another search or category."
+                ? "Try another search, category or filter."
                 : "This shop hasn’t listed any products yet."}
             </EmptyDescription>
           </EmptyHeader>

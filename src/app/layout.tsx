@@ -7,10 +7,13 @@ import { ThemeProvider } from "@/components/shared/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { siteConfig } from "@/config/site";
+import { env } from "@/env";
 
 import "./globals.css";
 
 export const metadata: Metadata = {
+  // Absolute URLs for share previews (Open Graph) and canonical links.
+  metadataBase: new URL(env.NEXT_PUBLIC_APP_URL),
   title: { default: siteConfig.name, template: `%s · ${siteConfig.name}` },
   description: siteConfig.description,
 };

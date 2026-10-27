@@ -2345,7 +2345,10 @@ export type Database = {
       storefront_catalog: {
         Args: {
           p_category_id?: string;
+          p_in_stock?: boolean;
           p_limit?: number;
+          p_max_price?: number;
+          p_min_price?: number;
           p_offset?: number;
           p_search?: string;
           p_shop_id: string;
@@ -2371,8 +2374,10 @@ export type Database = {
       };
       storefront_invoice: { Args: { p_full_buyer?: boolean; p_token: string }; Returns: Json };
       storefront_order: { Args: { p_token: string }; Returns: Json };
+      storefront_policy: { Args: { p_page: string; p_slug: string }; Returns: string };
       storefront_product: { Args: { p_shop_id: string; p_slug: string }; Returns: Json };
       storefront_shop: { Args: { p_slug: string }; Returns: Json };
+      storefront_sitemap: { Args: { p_shop_id: string }; Returns: Json };
       storefront_variants: { Args: { p_shop_id: string; p_variant_ids: string[] }; Returns: Json };
       transfer_stock: {
         Args: {

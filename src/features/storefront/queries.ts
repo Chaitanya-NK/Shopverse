@@ -1,6 +1,7 @@
 import "server-only";
 
 import { cache } from "react";
+import { z } from "zod";
 
 import {
   CATALOG_PAGE_SIZE,
@@ -35,7 +36,15 @@ export const getStorefrontCategories = cache(async (shopId: string) => {
 export const getCatalog = cache(
   async (
     shopId: string,
-    filters: { category: string | null; q: string; sort: CatalogSort; page: number },
+    filters: {
+      category: string | null;
+      q: string;
+      sort: CatalogSort;
+      page: number;
+      min?: number | null;
+      max?: number | null;
+      stock?: boolean;
+    },
   ) => {
     const supabase = await createClient();
     const page = Math.max(1, filters.page);
@@ -46,6 +55,9 @@ export const getCatalog = cache(
       p_sort: filters.sort,
       p_limit: CATALOG_PAGE_SIZE,
       p_offset: (page - 1) * CATALOG_PAGE_SIZE,
+      p_min_price: typeof filters.min === "number" && filters.min >= 0 ? filters.min : undefined,
+      p_max_price: typeof filters.max === "number" && filters.max >= 0 ? filters.max : undefined,
+      p_in_stock: filters.stock || undefined,
     });
     if (error) throw fromPostgrestError(error);
     const catalog = catalogSchema.parse(data);
@@ -95,4 +107,22 @@ export const getCustomerOrder = cache(async (token: string) => {
   const { data, error } = await supabase.rpc("storefront_order", { p_token: token });
   if (error) throw fromPostgrestError(error);
   return data ? customerOrderSchema.parse(data) : null;
+});
+
+export const getPolicyText = cache(async (shopSlug: string, page: string) => {
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("storefront_policy", {
+    p_slug: shopSlug,
+    p_page: page,
+  });
+  if (error) throw fromPostgrestError(error);
+  return data;
+});
+
+/** Product slugs for a live shop's sitemap. */
+export const getSitemapProducts = cache(async (shopId: string) => {
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("storefront_sitemap", { p_shop_id: shopId });
+  if (error) throw fromPostgrestError(error);
+  return z.array(z.object({ slug: z.string(), updated_at: z.string() })).parse(data ?? []);
 });

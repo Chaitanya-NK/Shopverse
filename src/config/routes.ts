@@ -36,6 +36,9 @@ export const routes = {
   storefrontCheckout: (shopSlug: string) => `/s/${shopSlug}/checkout`,
   storefrontOrder: (shopSlug: string, token: string) => `/s/${shopSlug}/orders/${token}`,
   storefrontInvoice: (shopSlug: string, token: string) => `/s/${shopSlug}/orders/${token}/invoice`,
+  storefrontPolicy: (shopSlug: string, page: string) => `/s/${shopSlug}/pages/${page}`,
+  storefrontContact: (shopSlug: string) => `/s/${shopSlug}/contact`,
+  storefrontSitemap: (shopSlug: string) => `/s/${shopSlug}/sitemap.xml`,
   // Shopper accounts (separate from staff sign-in)
   storefrontSignIn: (shopSlug: string, returnTo?: string) =>
     withReturnTo(`/s/${shopSlug}/account/sign-in`, returnTo),

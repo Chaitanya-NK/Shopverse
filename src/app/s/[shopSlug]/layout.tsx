@@ -1,13 +1,16 @@
 import { EyeIcon, MailIcon, PhoneIcon } from "lucide-react";
 import type { Metadata } from "next";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 
 import { Logo } from "@/components/shared/logo";
 import { Skeleton } from "@/components/ui/skeleton";
+import { routes } from "@/config/routes";
 import { AccountMenu } from "@/features/shopper/components/account-menu";
 import { getShopper } from "@/features/shopper/session";
 import { StorefrontHeader } from "@/features/storefront/components/storefront-header";
+import { STOREFRONT_POLICIES } from "@/features/storefront/policies";
 import { getCart, getStorefrontShop } from "@/features/storefront/queries";
 
 export async function generateMetadata({
@@ -19,6 +22,14 @@ export async function generateMetadata({
   return {
     title: { default: shop.name, template: `%s · ${shop.name}` },
     description: shop.tagline ?? `Shop ${shop.name} online.`,
+    alternates: { canonical: routes.storefront(shop.slug) },
+    openGraph: {
+      type: "website",
+      siteName: shop.name,
+      title: shop.name,
+      description: shop.tagline ?? `Shop ${shop.name} online.`,
+      url: routes.storefront(shop.slug),
+    },
     // Drafts are previews for staff; never index them.
     robots: shop.live ? undefined : { index: false, follow: false },
   };
@@ -72,34 +83,86 @@ async function Footer({ params }: Pick<LayoutProps<"/s/[shopSlug]">, "params">) 
   const { shopSlug } = await params;
   const shop = await getStorefrontShop(shopSlug);
   if (!shop) return null;
+  const link = "text-muted-foreground hover:text-foreground hover:underline";
   return (
     <footer className="border-t bg-muted/30 print:hidden">
-      <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-4 py-8 text-sm text-muted-foreground">
-        <div className="space-y-1">
-          <p className="font-medium text-foreground">{shop.name}</p>
-          <p className="flex flex-wrap gap-x-4 gap-y-1">
+      <div className="mx-auto grid max-w-6xl gap-8 px-4 py-10 text-sm sm:grid-cols-2 lg:grid-cols-4">
+        <div className="space-y-2">
+          <p className="font-semibold">{shop.name}</p>
+          {shop.tagline && <p className="text-muted-foreground">{shop.tagline}</p>}
+          <p className="text-muted-foreground">Cash on delivery across India.</p>
+        </div>
+        <nav aria-label="Help" className="space-y-2">
+          <p className="font-medium">Help</p>
+          <ul className="space-y-1.5">
+            <li>
+              <Link href={routes.storefrontContact(shop.slug)} className={link}>
+                Contact us
+              </Link>
+            </li>
+            <li>
+              <Link href={routes.storefrontAccount(shop.slug)} className={link}>
+                Your orders
+              </Link>
+            </li>
+            {shop.policies
+              .filter((p) => p === "shipping" || p === "returns")
+              .map((p) => (
+                <li key={p}>
+                  <Link href={routes.storefrontPolicy(shop.slug, p)} className={link}>
+                    {STOREFRONT_POLICIES[p]}
+                  </Link>
+                </li>
+              ))}
+          </ul>
+        </nav>
+        <nav aria-label="Legal" className="space-y-2">
+          <p className="font-medium">Legal</p>
+          <ul className="space-y-1.5">
+            {shop.policies
+              .filter((p) => p === "privacy" || p === "terms")
+              .map((p) => (
+                <li key={p}>
+                  <Link href={routes.storefrontPolicy(shop.slug, p)} className={link}>
+                    {STOREFRONT_POLICIES[p]}
+                  </Link>
+                </li>
+              ))}
+            {shop.legalName && <li className="text-muted-foreground">{shop.legalName}</li>}
+            {shop.gstin && <li className="text-muted-foreground">GSTIN {shop.gstin}</li>}
+          </ul>
+        </nav>
+        <div className="space-y-2">
+          <p className="font-medium">Get in touch</p>
+          <ul className="space-y-1.5">
             {shop.supportEmail && (
-              <a
-                href={`mailto:${shop.supportEmail}`}
-                className="inline-flex items-center gap-1.5 hover:underline"
-              >
-                <MailIcon className="size-3.5" aria-hidden />
-                {shop.supportEmail}
-              </a>
+              <li>
+                <a
+                  href={`mailto:${shop.supportEmail}`}
+                  className={`inline-flex items-center gap-1.5 ${link}`}
+                >
+                  <MailIcon className="size-3.5" aria-hidden />
+                  {shop.supportEmail}
+                </a>
+              </li>
             )}
             {shop.supportPhone && (
-              <a
-                href={`tel:${shop.supportPhone}`}
-                className="inline-flex items-center gap-1.5 hover:underline"
-              >
-                <PhoneIcon className="size-3.5" aria-hidden />
-                {shop.supportPhone}
-              </a>
+              <li>
+                <a
+                  href={`tel:${shop.supportPhone}`}
+                  className={`inline-flex items-center gap-1.5 ${link}`}
+                >
+                  <PhoneIcon className="size-3.5" aria-hidden />
+                  {shop.supportPhone}
+                </a>
+              </li>
             )}
-          </p>
+          </ul>
         </div>
-        <p className="flex items-center gap-2 text-xs">
-          Powered by <Logo className="text-xs" />
+      </div>
+      <div className="border-t">
+        <p className="mx-auto flex max-w-6xl items-center gap-2 px-4 py-4 text-xs text-muted-foreground">
+          © {shop.name} · Powered by <Logo className="text-xs" />
         </p>
       </div>
     </footer>

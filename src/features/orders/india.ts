@@ -81,7 +81,9 @@ export const GST_STATE_CODES: Record<IndianState, string> = {
 };
 
 export function gstStateCode(state: string | null | undefined): string | null {
-  return state && state in GST_STATE_CODES ? GST_STATE_CODES[state as IndianState] : null;
+  return state && Object.hasOwn(GST_STATE_CODES, state)
+    ? GST_STATE_CODES[state as IndianState]
+    : null;
 }
 
 /** 15 characters: state code, PAN, entity number, "Z", checksum. */
