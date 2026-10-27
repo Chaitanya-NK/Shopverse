@@ -19,7 +19,8 @@ export function applyActionError<T extends FieldValues, TOutput extends FieldVal
 
   for (const [field, messages] of Object.entries(error.fieldErrors ?? {})) {
     const message = messages?.[0];
-    if (message && knownFields.has(field)) {
+    // Nested paths ("attributes.brand", "variants.0.sku") map onto their inputs too.
+    if (message && knownFields.has(field.split(".")[0]!)) {
       form.setError(field as Path<T>, { type: "server", message }, { shouldFocus: !matchedField });
       matchedField = true;
     }

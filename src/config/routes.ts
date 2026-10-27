@@ -14,6 +14,10 @@ export const routes = {
   orgShops: (orgSlug: string) => `/app/${orgSlug}/shops`,
   orgCategories: (orgSlug: string) => `/app/${orgSlug}/categories`,
   orgWarehouses: (orgSlug: string) => `/app/${orgSlug}/warehouses`,
+  orgProducts: (orgSlug: string) => `/app/${orgSlug}/products`,
+  orgNewProduct: (orgSlug: string) => `/app/${orgSlug}/products/new`,
+  orgProduct: (orgSlug: string, productId: string) => `/app/${orgSlug}/products/${productId}`,
+  orgInventory: (orgSlug: string) => `/app/${orgSlug}/inventory`,
   orgSettings: (orgSlug: string) => `/app/${orgSlug}/settings`,
 } as const;
 

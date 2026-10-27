@@ -56,3 +56,30 @@ export function buildCategoryTree(flat: Omit<CategoryNode, "children">[]): Categ
   };
   return sort(roots);
 }
+
+/** A category products can be filed under, with the industry it belongs to. */
+export type CategoryOption = Pick<
+  CategoryNode,
+  "id" | "name" | "tracking" | "hsnCode" | "gstRate" | "attributes"
+> & { group: string };
+
+/** Leaf-level categories grouped by their top-level (industry) category. */
+export function toCategoryOptions(roots: readonly CategoryNode[]): CategoryOption[] {
+  const options: CategoryOption[] = [];
+  const visit = (node: CategoryNode, group: string) => {
+    if (node.children.length === 0) {
+      options.push({
+        id: node.id,
+        name: node.name,
+        group,
+        tracking: node.tracking,
+        hsnCode: node.hsnCode,
+        gstRate: node.gstRate,
+        attributes: node.attributes,
+      });
+    }
+    for (const child of node.children) visit(child, group);
+  };
+  for (const root of roots) visit(root, root.name);
+  return options;
+}

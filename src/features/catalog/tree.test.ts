@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { buildCategoryTree, type CategoryNode } from "./tree";
+import { buildCategoryTree, type CategoryNode, toCategoryOptions } from "./tree";
 
 const node = (
   id: string,
@@ -55,5 +55,21 @@ describe("buildCategoryTree", () => {
       node("phones", null, 1, { attributes: [attr("colour", 2), attr("brand", 1)] }),
     ]);
     expect(root!.attributes.map((a) => a.key)).toEqual(["brand", "colour"]);
+  });
+});
+
+describe("toCategoryOptions", () => {
+  it("lists leaves under their top-level group", () => {
+    const tree = buildCategoryTree([
+      node("electronics", null, 1, { name: "Electronics" }),
+      node("phones", "electronics", 1, { name: "Phones" }),
+      node("audio", "electronics", 2, { name: "Audio" }),
+      node("books", null, 2, { name: "Books" }),
+    ]);
+    expect(toCategoryOptions(tree).map((o) => `${o.group}/${o.name}`)).toEqual([
+      "Electronics/Phones",
+      "Electronics/Audio",
+      "Books/Books",
+    ]);
   });
 });
