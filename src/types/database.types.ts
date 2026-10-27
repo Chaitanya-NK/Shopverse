@@ -442,6 +442,13 @@ export type Database = {
             referencedColumns: ["id"];
           },
           {
+            foreignKeyName: "member_shop_access_member_id_fkey";
+            columns: ["member_id"];
+            isOneToOne: false;
+            referencedRelation: "team_overview";
+            referencedColumns: ["id"];
+          },
+          {
             foreignKeyName: "member_shop_access_shop_id_fkey";
             columns: ["shop_id"];
             isOneToOne: false;
@@ -786,34 +793,49 @@ export type Database = {
       organization_invitations: {
         Row: {
           accepted_at: string | null;
+          accepted_by: string | null;
+          all_shops: boolean;
           created_at: string;
           email: string;
           expires_at: string;
           id: string;
           invited_by: string | null;
           organization_id: string;
+          revoked_at: string | null;
           role: Database["public"]["Enums"]["org_role"];
+          shop_ids: string[];
+          token_hash: string | null;
         };
         ComputedFields: never;
         Insert: {
           accepted_at?: string | null;
+          accepted_by?: string | null;
+          all_shops?: boolean;
           created_at?: string;
           email: string;
           expires_at?: string;
           id?: string;
           invited_by?: string | null;
           organization_id: string;
+          revoked_at?: string | null;
           role?: Database["public"]["Enums"]["org_role"];
+          shop_ids?: string[];
+          token_hash?: string | null;
         };
         Update: {
           accepted_at?: string | null;
+          accepted_by?: string | null;
+          all_shops?: boolean;
           created_at?: string;
           email?: string;
           expires_at?: string;
           id?: string;
           invited_by?: string | null;
           organization_id?: string;
+          revoked_at?: string | null;
           role?: Database["public"]["Enums"]["org_role"];
+          shop_ids?: string[];
+          token_hash?: string | null;
         };
         Relationships: [
           {
@@ -1570,6 +1592,51 @@ export type Database = {
       };
     };
     Views: {
+      audit_log_view: {
+        Row: {
+          action: string;
+          actor_id: string | null;
+          actor_name: string | null;
+          created_at: string;
+          entity_id: string | null;
+          entity_type: string;
+          id: number;
+          metadata: NonNullable<Json>;
+          organization_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          action?: string | null;
+          actor_id?: string | null;
+          actor_name?: never;
+          created_at?: string | null;
+          entity_id?: string | null;
+          entity_type?: string | null;
+          id?: number | null;
+          metadata?: Json | null;
+          organization_id?: string | null;
+        };
+        Update: {
+          action?: string | null;
+          actor_id?: string | null;
+          actor_name?: never;
+          created_at?: string | null;
+          entity_id?: string | null;
+          entity_type?: string | null;
+          id?: number | null;
+          metadata?: Json | null;
+          organization_id?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "audit_logs_organization_id_fkey";
+            columns: ["organization_id"];
+            isOneToOne: false;
+            referencedRelation: "organizations";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       customer_overview: {
         Row: {
           accepts_marketing: boolean;
@@ -1796,6 +1863,29 @@ export type Database = {
           },
         ];
       };
+      team_overview: {
+        Row: {
+          all_shops: boolean;
+          created_at: string;
+          email: string | null;
+          full_name: string | null;
+          id: string;
+          organization_id: string;
+          role: Database["public"]["Enums"]["org_role"];
+          shop_ids: string[] | null;
+          user_id: string;
+        };
+        ComputedFields: never;
+        Relationships: [
+          {
+            foreignKeyName: "organization_members_organization_id_fkey";
+            columns: ["organization_id"];
+            isOneToOne: false;
+            referencedRelation: "organizations";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       variant_search: {
         Row: {
           gst_rate: number | null;
@@ -1840,6 +1930,7 @@ export type Database = {
       };
     };
     Functions: {
+      accept_invitation: { Args: { p_token: string }; Returns: Json };
       add_industries: {
         Args: { p_industries: string[]; p_organization_id: string };
         Returns: undefined;
@@ -1923,11 +2014,23 @@ export type Database = {
         };
         Returns: string;
       };
+      get_billing_overview: { Args: { p_organization_id: string }; Returns: Json };
+      get_invitation: { Args: { p_token: string }; Returns: Json };
       get_overview_stats: {
         Args: { p_organization_id: string; p_shop_id?: string };
         Returns: Json;
       };
       get_tracking: { Args: { p_token: string }; Returns: Json };
+      invite_member: {
+        Args: {
+          p_all_shops?: boolean;
+          p_email: string;
+          p_organization_id: string;
+          p_role: Database["public"]["Enums"]["org_role"];
+          p_shop_ids?: string[];
+        };
+        Returns: Json;
+      };
       mark_order_paid: { Args: { p_order_id: string }; Returns: undefined };
       receive_stock: {
         Args: {
@@ -1957,6 +2060,7 @@ export type Database = {
           isSetofReturn: false;
         };
       };
+      remove_member: { Args: { p_member_id: string }; Returns: undefined };
       remove_stock: {
         Args: {
           p_batch_id?: string;
@@ -1984,6 +2088,7 @@ export type Database = {
           isSetofReturn: false;
         };
       };
+      revoke_invitation: { Args: { p_invitation_id: string }; Returns: undefined };
       set_warehouse_shops: {
         Args: { p_shop_ids: string[]; p_warehouse_id: string };
         Returns: undefined;
@@ -2030,6 +2135,15 @@ export type Database = {
           p_variant_id: string;
         };
         Returns: string;
+      };
+      update_member: {
+        Args: {
+          p_all_shops: boolean;
+          p_member_id: string;
+          p_role: Database["public"]["Enums"]["org_role"];
+          p_shop_ids?: string[];
+        };
+        Returns: undefined;
       };
       update_product: {
         Args: { p_product: Json; p_product_id: string; p_shop_ids?: string[]; p_variants: Json };

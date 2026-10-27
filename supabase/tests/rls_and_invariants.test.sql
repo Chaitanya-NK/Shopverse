@@ -177,11 +177,12 @@ select pg_temp.assert((select count(*) = 1 from public.shops), 'granted shop bec
 select pg_temp.assert(
   (select count(*) = 2 from public.profiles), 'teammates can see each other''s profiles (and not other tenants)');
 
--- Staff cannot promote themselves
+-- Staff cannot promote themselves (directly or through the function)
 do $$
 begin
   update public.organization_members set role = 'owner' where user_id = '00000000-0000-0000-0000-00000000000c';
-  if found then raise exception 'ASSERTION FAILED: staff must not change roles'; end if;
+  raise exception 'ASSERTION FAILED: staff must not change roles';
+exception when insufficient_privilege then null;
 end $$;
 
 -- Orders & shipments -----------------------------------------------------------------
