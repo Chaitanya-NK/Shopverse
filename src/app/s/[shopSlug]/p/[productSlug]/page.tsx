@@ -6,6 +6,8 @@ import { Suspense } from "react";
 
 import { Skeleton } from "@/components/ui/skeleton";
 import { routes } from "@/config/routes";
+import { WishlistButton } from "@/features/shopper/components/wishlist-button";
+import { getShopper } from "@/features/shopper/session";
 import { ProductArt } from "@/features/storefront/components/product-art";
 import { ProductPurchase } from "@/features/storefront/components/product-purchase";
 import { getStorefrontProduct, getStorefrontShop } from "@/features/storefront/queries";
@@ -47,7 +49,10 @@ async function Product({ params }: Pick<Props, "params">) {
   const { shopSlug, productSlug } = await params;
   const shop = await getStorefrontShop(shopSlug);
   if (!shop) notFound();
-  const product = await getStorefrontProduct(shop.id, productSlug);
+  const [product, shopper] = await Promise.all([
+    getStorefrontProduct(shop.id, productSlug),
+    getShopper(shop.id),
+  ]);
   if (!product) notFound();
 
   return (
@@ -73,7 +78,18 @@ async function Product({ params }: Pick<Props, "params">) {
         />
 
         <div className="space-y-6">
-          <h1 className="text-3xl font-semibold tracking-tight">{product.title}</h1>
+          <div className="flex items-start justify-between gap-4">
+            <h1 className="text-3xl font-semibold tracking-tight">{product.title}</h1>
+            {shop.live && (
+              <WishlistButton
+                shopSlug={shop.slug}
+                productId={product.id}
+                productTitle={product.title}
+                saved={Boolean(shopper?.wishlist.includes(product.id))}
+                signedIn={Boolean(shopper)}
+              />
+            )}
+          </div>
           <ProductPurchase shopSlug={shop.slug} product={product} currency={shop.currency} />
 
           <ul className="space-y-2 rounded-xl border p-4 text-sm text-muted-foreground">

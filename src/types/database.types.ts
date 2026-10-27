@@ -176,6 +176,76 @@ export type Database = {
           },
         ];
       };
+      customer_addresses: {
+        Row: {
+          city: string;
+          country: string;
+          created_at: string;
+          customer_id: string;
+          id: string;
+          is_default: boolean;
+          label: string | null;
+          line1: string;
+          line2: string | null;
+          name: string;
+          organization_id: string;
+          phone: string;
+          postal_code: string;
+          state: string;
+          updated_at: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          city: string;
+          country?: string;
+          created_at?: string;
+          customer_id: string;
+          id?: string;
+          is_default?: boolean;
+          label?: string | null;
+          line1: string;
+          line2?: string | null;
+          name: string;
+          organization_id: string;
+          phone: string;
+          postal_code: string;
+          state: string;
+          updated_at?: string;
+        };
+        Update: {
+          city?: string;
+          country?: string;
+          created_at?: string;
+          customer_id?: string;
+          id?: string;
+          is_default?: boolean;
+          label?: string | null;
+          line1?: string;
+          line2?: string | null;
+          name?: string;
+          organization_id?: string;
+          phone?: string;
+          postal_code?: string;
+          state?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "customer_addresses_organization_id_customer_id_fkey";
+            columns: ["organization_id", "customer_id"];
+            isOneToOne: false;
+            referencedRelation: "customer_overview";
+            referencedColumns: ["organization_id", "id"];
+          },
+          {
+            foreignKeyName: "customer_addresses_organization_id_customer_id_fkey";
+            columns: ["organization_id", "customer_id"];
+            isOneToOne: false;
+            referencedRelation: "customers";
+            referencedColumns: ["organization_id", "id"];
+          },
+        ];
+      };
       customers: {
         Row: {
           accepts_marketing: boolean;
@@ -184,6 +254,7 @@ export type Database = {
           email_verified_at: string | null;
           full_name: string | null;
           id: string;
+          last_sign_in_at: string | null;
           organization_id: string;
           phone: string | null;
           tags: string[];
@@ -197,6 +268,7 @@ export type Database = {
           email_verified_at?: string | null;
           full_name?: string | null;
           id?: string;
+          last_sign_in_at?: string | null;
           organization_id: string;
           phone?: string | null;
           tags?: string[];
@@ -209,6 +281,7 @@ export type Database = {
           email_verified_at?: string | null;
           full_name?: string | null;
           id?: string;
+          last_sign_in_at?: string | null;
           organization_id?: string;
           phone?: string | null;
           tags?: string[];
@@ -1590,6 +1663,57 @@ export type Database = {
           },
         ];
       };
+      wishlist_items: {
+        Row: {
+          created_at: string;
+          customer_id: string;
+          organization_id: string;
+          product_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          created_at?: string;
+          customer_id: string;
+          organization_id: string;
+          product_id: string;
+        };
+        Update: {
+          created_at?: string;
+          customer_id?: string;
+          organization_id?: string;
+          product_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "wishlist_items_organization_id_customer_id_fkey";
+            columns: ["organization_id", "customer_id"];
+            isOneToOne: false;
+            referencedRelation: "customer_overview";
+            referencedColumns: ["organization_id", "id"];
+          },
+          {
+            foreignKeyName: "wishlist_items_organization_id_customer_id_fkey";
+            columns: ["organization_id", "customer_id"];
+            isOneToOne: false;
+            referencedRelation: "customers";
+            referencedColumns: ["organization_id", "id"];
+          },
+          {
+            foreignKeyName: "wishlist_items_organization_id_product_id_fkey";
+            columns: ["organization_id", "product_id"];
+            isOneToOne: false;
+            referencedRelation: "product_overview";
+            referencedColumns: ["organization_id", "id"];
+          },
+          {
+            foreignKeyName: "wishlist_items_organization_id_product_id_fkey";
+            columns: ["organization_id", "product_id"];
+            isOneToOne: false;
+            referencedRelation: "products";
+            referencedColumns: ["organization_id", "id"];
+          },
+        ];
+      };
     };
     Views: {
       audit_log_view: {
@@ -1646,6 +1770,7 @@ export type Database = {
           full_name: string | null;
           id: string;
           last_order_at: string | null;
+          last_sign_in_at: string | null;
           orders_count: number | null;
           organization_id: string;
           phone: string | null;
@@ -2093,6 +2218,60 @@ export type Database = {
         Args: { p_shop_ids: string[]; p_warehouse_id: string };
         Returns: undefined;
       };
+      shopper_cancel_order: {
+        Args: { p_order_token: string; p_reason?: string; p_shop_id: string; p_token: string };
+        Returns: undefined;
+      };
+      shopper_checkout: {
+        Args: {
+          p_address: Json;
+          p_contact: Json;
+          p_lines: Json;
+          p_payment_method?: Database["public"]["Enums"]["payment_method"];
+          p_request_id: string;
+          p_save_address?: boolean;
+          p_shop_id: string;
+          p_token: string;
+        };
+        Returns: Json;
+      };
+      shopper_delete_address: {
+        Args: { p_address_id: string; p_shop_id: string; p_token: string };
+        Returns: undefined;
+      };
+      shopper_me: { Args: { p_shop_id: string; p_token: string }; Returns: Json };
+      shopper_order_access: {
+        Args: { p_order_token: string; p_shop_id: string; p_token: string };
+        Returns: Json;
+      };
+      shopper_orders: {
+        Args: { p_limit?: number; p_offset?: number; p_shop_id: string; p_token: string };
+        Returns: Json;
+      };
+      shopper_save_address: {
+        Args: { p_address: Json; p_address_id?: string; p_shop_id: string; p_token: string };
+        Returns: string;
+      };
+      shopper_set_default_address: {
+        Args: { p_address_id: string; p_shop_id: string; p_token: string };
+        Returns: undefined;
+      };
+      shopper_set_wishlist: {
+        Args: { p_product_id: string; p_saved: boolean; p_shop_id: string; p_token: string };
+        Returns: undefined;
+      };
+      shopper_sign_in_resend: { Args: { p_sign_in_id: string }; Returns: Json };
+      shopper_sign_in_start: { Args: { p_email: string; p_shop_id: string }; Returns: Json };
+      shopper_sign_in_verify: {
+        Args: { p_otp: string; p_sign_in_id: string; p_user_agent?: string };
+        Returns: Json;
+      };
+      shopper_sign_out: { Args: { p_token: string }; Returns: undefined };
+      shopper_update_profile: {
+        Args: { p_profile: Json; p_shop_id: string; p_token: string };
+        Returns: undefined;
+      };
+      shopper_wishlist: { Args: { p_shop_id: string; p_token: string }; Returns: Json };
       storefront_catalog: {
         Args: {
           p_category_id?: string;

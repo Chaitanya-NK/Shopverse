@@ -6,6 +6,8 @@ import { Suspense } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { routes } from "@/config/routes";
+import { SignedInCheckout } from "@/features/shopper/components/signed-in-checkout";
+import { getShopper } from "@/features/shopper/session";
 import { CheckoutFlow } from "@/features/storefront/components/checkout-flow";
 import { getCart, getStorefrontShop } from "@/features/storefront/queries";
 import { shippingFor } from "@/features/storefront/schemas";
@@ -27,7 +29,7 @@ async function Checkout({ params }: Pick<Props, "params">) {
   const { shopSlug } = await params;
   const shop = await getStorefrontShop(shopSlug);
   if (!shop) notFound();
-  const items = await getCart(shop.id);
+  const [items, shopper] = await Promise.all([getCart(shop.id), getShopper(shop.id)]);
   if (items.length === 0 || items.some((i) => i.quantity > i.available))
     redirect(routes.storefrontCart(shop.slug));
 
@@ -39,12 +41,38 @@ async function Checkout({ params }: Pick<Props, "params">) {
     <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_22rem]">
       <div className="space-y-6">
         <h1 className="text-2xl font-semibold tracking-tight">Checkout</h1>
-        {shop.live ? (
-          <CheckoutFlow shopSlug={shop.slug} currency={shop.currency} total={subtotal + shipping} />
-        ) : (
+        {!shop.live ? (
           <p className="rounded-xl border bg-muted/40 p-4 text-sm">
             This shop is a preview. Set it live in Shops → settings to take orders.
           </p>
+        ) : shopper ? (
+          <SignedInCheckout
+            shopSlug={shop.slug}
+            currency={shop.currency}
+            total={subtotal + shipping}
+            email={shopper.email}
+            name={shopper.name}
+            phone={shopper.phone}
+            addresses={shopper.addresses}
+          />
+        ) : (
+          <>
+            <p className="rounded-xl border bg-muted/40 p-4 text-sm">
+              Have an account?{" "}
+              <Link
+                href={routes.storefrontSignIn(shop.slug, routes.storefrontCheckout(shop.slug))}
+                className="font-medium underline-offset-4 hover:underline"
+              >
+                Sign in
+              </Link>{" "}
+              to use your saved addresses. Or check out as a guest below.
+            </p>
+            <CheckoutFlow
+              shopSlug={shop.slug}
+              currency={shop.currency}
+              total={subtotal + shipping}
+            />
+          </>
         )}
       </div>
       <Card className="h-fit lg:sticky lg:top-24">

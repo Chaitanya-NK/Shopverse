@@ -17,10 +17,12 @@ export type CustomerSummary = {
   totalSpent: number;
   lastOrderAt: string | null;
   createdAt: string;
+  /** Set once they've signed in to a storefront account. */
+  lastSignInAt: string | null;
 };
 
 const COLUMNS =
-  "id, full_name, email, phone, email_verified_at, orders_count, total_spent, last_order_at, created_at" as const;
+  "id, full_name, email, phone, email_verified_at, orders_count, total_spent, last_order_at, created_at, last_sign_in_at" as const;
 
 function toSummary(c: {
   id: string;
@@ -32,6 +34,7 @@ function toSummary(c: {
   total_spent: number | null;
   last_order_at: string | null;
   created_at: string;
+  last_sign_in_at: string | null;
 }): CustomerSummary {
   return {
     id: c.id,
@@ -43,6 +46,7 @@ function toSummary(c: {
     totalSpent: Number(c.total_spent ?? 0),
     lastOrderAt: c.last_order_at,
     createdAt: c.created_at,
+    lastSignInAt: c.last_sign_in_at,
   };
 }
 

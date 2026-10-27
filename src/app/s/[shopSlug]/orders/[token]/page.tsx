@@ -1,4 +1,11 @@
-import { CheckCircle2Icon, MailIcon, PackageIcon, PhoneIcon, TruckIcon } from "lucide-react";
+import {
+  CheckCircle2Icon,
+  MailIcon,
+  PackageIcon,
+  PhoneIcon,
+  TruckIcon,
+  XCircleIcon,
+} from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -9,7 +16,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Skeleton } from "@/components/ui/skeleton";
 import { routes } from "@/config/routes";
 import { SHIPMENT_STATUS_LABELS } from "@/features/orders/schemas";
-import { getCustomerOrder } from "@/features/storefront/queries";
+import { OrderActions } from "@/features/shopper/components/order-actions";
+import { getOrderAccess } from "@/features/shopper/queries";
+import { getShopper } from "@/features/shopper/session";
+import { getCustomerOrder, getStorefrontShop } from "@/features/storefront/queries";
 import { formatMoney } from "@/lib/format";
 
 export const metadata: Metadata = {
@@ -44,26 +54,50 @@ export default function CustomerOrderPage({ params }: Props) {
 
 async function CustomerOrder({ params }: Pick<Props, "params">) {
   const { shopSlug, token } = await params;
-  const order = await getCustomerOrder(token);
-  if (!order || order.shop.slug !== shopSlug) notFound();
+  const [order, shop] = await Promise.all([getCustomerOrder(token), getStorefrontShop(shopSlug)]);
+  if (!order || !shop || order.shop.slug !== shopSlug) notFound();
+  const [access, shopper] = await Promise.all([
+    getOrderAccess(shop.id, token),
+    getShopper(shop.id),
+  ]);
   const money = (n: number) => formatMoney(n, order.currency);
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
       <div className="space-y-2 text-center">
-        <CheckCircle2Icon
-          className={
-            order.status === "cancelled"
-              ? "mx-auto size-12 text-muted-foreground"
-              : "mx-auto size-12 text-emerald-600"
-          }
-          aria-hidden
-        />
+        {order.status === "cancelled" ? (
+          <XCircleIcon className="mx-auto size-12 text-muted-foreground" aria-hidden />
+        ) : (
+          <CheckCircle2Icon className="mx-auto size-12 text-emerald-600" aria-hidden />
+        )}
         <h1 className="text-2xl font-semibold tracking-tight">{HEADLINE[order.status]}</h1>
         <p className="text-muted-foreground">
           Order <span className="font-mono font-medium text-foreground">{order.number}</span> ·
           placed {dateFormat.format(new Date(order.placed_at))}
         </p>
+        {access ? (
+          <div className="flex justify-center pt-2">
+            <OrderActions
+              shopSlug={shop.slug}
+              orderToken={token}
+              orderNumber={order.number}
+              canCancel={access.canCancel}
+            />
+          </div>
+        ) : (
+          !shopper &&
+          shop.live && (
+            <p className="pt-1 text-sm text-muted-foreground">
+              <Link
+                href={routes.storefrontSignIn(shop.slug, routes.storefrontOrder(shop.slug, token))}
+                className="font-medium text-foreground underline-offset-4 hover:underline"
+              >
+                Sign in
+              </Link>{" "}
+              with the email you ordered with to cancel, reorder or see all your orders.
+            </p>
+          )
+        )}
       </div>
 
       {order.shipments.length > 0 && (
@@ -126,7 +160,9 @@ async function CustomerOrder({ params }: Pick<Props, "params">) {
             </div>
             <div className="flex justify-between border-t pt-2 text-base font-semibold">
               <dt>
-                {order.payment_method === "cod" && order.payment_status !== "paid"
+                {order.status !== "cancelled" &&
+                order.payment_method === "cod" &&
+                order.payment_status !== "paid"
                   ? "To pay on delivery"
                   : "Total"}
               </dt>

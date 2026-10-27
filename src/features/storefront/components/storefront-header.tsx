@@ -11,12 +11,14 @@ type StorefrontHeaderProps = {
   shop: { name: string; slug: string };
   cartCount: number;
   query?: string;
+  /** Sign-in link or the account menu. */
+  account?: React.ReactNode;
 };
 
-export function StorefrontHeader({ shop, cartCount, query = "" }: StorefrontHeaderProps) {
+export function StorefrontHeader({ shop, cartCount, query = "", account }: StorefrontHeaderProps) {
   return (
     <header className="sticky top-0 z-40 border-b bg-background/90 backdrop-blur supports-backdrop-filter:bg-background/75">
-      <div className="mx-auto flex h-16 max-w-6xl items-center gap-3 px-4 sm:gap-6">
+      <div className="mx-auto flex h-16 max-w-6xl items-center gap-2 px-4 sm:gap-4">
         <Link
           href={routes.storefront(shop.slug)}
           className="flex shrink-0 items-center gap-2.5 font-semibold"
@@ -40,6 +42,7 @@ export function StorefrontHeader({ shop, cartCount, query = "" }: StorefrontHead
             />
           </InputGroup>
         </form>
+        {account}
         <Button asChild variant="ghost" className="relative shrink-0 rounded-full" size="icon">
           <Link
             href={routes.storefrontCart(shop.slug)}

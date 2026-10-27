@@ -275,29 +275,41 @@ export function shippingFor(
 // Checkout
 // ---------------------------------------------------------------------------
 
-const shopSlugSchema = z.string().regex(/^[a-z0-9-]{3,48}$/);
+export const shopSlugSchema = z.string().regex(/^[a-z0-9-]{3,48}$/);
+
+/** An Indian mobile number as people type it ("98765 43210", "+91 98765-43210"). */
+export const indianMobileSchema = z
+  .string()
+  .trim()
+  .transform((v) => v.replace(/[\s()-]/g, ""))
+  .pipe(z.string().regex(/^(\+91)?[6-9][0-9]{9}$/, "Enter a 10-digit mobile number"));
+
+/** "9876543210" -> "+919876543210" (already-prefixed numbers are kept). */
+export function toIndianE164(mobile: string): string {
+  return mobile.startsWith("+") ? mobile : `+91${mobile}`;
+}
+
+/** Street address fields shared by checkout and the address book. */
+export const streetAddressSchema = z.object({
+  line1: z.string().trim().min(5, "Enter your house and street").max(200),
+  line2: z.string().trim().max(200).optional().default(""),
+  city: z.string().trim().min(2, "Enter your city").max(80),
+  state: z.string().trim().min(2, "Choose your state").max(80),
+  postalCode: z
+    .string()
+    .trim()
+    .regex(/^[1-9][0-9]{5}$/, "Enter a 6-digit PIN code"),
+});
+export type StreetAddress = z.output<typeof streetAddressSchema>;
 
 export const checkoutDetailsSchema = z.object({
   shopSlug: shopSlugSchema,
   contact: z.object({
     name: z.string().trim().min(2, "Enter your name").max(120),
     email: z.email("Enter a valid email").max(254),
-    phone: z
-      .string()
-      .trim()
-      .transform((v) => v.replace(/[\s()-]/g, ""))
-      .pipe(z.string().regex(/^(\+91)?[6-9][0-9]{9}$/, "Enter a 10-digit mobile number")),
+    phone: indianMobileSchema,
   }),
-  address: z.object({
-    line1: z.string().trim().min(5, "Enter your house and street").max(200),
-    line2: z.string().trim().max(200).optional().default(""),
-    city: z.string().trim().min(2, "Enter your city").max(80),
-    state: z.string().trim().min(2, "Choose your state").max(80),
-    postalCode: z
-      .string()
-      .trim()
-      .regex(/^[1-9][0-9]{5}$/, "Enter a 6-digit PIN code"),
-  }),
+  address: streetAddressSchema,
   note: z.string().trim().max(300, "Keep it under 300 characters").optional().default(""),
 });
 export type CheckoutDetailsInput = z.input<typeof checkoutDetailsSchema>;

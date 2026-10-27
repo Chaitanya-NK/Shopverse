@@ -14,6 +14,8 @@ import {
 } from "@/components/ui/empty";
 import { Skeleton } from "@/components/ui/skeleton";
 import { routes } from "@/config/routes";
+import { WishlistButton } from "@/features/shopper/components/wishlist-button";
+import { getShopper } from "@/features/shopper/session";
 import { ProductCard } from "@/features/storefront/components/product-card";
 import { SortSelect } from "@/features/storefront/components/sort-select";
 import {
@@ -41,10 +43,12 @@ async function Catalog({ params, searchParams }: Props) {
   const shop = await getStorefrontShop(shopSlug);
   if (!shop) notFound();
 
-  const [catalog, categories] = await Promise.all([
+  const [catalog, categories, shopper] = await Promise.all([
     getCatalog(shop.id, filters),
     getStorefrontCategories(shop.id),
+    getShopper(shop.id),
   ]);
+  const saved = new Set(shopper?.wishlist);
   const activeCategory = categories.find((c) => c.id === filters.category);
   const browsing = Boolean(filters.q || filters.category);
   const href = (patch: Partial<typeof filters>) =>
@@ -103,7 +107,24 @@ async function Catalog({ params, searchParams }: Props) {
         <>
           <div className="grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3 lg:grid-cols-4">
             {catalog.items.map((p) => (
-              <ProductCard key={p.id} shopSlug={shop.slug} product={p} currency={shop.currency} />
+              <ProductCard
+                key={p.id}
+                shopSlug={shop.slug}
+                product={p}
+                currency={shop.currency}
+                action={
+                  shop.live && (
+                    <WishlistButton
+                      variant="overlay"
+                      shopSlug={shop.slug}
+                      productId={p.id}
+                      productTitle={p.title}
+                      saved={saved.has(p.id)}
+                      signedIn={Boolean(shopper)}
+                    />
+                  )
+                }
+              />
             ))}
           </div>
           {catalog.pageCount > 1 && (

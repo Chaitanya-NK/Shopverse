@@ -1,7 +1,6 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { REGEXP_ONLY_DIGITS } from "input-otp";
 import { MailCheckIcon, ShieldCheckIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useTransition } from "react";
@@ -14,12 +13,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import {
-  InputOTP,
-  InputOTPGroup,
-  InputOTPSeparator,
-  InputOTPSlot,
-} from "@/components/ui/input-otp";
 import {
   Select,
   SelectContent,
@@ -35,6 +28,7 @@ import {
   resendCheckoutCode,
   startCheckout,
 } from "@/features/storefront/checkout-actions";
+import { CodeInput } from "@/features/storefront/components/code-input";
 import { checkoutDetailsSchema } from "@/features/storefront/schemas";
 import { applyActionError } from "@/lib/forms/apply-action-error";
 import { formatMoney } from "@/lib/format";
@@ -308,52 +302,19 @@ function CodeStep({
             submit();
           }}
         >
-          <Field data-invalid={Boolean(error)}>
-            <FieldLabel htmlFor="checkout-code" className="sr-only">
-              Order code
-            </FieldLabel>
-            <InputOTP
-              ref={inputRef}
-              id="checkout-code"
-              maxLength={6}
-              pattern={REGEXP_ONLY_DIGITS}
-              inputMode="numeric"
-              autoComplete="one-time-code"
-              autoFocus
-              disabled={isPending}
-              value={code}
-              onChange={(v) => {
-                setCode(v);
-                setError(null);
-              }}
-              onComplete={(v: string) => submit(v)}
-              containerClassName="justify-center"
-              aria-invalid={Boolean(error)}
-            >
-              <InputOTPGroup>
-                {[0, 1, 2].map((i) => (
-                  <InputOTPSlot
-                    key={i}
-                    index={i}
-                    className="size-12 text-lg"
-                    aria-invalid={Boolean(error)}
-                  />
-                ))}
-              </InputOTPGroup>
-              <InputOTPSeparator />
-              <InputOTPGroup>
-                {[3, 4, 5].map((i) => (
-                  <InputOTPSlot
-                    key={i}
-                    index={i}
-                    className="size-12 text-lg"
-                    aria-invalid={Boolean(error)}
-                  />
-                ))}
-              </InputOTPGroup>
-            </InputOTP>
-            {error && <FieldError className="text-center">{error}</FieldError>}
-          </Field>
+          <CodeInput
+            id="checkout-code"
+            label="Order code"
+            inputRef={inputRef}
+            value={code}
+            onChange={(v) => {
+              setCode(v);
+              setError(null);
+            }}
+            onComplete={(v) => submit(v)}
+            error={error}
+            disabled={isPending}
+          />
           <Button type="submit" size="lg" className="w-full" disabled={isPending}>
             {isPending && <Spinner />}
             Place order

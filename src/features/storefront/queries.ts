@@ -1,6 +1,5 @@
 import "server-only";
 
-import { cookies } from "next/headers";
 import { cache } from "react";
 
 import {
@@ -10,14 +9,12 @@ import {
   categoriesSchema,
   cartVariantsSchema,
   customerOrderSchema,
-  parseCart,
   productSchema,
   storefrontShopSchema,
 } from "@/features/storefront/schemas";
+import { readCartLines } from "@/features/storefront/cart-cookie";
 import { fromPostgrestError } from "@/lib/errors";
 import { createClient } from "@/lib/supabase/server";
-
-export const CART_COOKIE = "sv_cart";
 
 /** A live shop (or a draft one, for its own staff). Null when not visible. */
 export const getStorefrontShop = cache(async (slug: string) => {
@@ -73,7 +70,7 @@ export const getStorefrontProduct = cache(async (shopId: string, slug: string) =
 
 /** The visitor's cart for this shop, re-priced and re-checked against stock. */
 export const getCart = cache(async (shopId: string) => {
-  const lines = parseCart((await cookies()).get(CART_COOKIE)?.value);
+  const lines = await readCartLines();
   if (lines.length === 0) return [];
 
   const supabase = await createClient();

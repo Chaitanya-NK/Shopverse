@@ -1,6 +1,8 @@
 import { BadgeCheckIcon, UsersIcon } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
+
+import { Badge } from "@/components/ui/badge";
 import { Suspense } from "react";
 
 import { PageHeader } from "@/components/shared/page-header";
@@ -97,6 +99,11 @@ async function Customers({ params, searchParams }: Props) {
                       >
                         {c.name ?? c.email ?? c.phone}
                       </Link>
+                      {c.lastSignInAt && (
+                        <Badge variant="secondary" className="ml-2 align-middle">
+                          Account
+                        </Badge>
+                      )}
                       <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
                         {[c.email, c.phone].filter(Boolean).join(" · ")}
                         {c.verified && (

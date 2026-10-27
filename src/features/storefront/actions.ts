@@ -1,17 +1,10 @@
 "use server";
 
-import { cookies } from "next/headers";
 import { refresh } from "next/cache";
 import { z } from "zod";
 
-import { routes } from "@/config/routes";
-import { CART_COOKIE } from "@/features/storefront/queries";
-import {
-  cartVariantsSchema,
-  MAX_LINE_QUANTITY,
-  parseCart,
-  setCartLine,
-} from "@/features/storefront/schemas";
+import { readCartLines, writeCartLines } from "@/features/storefront/cart-cookie";
+import { cartVariantsSchema, MAX_LINE_QUANTITY, setCartLine } from "@/features/storefront/schemas";
 import { createAction } from "@/lib/actions/create-action";
 import { Errors, fromPostgrestError } from "@/lib/errors";
 import { type ServerSupabaseClient } from "@/lib/supabase/server";
@@ -40,8 +33,7 @@ export const changeCart = createAction({
   requireAuth: false,
   handler: async (input, { supabase }) => {
     const shopId = await resolveShop(supabase, input.shopSlug);
-    const jar = await cookies();
-    const cart = parseCart(jar.get(CART_COOKIE)?.value);
+    const cart = await readCartLines();
 
     let quantity = input.quantity;
     if (quantity > 0) {
@@ -67,13 +59,7 @@ export const changeCart = createAction({
     }
 
     const next = setCartLine(cart, input.variantId, quantity, input.mode);
-    jar.set(CART_COOKIE, JSON.stringify(next), {
-      path: routes.storefront(input.shopSlug),
-      httpOnly: true,
-      sameSite: "lax",
-      secure: process.env.NODE_ENV === "production",
-      maxAge: 60 * 60 * 24 * 30,
-    });
+    await writeCartLines(input.shopSlug, next);
 
     refresh();
     return { count: next.reduce((n, l) => n + l.q, 0), limited: quantity !== input.quantity };

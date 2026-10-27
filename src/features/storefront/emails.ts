@@ -67,3 +67,20 @@ export function orderConfirmationEmail(input: {
     ),
   };
 }
+
+export function signInCodeEmail(input: { to: string; shopName: string; code: string }): Mail {
+  const shop = escapeHtml(input.shopName);
+  return {
+    to: input.to,
+    subject: `${input.code} is your ${input.shopName} sign-in code`,
+    text:
+      `Your code to sign in to ${input.shopName} is ${input.code}.\n` +
+      `It expires in 10 minutes. If you didn't ask for it, you can ignore this email.`,
+    html: wrap(
+      `Sign in to ${shop}`,
+      `<p style="margin:0 0 16px;color:#444">Enter this code to sign in to your account.</p>
+       <p style="font-size:32px;letter-spacing:8px;font-weight:700;margin:0 0 16px;font-family:monospace">${input.code}</p>
+       <p style="margin:0;color:#666;font-size:13px">It expires in 10 minutes. If you didn't ask for it, you can ignore this email.</p>`,
+    ),
+  };
+}

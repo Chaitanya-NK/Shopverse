@@ -4,17 +4,19 @@ import { cookies } from "next/headers";
 
 import { env } from "@/env";
 import { routes } from "@/config/routes";
-import { checkoutCodeEmail, orderConfirmationEmail } from "@/features/storefront/emails";
-import { CART_COOKIE, getCart, getStorefrontShop } from "@/features/storefront/queries";
+import { sendOrderConfirmation } from "@/features/storefront/confirmation";
+import { checkoutCodeEmail } from "@/features/storefront/emails";
+import { clearCart } from "@/features/storefront/cart-cookie";
+import { getCart, getStorefrontShop } from "@/features/storefront/queries";
 import {
   checkoutCodeSchema,
   checkoutDetailsSchema,
   checkoutResendSchema,
   maskEmailAddress,
+  toIndianE164,
 } from "@/features/storefront/schemas";
 import { createAction } from "@/lib/actions/create-action";
 import { Errors, fromPostgrestError } from "@/lib/errors";
-import { logger } from "@/lib/logger";
 import { sendMail } from "@/lib/mail";
 import { createAdminClient } from "@/lib/supabase/admin";
 
@@ -40,9 +42,9 @@ async function checkoutCookie(slug: string) {
         secure: env.NODE_ENV === "production",
         maxAge: 60 * 60,
       }),
-    clear: () => {
+    clear: async () => {
       jar.delete({ name: CHECKOUT_COOKIE, path: routes.storefront(slug) });
-      jar.delete({ name: CART_COOKIE, path: routes.storefront(slug) });
+      await clearCart(slug);
     },
   };
 }
@@ -60,9 +62,7 @@ export const startCheckout = createAction({
     const cart = await getCart(shop.id);
     if (cart.length === 0) throw Errors.validation({}, "Your cart is empty.");
 
-    const phone = input.contact.phone.startsWith("+")
-      ? input.contact.phone
-      : `+91${input.contact.phone}`;
+    const phone = toIndianE164(input.contact.phone);
     const admin = createAdminClient();
     const { data, error } = await admin.rpc("storefront_checkout_start", {
       p_shop_id: shop.id,
@@ -176,35 +176,14 @@ export const confirmCheckout = createAction({
       });
     }
 
-    cookie.clear();
+    await cookie.clear();
 
-    // Confirmation email is a courtesy: the order is placed even if it fails.
-    try {
-      const { data: order } = await admin
-        .from("orders")
-        .select("customer:customers (email)")
-        .eq("id", result.order_id!)
-        .maybeSingle();
-      const email = order?.customer?.email;
-      if (email) {
-        await sendMail(
-          orderConfirmationEmail({
-            to: email,
-            shopName: shop.name,
-            orderNumber: result.order_number!,
-            total: Number(result.grand_total),
-            currency: shop.currency,
-            orderUrl: new URL(
-              routes.storefrontOrder(shop.slug, result.public_token!),
-              env.NEXT_PUBLIC_APP_URL,
-            ).toString(),
-            replyTo: shop.supportEmail,
-          }),
-        );
-      }
-    } catch (cause) {
-      logger.warn({ err: cause, order: result.order_number }, "Order confirmation email failed");
-    }
+    await sendOrderConfirmation(shop, {
+      orderId: result.order_id!,
+      number: result.order_number!,
+      token: result.public_token!,
+      total: Number(result.grand_total),
+    });
 
     return { token: result.public_token!, number: result.order_number! };
   },

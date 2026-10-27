@@ -32,6 +32,13 @@ export const routes = {
   storefrontCart: (shopSlug: string) => `/s/${shopSlug}/cart`,
   storefrontCheckout: (shopSlug: string) => `/s/${shopSlug}/checkout`,
   storefrontOrder: (shopSlug: string, token: string) => `/s/${shopSlug}/orders/${token}`,
+  // Shopper accounts (separate from staff sign-in)
+  storefrontSignIn: (shopSlug: string, returnTo?: string) =>
+    withReturnTo(`/s/${shopSlug}/account/sign-in`, returnTo),
+  storefrontAccount: (shopSlug: string) => `/s/${shopSlug}/account`,
+  storefrontWishlist: (shopSlug: string) => `/s/${shopSlug}/account/wishlist`,
+  storefrontAddresses: (shopSlug: string) => `/s/${shopSlug}/account/addresses`,
+  storefrontProfile: (shopSlug: string) => `/s/${shopSlug}/account/profile`,
   orgCustomers: (orgSlug: string) => `/app/${orgSlug}/customers`,
   orgTeam: (orgSlug: string) => `/app/${orgSlug}/team`,
   orgAudit: (orgSlug: string) => `/app/${orgSlug}/team/audit`,

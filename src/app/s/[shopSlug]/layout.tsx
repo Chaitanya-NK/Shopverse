@@ -5,6 +5,8 @@ import { Suspense } from "react";
 
 import { Logo } from "@/components/shared/logo";
 import { Skeleton } from "@/components/ui/skeleton";
+import { AccountMenu } from "@/features/shopper/components/account-menu";
+import { getShopper } from "@/features/shopper/session";
 import { StorefrontHeader } from "@/features/storefront/components/storefront-header";
 import { getCart, getStorefrontShop } from "@/features/storefront/queries";
 
@@ -40,7 +42,7 @@ async function Chrome({ params }: Pick<LayoutProps<"/s/[shopSlug]">, "params">) 
   const { shopSlug } = await params;
   const shop = await getStorefrontShop(shopSlug);
   if (!shop) notFound();
-  const cart = await getCart(shop.id);
+  const [cart, shopper] = await Promise.all([getCart(shop.id), getShopper(shop.id)]);
 
   return (
     <>
@@ -50,7 +52,18 @@ async function Chrome({ params }: Pick<LayoutProps<"/s/[shopSlug]">, "params">) 
           Preview: this shop isn&apos;t live yet. Only your team can see it.
         </p>
       )}
-      <StorefrontHeader shop={shop} cartCount={cart.reduce((n, l) => n + l.quantity, 0)} />
+      <StorefrontHeader
+        shop={shop}
+        cartCount={cart.reduce((n, l) => n + l.quantity, 0)}
+        account={
+          shop.live && (
+            <AccountMenu
+              shopSlug={shop.slug}
+              shopper={shopper && { name: shopper.name, email: shopper.email }}
+            />
+          )
+        }
+      />
     </>
   );
 }

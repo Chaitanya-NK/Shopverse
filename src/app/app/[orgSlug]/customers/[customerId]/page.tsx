@@ -87,6 +87,11 @@ async function Customer({ params }: Pick<Props, "params">) {
             </a>
           )}
           <span>Customer since {dateFormat.format(new Date(customer.createdAt))}</span>
+          <span>
+            {customer.lastSignInAt
+              ? `Has an account · last signed in ${dateFormat.format(new Date(customer.lastSignInAt))}`
+              : "Guest (no account)"}
+          </span>
         </p>
       </div>
       <StatGrid
