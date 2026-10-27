@@ -9,6 +9,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import { DatePicker } from "@/components/shared/date-picker";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import {
   type AttributeDefinition,
@@ -89,11 +90,23 @@ export function AttributeInput({
         </ToggleGroup>
       );
 
+    case "date":
+      return (
+        <DatePicker
+          id={id}
+          value={typeof value === "string" ? value : ""}
+          onChange={onChange}
+          onBlur={onBlur}
+          clearable
+          aria-invalid={invalid}
+        />
+      );
+
     default:
       return (
         <Input
           id={id}
-          type={definition.type === "date" ? "date" : "text"}
+          type="text"
           inputMode={definition.type === "number" ? "decimal" : undefined}
           value={typeof value === "string" ? value : ""}
           onChange={(e) => onChange(e.target.value)}

@@ -5,7 +5,6 @@ import { useTransition } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Field, FieldLabel } from "@/components/ui/field";
-import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -13,6 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { DatePicker } from "@/components/shared/date-picker";
 import { Spinner } from "@/components/ui/spinner";
 import { AUDIT_ENTITY_LABELS } from "@/features/audit/describe";
 import { auditParams } from "@/features/audit/search-params";
@@ -69,26 +69,26 @@ export function AuditFilters({ people }: { people: { id: string; name: string }[
           </SelectContent>
         </Select>
       </Field>
-      <Field className="w-40">
+      <Field className="w-44">
         <FieldLabel htmlFor="audit-from">From</FieldLabel>
-        <Input
+        <DatePicker
           id="audit-from"
-          type="date"
-          defaultValue={iso(from)}
-          onChange={(e) =>
-            void setParams({ from: e.target.value ? new Date(e.target.value) : null, page: null })
-          }
+          value={iso(from)}
+          max={iso(to) || undefined}
+          placeholder="Any day"
+          clearable
+          onChange={(value) => void setParams({ from: value ? new Date(value) : null, page: null })}
         />
       </Field>
-      <Field className="w-40">
+      <Field className="w-44">
         <FieldLabel htmlFor="audit-to">To</FieldLabel>
-        <Input
+        <DatePicker
           id="audit-to"
-          type="date"
-          defaultValue={iso(to)}
-          onChange={(e) =>
-            void setParams({ to: e.target.value ? new Date(e.target.value) : null, page: null })
-          }
+          value={iso(to)}
+          min={iso(from) || undefined}
+          placeholder="Any day"
+          clearable
+          onChange={(value) => void setParams({ to: value ? new Date(value) : null, page: null })}
         />
       </Field>
       {isPending && <Spinner className="mb-2.5" />}

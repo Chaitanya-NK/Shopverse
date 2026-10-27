@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/dialog";
 import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { DatePicker, toIsoDate } from "@/components/shared/date-picker";
 import { Spinner } from "@/components/ui/spinner";
 import { listInStockSerials } from "@/features/inventory/actions";
 import { SerialPicker } from "@/features/inventory/components/serial-picker";
@@ -252,7 +253,14 @@ function ShipmentForm({
         </Field>
         <Field>
           <FieldLabel htmlFor="ship-eta">Expected delivery</FieldLabel>
-          <Input id="ship-eta" type="date" value={eta} onChange={(e) => setEta(e.target.value)} />
+          <DatePicker
+            id="ship-eta"
+            value={eta}
+            onChange={setEta}
+            min={toIsoDate(new Date())}
+            placeholder="Optional"
+            clearable
+          />
         </Field>
       </FieldGroup>
 

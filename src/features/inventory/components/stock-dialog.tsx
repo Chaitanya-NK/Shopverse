@@ -27,6 +27,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Spinner } from "@/components/ui/spinner";
+import { DatePicker } from "@/components/shared/date-picker";
 import { Textarea } from "@/components/ui/textarea";
 import {
   type BatchOption,
@@ -478,10 +479,12 @@ function StockForm({
               render={({ field, fieldState }) => (
                 <Field data-invalid={fieldState.invalid}>
                   <FieldLabel htmlFor="stock-expiry">Expiry date</FieldLabel>
-                  <Input
-                    {...field}
+                  <DatePicker
                     id="stock-expiry"
-                    type="date"
+                    value={field.value ?? ""}
+                    onChange={field.onChange}
+                    onBlur={field.onBlur}
+                    placeholder="Choose expiry"
                     aria-invalid={fieldState.invalid}
                   />
                   {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
