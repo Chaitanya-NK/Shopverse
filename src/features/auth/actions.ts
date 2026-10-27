@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 
 import { routes, safeReturnTo } from "@/config/routes";
+import { emailConfirmUrl } from "./internal/email-link";
 import { clearPendingEmail, getPendingEmail, setPendingEmail } from "./internal/pending-email";
 import {
   resendOtpSchema,
@@ -27,7 +28,7 @@ export const requestSignInCode = createAction({
   handler: async ({ email, next }, { supabase }) => {
     const { error } = await supabase.auth.signInWithOtp({
       email,
-      options: { shouldCreateUser: false },
+      options: { shouldCreateUser: false, emailRedirectTo: emailConfirmUrl(next) },
     });
 
     if (error && !isUnknownUserError(error)) {
@@ -47,7 +48,11 @@ export const requestSignUpCode = createAction({
   handler: async ({ email, fullName, next }, { supabase }) => {
     const { error } = await supabase.auth.signInWithOtp({
       email,
-      options: { shouldCreateUser: true, data: { full_name: fullName } },
+      options: {
+        shouldCreateUser: true,
+        data: { full_name: fullName },
+        emailRedirectTo: emailConfirmUrl(safeReturnTo(next, routes.onboarding)),
+      },
     });
     if (error) {
       throw fromAuthError(error);
@@ -96,7 +101,7 @@ export const resendCode = createAction({
 
     const { error } = await supabase.auth.signInWithOtp({
       email,
-      options: { shouldCreateUser: false },
+      options: { shouldCreateUser: false, emailRedirectTo: emailConfirmUrl() },
     });
     if (error && !isUnknownUserError(error)) {
       throw fromAuthError(error);

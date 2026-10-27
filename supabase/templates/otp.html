@@ -48,6 +48,24 @@
                 >
                   {{ .Token }}
                 </p>
+                <p style="margin: 0 0 24px; font-size: 15px; line-height: 1.55; color: #3d4450">
+                  Or sign in with one click:
+                </p>
+                <p style="margin: 0 0 28px">
+                  <a
+                    href="{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&amp;type=email"
+                    style="
+                      display: inline-block;
+                      padding: 12px 22px;
+                      border-radius: 10px;
+                      background: #0b6b5d;
+                      color: #ffffff;
+                      font-weight: 600;
+                      text-decoration: none;
+                    "
+                    >Sign in to Shopverse</a
+                  >
+                </p>
                 <p style="margin: 0; font-size: 13px; line-height: 1.5; color: #5b6472">
                   If you didn't try to sign in, you can ignore this email. We will never ask you for
                   this code by phone.

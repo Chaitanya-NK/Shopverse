@@ -32,13 +32,27 @@ Multi-shop commerce SaaS for businesses that sell **anything**: clothing, electr
    npx supabase link --project-ref <your-project-ref>
    npx supabase db push            # applies supabase/migrations
    ```
-3. In the Supabase dashboard:
-   - **Authentication → Email Templates → Magic Link**: replace the body with the contents of `supabase/templates/otp.html` (it renders `{{ .Token }}`, the 6-digit code). Do the same for **Confirm signup**.
-   - **Authentication → Providers → Email**: set _Email OTP Length_ to 6 and _Email OTP Expiration_ to 600 seconds.
-   - **Authentication → URL Configuration**: set _Site URL_ to your codespace URL (`https://<codespace>-3000.app.github.dev`).
-4. Copy **Project URL** and **Publishable key** (Project Settings → API Keys) into `.env.local`.
+3. **Set up email sending (custom SMTP).** Supabase's built-in sender only emails your own team members, allows about 2 emails per hour, and won't let you edit templates. Brevo's free plan (300 emails/day, no domain needed) works well:
+   1. Sign up at [brevo.com](https://www.brevo.com). Under **Senders, Domains & Dedicated IPs → Senders**, add and verify the address emails should come from (your Gmail works for testing).
+   2. Under **SMTP & API → SMTP**, generate an **SMTP key** (not an API key) and note the _Login_ shown there.
+   3. In Supabase, go to **Authentication → Emails → SMTP Settings** and turn on **Enable custom SMTP**:
 
-> The built-in Supabase email sender only allows a few emails per hour. For real use, add your own SMTP provider under Authentication → SMTP Settings.
+      | Field        | Value                             |
+      | ------------ | --------------------------------- |
+      | Sender email | the address you verified in Brevo |
+      | Sender name  | `Shopverse`                       |
+      | Host         | `smtp-relay.brevo.com`            |
+      | Port         | `587`                             |
+      | Username     | the SMTP _Login_ from Brevo       |
+      | Password     | the SMTP key                      |
+
+   4. **Authentication → Rate Limits:** raise _emails per hour_ if you need more than the default 30.
+4. **Email templates** (editable once SMTP is on). Under **Authentication → Emails → Templates**, open **Magic Link** and **Confirm signup**. Set the subject to _Your Shopverse sign-in code_, and replace the body with the contents of `supabase/templates/otp.html`. The email then shows the 6-digit code **and** a one-click sign-in button.
+5. **Authentication → Providers → Email:** set _Email OTP Length_ to 6 and _Email OTP Expiration_ to 600 seconds.
+6. **Authentication → URL Configuration:** set _Site URL_ to your app URL (`https://<codespace>-3000.app.github.dev`), and add `https://*.app.github.dev/**` and `http://localhost:3000/**` to _Redirect URLs_.
+7. Copy **Project URL** and **Publishable key** (Project Settings → API Keys) into `.env.local`, and set `NEXT_PUBLIC_APP_URL` to the same URL as the Site URL.
+
+> **Before SMTP is set up**, sign-in still works for your own (team-member) email. The default email contains a link instead of a code; clicking it signs you in via `/auth/confirm`. Open it in the same browser you requested it from.
 
 ### Option B: local Supabase in Docker
 

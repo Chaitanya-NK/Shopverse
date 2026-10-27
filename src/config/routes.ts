@@ -6,6 +6,8 @@ export const routes = {
   signIn: (returnTo?: string) => withReturnTo("/sign-in", returnTo),
   signUp: (returnTo?: string) => withReturnTo("/sign-up", returnTo),
   verify: (returnTo?: string) => withReturnTo("/verify", returnTo),
+  /** Lands here from the link in the sign-in email (token hash or PKCE code). */
+  authConfirm: "/auth/confirm",
   onboarding: "/onboarding",
   app: "/app",
   org: (orgSlug: string) => `/app/${orgSlug}`,

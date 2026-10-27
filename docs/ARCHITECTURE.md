@@ -93,6 +93,7 @@ Migrations are forward-only. Never edit one that has been applied in a shared en
 ## Auth (email OTP)
 
 - `requestSignInCode` uses `shouldCreateUser: false` and behaves the same whether or not the account exists (no enumeration). `requestSignUpCode` creates the account with the user's name in its metadata.
+- Every email carries both the code and a one-click link. `/auth/confirm` accepts our template's `token_hash` link (works in any browser) and the default template's PKCE `code` link (same browser only). Invalid or expired links go back to sign-in with a clear message.
 - The address being verified is kept in a short-lived httpOnly cookie, not in the URL, and the verify screen shows only a masked version.
 - Codes are 6 digits, expire after 10 minutes and have a 30-second resend cooldown. Supabase also rate-limits sends and verification attempts, and 429s are shown as friendly messages.
 - `?next=` return paths go through `safeReturnTo()` to block open redirects (unit tested).

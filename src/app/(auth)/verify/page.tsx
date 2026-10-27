@@ -62,7 +62,8 @@ async function VerifyContent({ searchParams }: Pick<PageProps<"/verify">, "searc
           <>
             If an account exists for{" "}
             <span className="font-medium text-foreground">{pending.maskedEmail}</span>, we&apos;ve
-            sent a 6-digit code. It expires in {OTP_EXPIRY_MINUTES} minutes.
+            sent a 6-digit code. Enter it below or tap the link in the email. It expires in
+            {OTP_EXPIRY_MINUTES} minutes.
           </>
         }
       />
