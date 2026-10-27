@@ -450,45 +450,203 @@ export type Database = {
           },
         ];
       };
-      order_items: {
+      order_allocations: {
         Row: {
           created_at: string;
           id: string;
           order_id: string;
+          order_item_id: string;
           organization_id: string;
           quantity: number;
-          sku: string;
-          title: string;
-          total: number | null;
-          unit_price: number;
-          variant_id: string | null;
+          shipped_quantity: number;
+          updated_at: string;
+          variant_id: string;
+          warehouse_id: string;
         };
         ComputedFields: never;
         Insert: {
           created_at?: string;
           id?: string;
           order_id: string;
+          order_item_id: string;
           organization_id: string;
           quantity: number;
-          sku: string;
-          title: string;
-          total?: never;
-          unit_price: number;
-          variant_id?: string | null;
+          shipped_quantity?: number;
+          updated_at?: string;
+          variant_id: string;
+          warehouse_id: string;
         };
         Update: {
           created_at?: string;
           id?: string;
           order_id?: string;
+          order_item_id?: string;
+          organization_id?: string;
+          quantity?: number;
+          shipped_quantity?: number;
+          updated_at?: string;
+          variant_id?: string;
+          warehouse_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "order_allocations_organization_id_order_id_fkey";
+            columns: ["organization_id", "order_id"];
+            isOneToOne: false;
+            referencedRelation: "order_overview";
+            referencedColumns: ["organization_id", "id"];
+          },
+          {
+            foreignKeyName: "order_allocations_organization_id_order_id_fkey";
+            columns: ["organization_id", "order_id"];
+            isOneToOne: false;
+            referencedRelation: "orders";
+            referencedColumns: ["organization_id", "id"];
+          },
+          {
+            foreignKeyName: "order_allocations_organization_id_order_item_id_fkey";
+            columns: ["organization_id", "order_item_id"];
+            isOneToOne: false;
+            referencedRelation: "order_items";
+            referencedColumns: ["organization_id", "id"];
+          },
+          {
+            foreignKeyName: "order_allocations_organization_id_variant_id_fkey";
+            columns: ["organization_id", "variant_id"];
+            isOneToOne: false;
+            referencedRelation: "product_variants";
+            referencedColumns: ["organization_id", "id"];
+          },
+          {
+            foreignKeyName: "order_allocations_organization_id_variant_id_fkey";
+            columns: ["organization_id", "variant_id"];
+            isOneToOne: false;
+            referencedRelation: "variant_search";
+            referencedColumns: ["organization_id", "id"];
+          },
+          {
+            foreignKeyName: "order_allocations_organization_id_warehouse_id_fkey";
+            columns: ["organization_id", "warehouse_id"];
+            isOneToOne: false;
+            referencedRelation: "warehouse_overview";
+            referencedColumns: ["organization_id", "id"];
+          },
+          {
+            foreignKeyName: "order_allocations_organization_id_warehouse_id_fkey";
+            columns: ["organization_id", "warehouse_id"];
+            isOneToOne: false;
+            referencedRelation: "warehouses";
+            referencedColumns: ["organization_id", "id"];
+          },
+        ];
+      };
+      order_events: {
+        Row: {
+          actor_id: string | null;
+          created_at: string;
+          id: number;
+          message: string;
+          metadata: NonNullable<Json>;
+          order_id: string;
+          organization_id: string;
+          type: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          actor_id?: string | null;
+          created_at?: string;
+          id?: never;
+          message: string;
+          metadata?: NonNullable<Json>;
+          order_id: string;
+          organization_id: string;
+          type: string;
+        };
+        Update: {
+          actor_id?: string | null;
+          created_at?: string;
+          id?: never;
+          message?: string;
+          metadata?: NonNullable<Json>;
+          order_id?: string;
+          organization_id?: string;
+          type?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "order_events_organization_id_order_id_fkey";
+            columns: ["organization_id", "order_id"];
+            isOneToOne: false;
+            referencedRelation: "order_overview";
+            referencedColumns: ["organization_id", "id"];
+          },
+          {
+            foreignKeyName: "order_events_organization_id_order_id_fkey";
+            columns: ["organization_id", "order_id"];
+            isOneToOne: false;
+            referencedRelation: "orders";
+            referencedColumns: ["organization_id", "id"];
+          },
+        ];
+      };
+      order_items: {
+        Row: {
+          created_at: string;
+          fulfilled_quantity: number;
+          gst_rate: number;
+          id: string;
+          order_id: string;
+          organization_id: string;
+          quantity: number;
+          sku: string;
+          tax_amount: number;
+          title: string;
+          total: number | null;
+          tracking: Database["public"]["Enums"]["inventory_tracking"];
+          unit_price: number;
+          variant_id: string | null;
+        };
+        ComputedFields: never;
+        Insert: {
+          created_at?: string;
+          fulfilled_quantity?: number;
+          gst_rate?: number;
+          id?: string;
+          order_id: string;
+          organization_id: string;
+          quantity: number;
+          sku: string;
+          tax_amount?: number;
+          title: string;
+          total?: never;
+          tracking?: Database["public"]["Enums"]["inventory_tracking"];
+          unit_price: number;
+          variant_id?: string | null;
+        };
+        Update: {
+          created_at?: string;
+          fulfilled_quantity?: number;
+          gst_rate?: number;
+          id?: string;
+          order_id?: string;
           organization_id?: string;
           quantity?: number;
           sku?: string;
+          tax_amount?: number;
           title?: string;
           total?: never;
+          tracking?: Database["public"]["Enums"]["inventory_tracking"];
           unit_price?: number;
           variant_id?: string | null;
         };
         Relationships: [
+          {
+            foreignKeyName: "order_items_organization_id_order_id_fkey";
+            columns: ["organization_id", "order_id"];
+            isOneToOne: false;
+            referencedRelation: "order_overview";
+            referencedColumns: ["organization_id", "id"];
+          },
           {
             foreignKeyName: "order_items_organization_id_order_id_fkey";
             columns: ["organization_id", "order_id"];
@@ -514,7 +672,10 @@ export type Database = {
       };
       orders: {
         Row: {
+          cancel_reason: string | null;
           cancelled_at: string | null;
+          completed_at: string | null;
+          confirmed_at: string | null;
           created_at: string;
           currency: string;
           customer_id: string | null;
@@ -525,6 +686,7 @@ export type Database = {
           notes: string | null;
           number: string;
           organization_id: string;
+          paid_at: string | null;
           payment_method: Database["public"]["Enums"]["payment_method"] | null;
           payment_status: Database["public"]["Enums"]["payment_status"];
           placed_at: string;
@@ -538,7 +700,10 @@ export type Database = {
         };
         ComputedFields: never;
         Insert: {
+          cancel_reason?: string | null;
           cancelled_at?: string | null;
+          completed_at?: string | null;
+          confirmed_at?: string | null;
           created_at?: string;
           currency?: string;
           customer_id?: string | null;
@@ -549,6 +714,7 @@ export type Database = {
           notes?: string | null;
           number: string;
           organization_id: string;
+          paid_at?: string | null;
           payment_method?: Database["public"]["Enums"]["payment_method"] | null;
           payment_status?: Database["public"]["Enums"]["payment_status"];
           placed_at?: string;
@@ -561,7 +727,10 @@ export type Database = {
           updated_at?: string;
         };
         Update: {
+          cancel_reason?: string | null;
           cancelled_at?: string | null;
+          completed_at?: string | null;
+          confirmed_at?: string | null;
           created_at?: string;
           currency?: string;
           customer_id?: string | null;
@@ -572,6 +741,7 @@ export type Database = {
           notes?: string | null;
           number?: string;
           organization_id?: string;
+          paid_at?: string | null;
           payment_method?: Database["public"]["Enums"]["payment_method"] | null;
           payment_status?: Database["public"]["Enums"]["payment_status"];
           placed_at?: string;
@@ -920,6 +1090,79 @@ export type Database = {
             foreignKeyName: "shipment_events_organization_id_shipment_id_fkey";
             columns: ["organization_id", "shipment_id"];
             isOneToOne: false;
+            referencedRelation: "shipment_overview";
+            referencedColumns: ["organization_id", "id"];
+          },
+          {
+            foreignKeyName: "shipment_events_organization_id_shipment_id_fkey";
+            columns: ["organization_id", "shipment_id"];
+            isOneToOne: false;
+            referencedRelation: "shipments";
+            referencedColumns: ["organization_id", "id"];
+          },
+        ];
+      };
+      shipment_items: {
+        Row: {
+          allocation_id: string;
+          batches: NonNullable<Json>;
+          created_at: string;
+          id: string;
+          order_item_id: string;
+          organization_id: string;
+          quantity: number;
+          serial_numbers: string[];
+          shipment_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          allocation_id: string;
+          batches?: NonNullable<Json>;
+          created_at?: string;
+          id?: string;
+          order_item_id: string;
+          organization_id: string;
+          quantity: number;
+          serial_numbers?: string[];
+          shipment_id: string;
+        };
+        Update: {
+          allocation_id?: string;
+          batches?: NonNullable<Json>;
+          created_at?: string;
+          id?: string;
+          order_item_id?: string;
+          organization_id?: string;
+          quantity?: number;
+          serial_numbers?: string[];
+          shipment_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "shipment_items_organization_id_allocation_id_fkey";
+            columns: ["organization_id", "allocation_id"];
+            isOneToOne: false;
+            referencedRelation: "order_allocations";
+            referencedColumns: ["organization_id", "id"];
+          },
+          {
+            foreignKeyName: "shipment_items_organization_id_order_item_id_fkey";
+            columns: ["organization_id", "order_item_id"];
+            isOneToOne: false;
+            referencedRelation: "order_items";
+            referencedColumns: ["organization_id", "id"];
+          },
+          {
+            foreignKeyName: "shipment_items_organization_id_shipment_id_fkey";
+            columns: ["organization_id", "shipment_id"];
+            isOneToOne: false;
+            referencedRelation: "shipment_overview";
+            referencedColumns: ["organization_id", "id"];
+          },
+          {
+            foreignKeyName: "shipment_items_organization_id_shipment_id_fkey";
+            columns: ["organization_id", "shipment_id"];
+            isOneToOne: false;
             referencedRelation: "shipments";
             referencedColumns: ["organization_id", "id"];
           },
@@ -927,52 +1170,80 @@ export type Database = {
       };
       shipments: {
         Row: {
+          cancelled_at: string | null;
           carrier: string | null;
           created_at: string;
           delivered_at: string | null;
+          delivery_attempts: number;
           delivery_otp_hash: string | null;
           estimated_delivery: string | null;
           id: string;
+          number: string | null;
           order_id: string;
           organization_id: string;
+          otp_attempts: number;
+          otp_expires_at: string | null;
+          returned_at: string | null;
           shipped_at: string | null;
           status: Database["public"]["Enums"]["shipment_status"];
           tracking_number: string | null;
+          tracking_token: string;
           updated_at: string;
           warehouse_id: string;
         };
         ComputedFields: never;
         Insert: {
+          cancelled_at?: string | null;
           carrier?: string | null;
           created_at?: string;
           delivered_at?: string | null;
+          delivery_attempts?: number;
           delivery_otp_hash?: string | null;
           estimated_delivery?: string | null;
           id?: string;
+          number?: string | null;
           order_id: string;
           organization_id: string;
+          otp_attempts?: number;
+          otp_expires_at?: string | null;
+          returned_at?: string | null;
           shipped_at?: string | null;
           status?: Database["public"]["Enums"]["shipment_status"];
           tracking_number?: string | null;
+          tracking_token?: string;
           updated_at?: string;
           warehouse_id: string;
         };
         Update: {
+          cancelled_at?: string | null;
           carrier?: string | null;
           created_at?: string;
           delivered_at?: string | null;
+          delivery_attempts?: number;
           delivery_otp_hash?: string | null;
           estimated_delivery?: string | null;
           id?: string;
+          number?: string | null;
           order_id?: string;
           organization_id?: string;
+          otp_attempts?: number;
+          otp_expires_at?: string | null;
+          returned_at?: string | null;
           shipped_at?: string | null;
           status?: Database["public"]["Enums"]["shipment_status"];
           tracking_number?: string | null;
+          tracking_token?: string;
           updated_at?: string;
           warehouse_id?: string;
         };
         Relationships: [
+          {
+            foreignKeyName: "shipments_organization_id_order_id_fkey";
+            columns: ["organization_id", "order_id"];
+            isOneToOne: false;
+            referencedRelation: "order_overview";
+            referencedColumns: ["organization_id", "id"];
+          },
           {
             foreignKeyName: "shipments_organization_id_order_id_fkey";
             columns: ["organization_id", "order_id"];
@@ -1340,6 +1611,46 @@ export type Database = {
           },
         ];
       };
+      order_overview: {
+        Row: {
+          city: string | null;
+          currency: string;
+          customer_email: string | null;
+          customer_id: string | null;
+          customer_name: string | null;
+          customer_phone: string | null;
+          fulfillment_status: Database["public"]["Enums"]["fulfillment_status"];
+          grand_total: number;
+          id: string;
+          item_count: number | null;
+          number: string;
+          organization_id: string;
+          payment_method: Database["public"]["Enums"]["payment_method"] | null;
+          payment_status: Database["public"]["Enums"]["payment_status"];
+          placed_at: string;
+          search_text: string | null;
+          shop_id: string;
+          shop_name: string;
+          status: Database["public"]["Enums"]["order_status"];
+        };
+        ComputedFields: never;
+        Relationships: [
+          {
+            foreignKeyName: "orders_organization_id_customer_id_fkey";
+            columns: ["organization_id", "customer_id"];
+            isOneToOne: false;
+            referencedRelation: "customers";
+            referencedColumns: ["organization_id", "id"];
+          },
+          {
+            foreignKeyName: "orders_organization_id_shop_id_fkey";
+            columns: ["organization_id", "shop_id"];
+            isOneToOne: false;
+            referencedRelation: "shops";
+            referencedColumns: ["organization_id", "id"];
+          },
+        ];
+      };
       product_overview: {
         Row: {
           available: number | null;
@@ -1374,6 +1685,67 @@ export type Database = {
             isOneToOne: false;
             referencedRelation: "organizations";
             referencedColumns: ["id"];
+          },
+        ];
+      };
+      shipment_overview: {
+        Row: {
+          carrier: string | null;
+          city: string | null;
+          created_at: string;
+          currency: string;
+          delivered_at: string | null;
+          delivery_attempts: number;
+          estimated_delivery: string | null;
+          grand_total: number;
+          id: string;
+          item_count: number | null;
+          number: string | null;
+          order_id: string;
+          order_number: string;
+          organization_id: string;
+          payment_method: Database["public"]["Enums"]["payment_method"] | null;
+          payment_status: Database["public"]["Enums"]["payment_status"];
+          recipient_name: string | null;
+          recipient_phone: string | null;
+          shipped_at: string | null;
+          shop_id: string;
+          status: Database["public"]["Enums"]["shipment_status"];
+          tracking_number: string | null;
+          tracking_token: string;
+          updated_at: string;
+          warehouse_id: string;
+          warehouse_name: string;
+        };
+        ComputedFields: never;
+        Relationships: [
+          {
+            foreignKeyName: "shipments_organization_id_order_id_fkey";
+            columns: ["organization_id", "order_id"];
+            isOneToOne: false;
+            referencedRelation: "order_overview";
+            referencedColumns: ["organization_id", "id"];
+          },
+          {
+            foreignKeyName: "shipments_organization_id_order_id_fkey";
+            columns: ["organization_id", "order_id"];
+            isOneToOne: false;
+            referencedRelation: "orders";
+            referencedColumns: ["organization_id", "id"];
+          },
+          {
+            foreignKeyName: "shipments_organization_id_warehouse_id_fkey";
+            columns: ["organization_id", "warehouse_id"];
+            isOneToOne: false;
+            referencedRelation: "warehouse_overview";
+            referencedColumns: ["organization_id", "id"];
+          },
+          {
+            foreignKeyName: "shipments_organization_id_warehouse_id_fkey";
+            columns: ["organization_id", "warehouse_id"];
+            isOneToOne: false;
+            referencedRelation: "warehouses";
+            referencedColumns: ["organization_id", "id"];
           },
         ];
       };
@@ -1450,6 +1822,24 @@ export type Database = {
           isSetofReturn: false;
         };
       };
+      cancel_order: { Args: { p_order_id: string; p_reason?: string }; Returns: undefined };
+      confirm_delivery: { Args: { p_otp: string; p_shipment_id: string }; Returns: Json };
+      confirm_order: { Args: { p_order_id: string }; Returns: undefined };
+      create_order: {
+        Args: {
+          p_address: Json;
+          p_confirm?: boolean;
+          p_customer: Json;
+          p_discount_total?: number;
+          p_items: Json;
+          p_notes?: string;
+          p_payment_method: Database["public"]["Enums"]["payment_method"];
+          p_payment_status?: Database["public"]["Enums"]["payment_status"];
+          p_shipping_total?: number;
+          p_shop_id: string;
+        };
+        Returns: string;
+      };
       create_organization: {
         Args: {
           p_currency: string;
@@ -1473,10 +1863,23 @@ export type Database = {
         };
         Returns: string;
       };
+      create_shipment: {
+        Args: {
+          p_carrier?: string;
+          p_estimated_delivery?: string;
+          p_items: Json;
+          p_order_id: string;
+          p_tracking_number?: string;
+          p_warehouse_id: string;
+        };
+        Returns: string;
+      };
       get_overview_stats: {
         Args: { p_organization_id: string; p_shop_id?: string };
         Returns: Json;
       };
+      get_tracking: { Args: { p_token: string }; Returns: Json };
+      mark_order_paid: { Args: { p_order_id: string }; Returns: undefined };
       receive_stock: {
         Args: {
           p_batch_code?: string;
@@ -1551,6 +1954,15 @@ export type Database = {
       update_product: {
         Args: { p_product: Json; p_product_id: string; p_shop_ids?: string[]; p_variants: Json };
         Returns: undefined;
+      };
+      update_shipment_status: {
+        Args: {
+          p_description?: string;
+          p_location?: string;
+          p_shipment_id: string;
+          p_status: Database["public"]["Enums"]["shipment_status"];
+        };
+        Returns: string;
       };
     };
     Enums: {

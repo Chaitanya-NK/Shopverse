@@ -185,7 +185,8 @@ begin
 end $$;
 
 -- Orders & shipments -----------------------------------------------------------------
-select pg_temp.act_as('00000000-0000-0000-0000-00000000000a');
+-- Orders are written only through functions; set up raw rows as the table owner.
+reset role;
 insert into public.orders (organization_id, shop_id, grand_total)
 select (r ->> 'organization_id')::uuid, (r ->> 'shop_id')::uuid, 1899 from a_org;
 insert into public.orders (organization_id, shop_id, grand_total)
@@ -198,6 +199,14 @@ select pg_temp.assert(
 insert into public.shipments (organization_id, order_id, warehouse_id, delivery_otp_hash)
 select o.organization_id, o.id, (select warehouse_id from ids), 'hash'
 from public.orders o where o.number = 'ORD-000001';
+
+select pg_temp.act_as('00000000-0000-0000-0000-00000000000a');
+do $$
+begin
+  insert into public.orders (organization_id, shop_id) select organization_id, shop_id from public.orders limit 1;
+  raise exception 'ASSERTION FAILED: clients must not insert orders directly';
+exception when insufficient_privilege then null;
+end $$;
 
 do $$
 begin
