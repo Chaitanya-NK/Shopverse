@@ -43,6 +43,8 @@ type FormOutput = z.output<typeof updateShopSchema>;
 type TextPath =
   | "name"
   | "settings.tagline"
+  | "settings.announcement"
+  | "settings.announcementLink"
   | "settings.supportEmail"
   | "settings.supportPhone"
   | "settings.legalName"
@@ -204,6 +206,17 @@ export function ShopSettingsForm({
               />
             </div>
             {text("settings.tagline", "Tagline", { placeholder: "Fresh styles every week" })}
+            <div className="grid gap-4 sm:grid-cols-2">
+              {text(
+                "settings.announcement",
+                "Announcement bar",
+                { placeholder: "Diwali sale: 10% off with code DIWALI10" },
+                "A line across the top of every page. Leave empty to hide it.",
+              )}
+              {text("settings.announcementLink", "Announcement link (optional)", {
+                placeholder: "https:// or /s/your-shop?category=…",
+              })}
+            </div>
           </FieldGroup>
         </CardContent>
       </Card>

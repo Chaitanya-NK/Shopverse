@@ -244,7 +244,10 @@ async function OrderContent({ params }: Pick<Props, "params">) {
               <dl className="ml-auto max-w-xs space-y-1.5 text-sm">
                 <TotalRow label="Subtotal" value={money(order.subtotal)} />
                 {order.discountTotal > 0 && (
-                  <TotalRow label="Discount" value={`− ${money(order.discountTotal)}`} />
+                  <TotalRow
+                    label={order.discountCode ? `Discount (${order.discountCode})` : "Discount"}
+                    value={`− ${money(order.discountTotal)}`}
+                  />
                 )}
                 {order.shippingTotal > 0 && (
                   <TotalRow label="Shipping" value={money(order.shippingTotal)} />

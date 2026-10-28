@@ -8,6 +8,8 @@ export type InvoiceLine = {
   hsnCode: string | null;
   quantity: number | null;
   rate: number;
+  /** Discount taken off this line (already out of taxable and total). */
+  discount: number;
   /** Value before tax. */
   taxable: number;
   cgst: number;
@@ -29,7 +31,11 @@ export type InvoiceTotals = {
   cgst: number;
   sgst: number;
   igst: number;
-  discount: number;
+  /** Discount spread over the lines (shown per line). */
+  lineDiscount: number;
+  discountCode: string | null;
+  /** An order-level discount that wasn't spread over lines (older orders). */
+  extraDiscount: number;
   total: number;
 };
 
@@ -54,16 +60,19 @@ export function computeInvoiceTotals(invoice: Invoice): InvoiceTotals {
 
   const lines: InvoiceLine[] = invoice.items.map((item) => {
     const tax = registered ? item.taxAmount : 0;
+    const net = round2(item.total - item.discountAmount);
     return {
       description: item.title,
       hsnCode: item.hsnCode,
       quantity: item.quantity,
       rate: registered ? item.gstRate : 0,
-      taxable: round2(item.total - tax),
+      discount: item.discountAmount,
+      taxable: round2(net - tax),
       ...split(tax, intraState),
-      total: item.total,
+      total: net,
     };
   });
+  const lineDiscount = round2(invoice.items.reduce((n, i) => n + i.discountAmount, 0));
 
   if (invoice.shippingTotal > 0) {
     const rate = registered ? Math.max(0, ...invoice.items.map((i) => i.gstRate)) : 0;
@@ -74,6 +83,7 @@ export function computeInvoiceTotals(invoice: Invoice): InvoiceTotals {
       hsnCode: null,
       quantity: null,
       rate,
+      discount: 0,
       taxable: round2(invoice.shippingTotal - tax),
       ...split(tax, intraState),
       total: invoice.shippingTotal,
@@ -92,7 +102,9 @@ export function computeInvoiceTotals(invoice: Invoice): InvoiceTotals {
     cgst: sum("cgst"),
     sgst: sum("sgst"),
     igst: sum("igst"),
-    discount: invoice.discountTotal,
+    lineDiscount,
+    discountCode: invoice.discountCode,
+    extraDiscount: Math.max(round2(invoice.discountTotal - lineDiscount), 0),
     total: invoice.grandTotal,
   };
 }

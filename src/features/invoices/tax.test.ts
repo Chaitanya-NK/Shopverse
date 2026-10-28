@@ -33,6 +33,7 @@ const base: Invoice = {
   },
   subtotal: 1050,
   discountTotal: 0,
+  discountCode: null,
   shippingTotal: 49,
   grandTotal: 1099,
   items: [
@@ -45,6 +46,7 @@ const base: Invoice = {
       total: 1050,
       gstRate: 5,
       taxAmount: 50,
+      discountAmount: 0,
     },
   ],
 };
@@ -87,6 +89,29 @@ describe("computeInvoiceTotals", () => {
     expect(t.registered).toBe(false);
     expect(t.igst + t.cgst + t.sgst).toBe(0);
     expect(t.taxable).toBe(1099);
+  });
+});
+
+describe("discounts on invoices", () => {
+  it("taxes each line on its discounted value", () => {
+    // 1050 - 105 (10% code) = 945 incl. 5% GST -> tax 45, taxable 900.
+    const t = computeInvoiceTotals({
+      ...base,
+      discountTotal: 105,
+      discountCode: "WELCOME10",
+      grandTotal: 994,
+      items: [{ ...base.items[0]!, discountAmount: 105, taxAmount: 45 }],
+    });
+    expect(t.lines[0]).toMatchObject({ discount: 105, taxable: 900, igst: 45, total: 945 });
+    expect(t.lineDiscount).toBe(105);
+    expect(t.extraDiscount).toBe(0);
+    expect(t.taxable + t.igst).toBeCloseTo(994, 2);
+  });
+
+  it("keeps older order-level discounts as a separate line", () => {
+    const t = computeInvoiceTotals({ ...base, discountTotal: 50, grandTotal: 1049 });
+    expect(t.extraDiscount).toBe(50);
+    expect(t.taxable + t.igst - t.extraDiscount).toBeCloseTo(1049, 2);
   });
 });
 

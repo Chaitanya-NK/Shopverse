@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { includedTax, orderTotals } from "@/features/orders/totals";
+import { allocateDiscount, includedTax, orderTotals } from "@/features/orders/totals";
 
 describe("order totals", () => {
   it("extracts GST from inclusive prices", () => {
@@ -20,10 +20,19 @@ describe("order totals", () => {
         99,
         525,
       ),
-    ).toEqual({ subtotal: 21575, tax: 75, shipping: 99, discount: 525, grandTotal: 21149 });
+      // GST is on each line after its share of the discount: (1575 - 38.33) * 5/105 = 73.17.
+    ).toEqual({ subtotal: 21575, tax: 73.17, shipping: 99, discount: 525, grandTotal: 21149 });
   });
 
   it("avoids floating point drift", () => {
     expect(orderTotals([{ quantity: 3, unitPrice: 0.1, gstRate: 0 }], 0, 0).subtotal).toBe(0.3);
+  });
+});
+
+describe("discount allocation", () => {
+  it("spreads by value, largest first, remainder on the last line", () => {
+    expect(allocateDiscount([20000, 1575], 525)).toEqual([486.67, 38.33]);
+    expect(allocateDiscount([100, 100, 100], 100)).toEqual([33.33, 33.33, 33.34]);
+    expect(allocateDiscount([50], 80)).toEqual([50]);
   });
 });

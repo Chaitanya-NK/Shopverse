@@ -39,6 +39,8 @@ export const storefrontShopSchema = z
       .array(z.enum(["shipping", "returns", "privacy", "terms"]))
       .optional()
       .default([]),
+    announcement: z.string().nullable().optional().default(null),
+    announcement_link: z.string().nullable().optional().default(null),
     payment_methods: z
       .array(z.enum(["online", "cod"]))
       .optional()
@@ -69,6 +71,12 @@ export const storefrontShopSchema = z
       : null,
     policies: s.policies,
     paymentMethods: s.payment_methods,
+    announcement: s.announcement,
+    // Only same-site paths or https links are honoured.
+    announcementLink:
+      s.announcement_link && /^(\/(?!\/)|https:\/\/)/.test(s.announcement_link)
+        ? s.announcement_link
+        : null,
   }));
 export type StorefrontShop = z.output<typeof storefrontShopSchema>;
 
@@ -214,6 +222,8 @@ export const customerOrderSchema = z.object({
   payment_method: z.enum(Constants.public.Enums.payment_method).nullable(),
   payment_status: z.enum(Constants.public.Enums.payment_status),
   payment_due_at: z.string().nullable().optional().default(null),
+  discount_code: z.string().nullable().optional().default(null),
+  discount_title: z.string().nullable().optional().default(null),
   fulfillment_status: z.enum(Constants.public.Enums.fulfillment_status),
   currency: z.string(),
   subtotal: money,
@@ -387,3 +397,41 @@ export function maskEmailAddress(email: string): string {
   const [user = "", domain = ""] = email.split("@");
   return `${user.slice(0, 2)}${"*".repeat(Math.max(user.length - 2, 1))}@${domain}`;
 }
+
+// ---------------------------------------------------------------------------
+// Quotes and discount codes
+// ---------------------------------------------------------------------------
+
+export const discountCodeSchema = z
+  .string()
+  .trim()
+  .regex(/^[A-Za-z0-9_-]{3,32}$/, "Codes are 3–32 letters, numbers, - or _");
+
+/** storefront_quote: what the cart costs with the discount that applies. */
+export const quoteSchema = z
+  .object({
+    subtotal: money,
+    shipping_total: money,
+    discount_total: money,
+    grand_total: money,
+    saved: money,
+    discount: z
+      .object({
+        id: z.uuid(),
+        code: z.string().nullable(),
+        title: z.string(),
+        kind: z.enum(["percent", "fixed", "free_shipping"]),
+      })
+      .nullable(),
+    error: z.string().nullable(),
+  })
+  .transform((q) => ({
+    subtotal: q.subtotal,
+    shipping: q.shipping_total,
+    discountTotal: q.discount_total,
+    total: q.grand_total,
+    saved: q.saved,
+    discount: q.discount,
+    error: q.error,
+  }));
+export type Quote = z.output<typeof quoteSchema>;

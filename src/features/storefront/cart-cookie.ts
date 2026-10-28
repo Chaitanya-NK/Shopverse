@@ -23,6 +23,32 @@ export async function writeCartLines(shopSlug: string, lines: CartLine[]) {
   });
 }
 
+/** After an order: empty the cart and forget the applied code. */
 export async function clearCart(shopSlug: string) {
-  (await cookies()).delete({ name: CART_COOKIE, path: routes.storefront(shopSlug) });
+  const jar = await cookies();
+  jar.delete({ name: CART_COOKIE, path: routes.storefront(shopSlug) });
+  jar.delete({ name: DISCOUNT_COOKIE, path: routes.storefront(shopSlug) });
+}
+
+/** The discount code a shopper applied (validated again at checkout). */
+export const DISCOUNT_COOKIE = "sv_discount";
+
+export async function readDiscountCode(): Promise<string | null> {
+  const value = (await cookies()).get(DISCOUNT_COOKIE)?.value;
+  return value && /^[A-Za-z0-9_-]{3,32}$/.test(value) ? value : null;
+}
+
+export async function writeDiscountCode(shopSlug: string, code: string | null) {
+  const jar = await cookies();
+  if (!code) {
+    jar.delete({ name: DISCOUNT_COOKIE, path: routes.storefront(shopSlug) });
+    return;
+  }
+  jar.set(DISCOUNT_COOKIE, code, {
+    path: routes.storefront(shopSlug),
+    httpOnly: true,
+    sameSite: "lax",
+    secure: env.NODE_ENV === "production",
+    maxAge: 60 * 60 * 24 * 7,
+  });
 }

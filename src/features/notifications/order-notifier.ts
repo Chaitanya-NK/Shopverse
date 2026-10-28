@@ -21,7 +21,7 @@ async function loadContext(orderId: string): Promise<OrderEmailContext | null> {
   const { data, error } = await createAdminClient()
     .from("orders")
     .select(
-      `number, public_token, grand_total, currency, payment_method, invoice_number,
+      `number, public_token, grand_total, shipping_total, discount_total, discount_code, currency, payment_method, invoice_number,
        shop:shops!orders_organization_id_shop_id_fkey (name, slug, settings),
        customer:customers (email, full_name),
        order_items (title, quantity, total, created_at)`,
@@ -48,6 +48,11 @@ async function loadContext(orderId: string): Promise<OrderEmailContext | null> {
       ? url(routes.storefrontInvoice(data.shop.slug, data.public_token))
       : null,
     total: Number(data.grand_total),
+    shipping: Number(data.shipping_total),
+    discount:
+      Number(data.discount_total) > 0
+        ? { amount: Number(data.discount_total), code: data.discount_code }
+        : null,
     currency: data.currency,
     cashOnDelivery: data.payment_method === "cod",
     items: [...data.order_items]

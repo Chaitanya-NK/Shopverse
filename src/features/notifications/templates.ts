@@ -13,6 +13,9 @@ export type OrderEmailContext = {
   orderUrl: string;
   invoiceUrl: string | null;
   total: number;
+  shipping: number;
+  /** Discount on the order, with its code if one was used. */
+  discount: { amount: number; code: string | null } | null;
   currency: string;
   cashOnDelivery: boolean;
   items: { title: string; quantity: number; total: number }[];
@@ -49,7 +52,12 @@ function itemsTable(ctx: OrderEmailContext) {
         `<tr><td style="padding:6px 0;color:#333">${i.quantity} × ${escapeHtml(i.title)}</td><td style="padding:6px 0;text-align:right;color:#333;white-space:nowrap">${escapeHtml(formatMoney(i.total, ctx.currency))}</td></tr>`,
     )
     .join("");
-  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-top:1px solid #eee;border-bottom:1px solid #eee;margin:16px 0;font-size:14px">${rows}
+  const discount =
+    ctx.discount && ctx.discount.amount > 0
+      ? `<tr><td style="padding:6px 0;color:#15803d">Discount${ctx.discount.code ? ` (${escapeHtml(ctx.discount.code)})` : ""}</td><td style="padding:6px 0;text-align:right;color:#15803d;white-space:nowrap">−${escapeHtml(formatMoney(ctx.discount.amount, ctx.currency))}</td></tr>`
+      : "";
+  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-top:1px solid #eee;border-bottom:1px solid #eee;margin:16px 0;font-size:14px">${rows}${discount}
+<tr><td style="padding:6px 0;color:#333">Delivery</td><td style="padding:6px 0;text-align:right;color:#333;white-space:nowrap">${ctx.shipping > 0 ? escapeHtml(formatMoney(ctx.shipping, ctx.currency)) : "Free"}</td></tr>
 <tr><td style="padding:10px 0;font-weight:700">Total</td><td style="padding:10px 0;text-align:right;font-weight:700">${escapeHtml(formatMoney(ctx.total, ctx.currency))}</td></tr></table>`;
 }
 

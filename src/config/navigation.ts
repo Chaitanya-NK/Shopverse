@@ -48,7 +48,7 @@ export function getOrgNavigation(orgSlug: string): NavGroup[] {
       items: [
         { title: "Customers", icon: UsersIcon, href: routes.orgCustomers(orgSlug) },
         { title: "Marketing", icon: MegaphoneIcon },
-        { title: "Discounts", icon: BadgePercentIcon },
+        { title: "Discounts", icon: BadgePercentIcon, href: routes.orgDiscounts(orgSlug) },
         { title: "Analytics", icon: BarChart3Icon },
       ],
     },

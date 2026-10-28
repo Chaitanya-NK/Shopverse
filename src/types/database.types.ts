@@ -297,6 +297,138 @@ export type Database = {
           },
         ];
       };
+      discount_redemptions: {
+        Row: {
+          amount: number;
+          created_at: string;
+          customer_id: string | null;
+          discount_id: string;
+          id: string;
+          order_id: string;
+          organization_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          amount: number;
+          created_at?: string;
+          customer_id?: string | null;
+          discount_id: string;
+          id?: string;
+          order_id: string;
+          organization_id: string;
+        };
+        Update: {
+          amount?: number;
+          created_at?: string;
+          customer_id?: string | null;
+          discount_id?: string;
+          id?: string;
+          order_id?: string;
+          organization_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "discount_redemptions_organization_id_discount_id_fkey";
+            columns: ["organization_id", "discount_id"];
+            isOneToOne: false;
+            referencedRelation: "discount_overview";
+            referencedColumns: ["organization_id", "id"];
+          },
+          {
+            foreignKeyName: "discount_redemptions_organization_id_discount_id_fkey";
+            columns: ["organization_id", "discount_id"];
+            isOneToOne: false;
+            referencedRelation: "discounts";
+            referencedColumns: ["organization_id", "id"];
+          },
+          {
+            foreignKeyName: "discount_redemptions_organization_id_order_id_fkey";
+            columns: ["organization_id", "order_id"];
+            isOneToOne: false;
+            referencedRelation: "order_overview";
+            referencedColumns: ["organization_id", "id"];
+          },
+          {
+            foreignKeyName: "discount_redemptions_organization_id_order_id_fkey";
+            columns: ["organization_id", "order_id"];
+            isOneToOne: false;
+            referencedRelation: "orders";
+            referencedColumns: ["organization_id", "id"];
+          },
+        ];
+      };
+      discounts: {
+        Row: {
+          code: string | null;
+          created_at: string;
+          created_by: string | null;
+          ends_at: string | null;
+          first_order_only: boolean;
+          id: string;
+          is_active: boolean;
+          kind: string;
+          max_discount: number | null;
+          min_subtotal: number | null;
+          organization_id: string;
+          per_customer_limit: number | null;
+          shop_ids: string[] | null;
+          starts_at: string;
+          title: string;
+          updated_at: string;
+          usage_limit: number | null;
+          value: number;
+        };
+        ComputedFields: never;
+        Insert: {
+          code?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          ends_at?: string | null;
+          first_order_only?: boolean;
+          id?: string;
+          is_active?: boolean;
+          kind: string;
+          max_discount?: number | null;
+          min_subtotal?: number | null;
+          organization_id: string;
+          per_customer_limit?: number | null;
+          shop_ids?: string[] | null;
+          starts_at?: string;
+          title: string;
+          updated_at?: string;
+          usage_limit?: number | null;
+          value?: number;
+        };
+        Update: {
+          code?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          ends_at?: string | null;
+          first_order_only?: boolean;
+          id?: string;
+          is_active?: boolean;
+          kind?: string;
+          max_discount?: number | null;
+          min_subtotal?: number | null;
+          organization_id?: string;
+          per_customer_limit?: number | null;
+          shop_ids?: string[] | null;
+          starts_at?: string;
+          title?: string;
+          updated_at?: string;
+          usage_limit?: number | null;
+          value?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "discounts_organization_id_fkey";
+            columns: ["organization_id"];
+            isOneToOne: false;
+            referencedRelation: "organizations";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       inventory_batches: {
         Row: {
           batch_code: string;
@@ -672,6 +804,7 @@ export type Database = {
       order_items: {
         Row: {
           created_at: string;
+          discount_amount: number;
           fulfilled_quantity: number;
           gst_rate: number;
           hsn_code: string | null;
@@ -690,6 +823,7 @@ export type Database = {
         ComputedFields: never;
         Insert: {
           created_at?: string;
+          discount_amount?: number;
           fulfilled_quantity?: number;
           gst_rate?: number;
           hsn_code?: string | null;
@@ -707,6 +841,7 @@ export type Database = {
         };
         Update: {
           created_at?: string;
+          discount_amount?: number;
           fulfilled_quantity?: number;
           gst_rate?: number;
           hsn_code?: string | null;
@@ -762,6 +897,8 @@ export type Database = {
           created_at: string;
           currency: string;
           customer_id: string | null;
+          discount_code: string | null;
+          discount_id: string | null;
           discount_total: number;
           fulfillment_status: Database["public"]["Enums"]["fulfillment_status"];
           grand_total: number;
@@ -796,6 +933,8 @@ export type Database = {
           created_at?: string;
           currency?: string;
           customer_id?: string | null;
+          discount_code?: string | null;
+          discount_id?: string | null;
           discount_total?: number;
           fulfillment_status?: Database["public"]["Enums"]["fulfillment_status"];
           grand_total?: number;
@@ -829,6 +968,8 @@ export type Database = {
           created_at?: string;
           currency?: string;
           customer_id?: string | null;
+          discount_code?: string | null;
+          discount_id?: string | null;
           discount_total?: number;
           fulfillment_status?: Database["public"]["Enums"]["fulfillment_status"];
           grand_total?: number;
@@ -855,6 +996,20 @@ export type Database = {
           updated_at?: string;
         };
         Relationships: [
+          {
+            foreignKeyName: "orders_discount_fk";
+            columns: ["organization_id", "discount_id"];
+            isOneToOne: false;
+            referencedRelation: "discount_overview";
+            referencedColumns: ["organization_id", "id"];
+          },
+          {
+            foreignKeyName: "orders_discount_fk";
+            columns: ["organization_id", "discount_id"];
+            isOneToOne: false;
+            referencedRelation: "discounts";
+            referencedColumns: ["organization_id", "id"];
+          },
           {
             foreignKeyName: "orders_organization_id_customer_id_fkey";
             columns: ["organization_id", "customer_id"];
@@ -1929,6 +2084,41 @@ export type Database = {
           },
         ];
       };
+      discount_overview: {
+        Row: {
+          code: string | null;
+          created_at: string;
+          created_by: string | null;
+          ends_at: string | null;
+          first_order_only: boolean;
+          id: string;
+          is_active: boolean;
+          kind: string;
+          max_discount: number | null;
+          min_subtotal: number | null;
+          organization_id: string;
+          per_customer_limit: number | null;
+          shop_ids: string[] | null;
+          starts_at: string;
+          state: string | null;
+          title: string;
+          total_saved: number | null;
+          updated_at: string;
+          usage_limit: number | null;
+          uses: number | null;
+          value: number;
+        };
+        ComputedFields: never;
+        Relationships: [
+          {
+            foreignKeyName: "discounts_organization_id_fkey";
+            columns: ["organization_id"];
+            isOneToOne: false;
+            referencedRelation: "organizations";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       inventory_overview: {
         Row: {
           available: number | null;
@@ -2419,6 +2609,7 @@ export type Database = {
         Args: {
           p_address: Json;
           p_contact: Json;
+          p_discount_code?: string;
           p_lines: Json;
           p_payment_method?: Database["public"]["Enums"]["payment_method"];
           p_request_id: string;
@@ -2489,6 +2680,7 @@ export type Database = {
         Args: {
           p_address: Json;
           p_contact: Json;
+          p_discount_code?: string;
           p_lines: Json;
           p_payment_method?: Database["public"]["Enums"]["payment_method"];
           p_shop_id: string;
@@ -2499,6 +2691,10 @@ export type Database = {
       storefront_order: { Args: { p_token: string }; Returns: Json };
       storefront_policy: { Args: { p_page: string; p_slug: string }; Returns: string };
       storefront_product: { Args: { p_shop_id: string; p_slug: string }; Returns: Json };
+      storefront_quote: {
+        Args: { p_code?: string; p_email?: string; p_lines: Json; p_shop_id: string };
+        Returns: Json;
+      };
       storefront_shop: { Args: { p_slug: string }; Returns: Json };
       storefront_sitemap: { Args: { p_shop_id: string }; Returns: Json };
       storefront_variants: { Args: { p_shop_id: string; p_variant_ids: string[] }; Returns: Json };

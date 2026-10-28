@@ -3,8 +3,19 @@
 import { refresh } from "next/cache";
 import { z } from "zod";
 
-import { readCartLines, writeCartLines } from "@/features/storefront/cart-cookie";
-import { cartVariantsSchema, MAX_LINE_QUANTITY, setCartLine } from "@/features/storefront/schemas";
+import {
+  readCartLines,
+  writeCartLines,
+  writeDiscountCode,
+} from "@/features/storefront/cart-cookie";
+import { getShopper } from "@/features/shopper/session";
+import { getQuote, getStorefrontShop } from "@/features/storefront/queries";
+import {
+  cartVariantsSchema,
+  discountCodeSchema,
+  MAX_LINE_QUANTITY,
+  setCartLine,
+} from "@/features/storefront/schemas";
 import { createAction } from "@/lib/actions/create-action";
 import { Errors, fromPostgrestError } from "@/lib/errors";
 import { type ServerSupabaseClient } from "@/lib/supabase/server";
@@ -63,5 +74,33 @@ export const changeCart = createAction({
 
     refresh();
     return { count: next.reduce((n, l) => n + l.q, 0), limited: quantity !== input.quantity };
+  },
+});
+
+/** Apply a discount code to the cart (checked now, and again at checkout). */
+export const applyDiscountCode = createAction({
+  name: "storefront.applyDiscount",
+  schema: z.object({ shopSlug, code: discountCodeSchema }),
+  requireAuth: false,
+  handler: async (input) => {
+    const shop = await getStorefrontShop(input.shopSlug);
+    if (!shop) throw Errors.notFound("Shop");
+    const shopper = await getShopper(shop.id);
+    const quote = await getQuote(shop.id, { code: input.code, email: shopper?.email });
+    if (quote.error) throw Errors.validation({ code: [quote.error] }, quote.error);
+    await writeDiscountCode(shop.slug, input.code.toUpperCase());
+    refresh();
+    return { title: quote.discount?.title ?? "", saved: quote.saved };
+  },
+});
+
+export const removeDiscountCode = createAction({
+  name: "storefront.removeDiscount",
+  schema: z.object({ shopSlug }),
+  requireAuth: false,
+  handler: async (input) => {
+    await writeDiscountCode(input.shopSlug, null);
+    refresh();
+    return null;
   },
 });

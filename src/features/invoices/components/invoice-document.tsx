@@ -118,6 +118,7 @@ export function InvoiceDocument({ invoice }: { invoice: Invoice }) {
               <th className="py-2 pr-2 font-medium">Item</th>
               <th className="py-2 pr-2 font-medium">HSN</th>
               <th className="py-2 pr-2 text-right font-medium">Qty</th>
+              {t.lineDiscount > 0 && <th className="py-2 pr-2 text-right font-medium">Discount</th>}
               {t.registered && <th className="py-2 pr-2 text-right font-medium">GST %</th>}
               <th className="py-2 pr-2 text-right font-medium">
                 {t.registered ? "Taxable value" : "Amount"}
@@ -137,6 +138,11 @@ export function InvoiceDocument({ invoice }: { invoice: Invoice }) {
                 <td className="py-2 pr-2">{line.description}</td>
                 <td className="py-2 pr-2 font-mono text-xs">{line.hsnCode ?? "—"}</td>
                 <td className="py-2 pr-2 text-right">{line.quantity ?? ""}</td>
+                {t.lineDiscount > 0 && (
+                  <td className="py-2 pr-2 text-right">
+                    {line.discount > 0 ? `−${money(line.discount)}` : ""}
+                  </td>
+                )}
                 {t.registered && <td className="py-2 pr-2 text-right">{line.rate}</td>}
                 <td className="py-2 pr-2 text-right">
                   {money(t.registered ? line.taxable : line.total)}
@@ -163,6 +169,12 @@ export function InvoiceDocument({ invoice }: { invoice: Invoice }) {
             Amount in words
           </span>
           {amountInWords(t.total)}
+          {t.lineDiscount > 0 && (
+            <span className="mt-2 block text-xs">
+              Includes a discount of {money(t.lineDiscount)}
+              {t.discountCode ? ` (code ${t.discountCode})` : ""}, applied before tax.
+            </span>
+          )}
         </p>
         <dl className="grid min-w-64 grid-cols-[1fr_auto] gap-x-6 gap-y-1 tabular-nums">
           {t.registered && (
@@ -184,10 +196,10 @@ export function InvoiceDocument({ invoice }: { invoice: Invoice }) {
               )}
             </>
           )}
-          {t.discount > 0 && (
+          {t.extraDiscount > 0 && (
             <>
               <dt className="text-neutral-500">Less: discount</dt>
-              <dd className="text-right">−{money(t.discount)}</dd>
+              <dd className="text-right">−{money(t.extraDiscount)}</dd>
             </>
           )}
           <dt className="border-t border-neutral-300 pt-2 font-semibold">

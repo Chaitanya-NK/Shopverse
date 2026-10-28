@@ -63,6 +63,17 @@ async function Chrome({ params }: Pick<LayoutProps<"/s/[shopSlug]">, "params">) 
           Preview: this shop isn&apos;t live yet. Only your team can see it.
         </p>
       )}
+      {shop.announcement && (
+        <p className="bg-primary px-4 py-2 text-center text-sm text-primary-foreground print:hidden">
+          {shop.announcementLink ? (
+            <Link href={shop.announcementLink} className="underline-offset-4 hover:underline">
+              {shop.announcement}
+            </Link>
+          ) : (
+            shop.announcement
+          )}
+        </p>
+      )}
       <StorefrontHeader
         shop={shop}
         cartCount={cart.reduce((n, l) => n + l.quantity, 0)}

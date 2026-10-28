@@ -16,6 +16,9 @@ describe("initials", () => {
 describe("formatMoney", () => {
   it("uses Indian digit grouping for INR", () => {
     expect(formatMoney(123456)).toBe("₹1,23,456");
+    // Paise only when there are any.
+    expect(formatMoney(947.2)).toBe("₹947.20");
+    expect(formatMoney(99.8)).toBe("₹99.80");
   });
 
   it("formats other currencies", () => {

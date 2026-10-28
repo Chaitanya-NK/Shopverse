@@ -5,7 +5,7 @@ import { cookies } from "next/headers";
 import { env } from "@/env";
 import { routes } from "@/config/routes";
 import { checkoutCodeEmail } from "@/features/storefront/emails";
-import { clearCart } from "@/features/storefront/cart-cookie";
+import { clearCart, readDiscountCode } from "@/features/storefront/cart-cookie";
 import { getCart, getStorefrontShop } from "@/features/storefront/queries";
 import {
   checkoutCodeSchema,
@@ -84,6 +84,8 @@ export const startCheckout = createAction({
         country: "IN",
       },
       p_payment_method: input.paymentMethod,
+      // Re-checked here with the shopper's email (first order, once per customer).
+      p_discount_code: (await readDiscountCode()) ?? undefined,
     });
     if (error) throw fromPostgrestError(error);
 

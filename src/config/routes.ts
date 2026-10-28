@@ -47,6 +47,7 @@ export const routes = {
   storefrontAddresses: (shopSlug: string) => `/s/${shopSlug}/account/addresses`,
   storefrontProfile: (shopSlug: string) => `/s/${shopSlug}/account/profile`,
   orgCustomers: (orgSlug: string) => `/app/${orgSlug}/customers`,
+  orgDiscounts: (orgSlug: string) => `/app/${orgSlug}/discounts`,
   orgTeam: (orgSlug: string) => `/app/${orgSlug}/team`,
   orgAudit: (orgSlug: string) => `/app/${orgSlug}/team/audit`,
   orgBilling: (orgSlug: string) => `/app/${orgSlug}/billing`,

@@ -9,8 +9,9 @@ import { routes } from "@/config/routes";
 import { SignedInCheckout } from "@/features/shopper/components/signed-in-checkout";
 import { getShopper } from "@/features/shopper/session";
 import { CheckoutFlow } from "@/features/storefront/components/checkout-flow";
-import { getCart, getStorefrontShop } from "@/features/storefront/queries";
-import { shippingFor } from "@/features/storefront/schemas";
+import { DiscountCodeForm } from "@/features/storefront/components/discount-code-form";
+import { OrderSummaryLines } from "@/features/storefront/components/order-summary-lines";
+import { getCart, getQuote, getStorefrontShop } from "@/features/storefront/queries";
 import { formatMoney } from "@/lib/format";
 
 export const metadata: Metadata = { title: "Checkout", robots: { index: false } };
@@ -34,8 +35,7 @@ async function Checkout({ params }: Pick<Props, "params">) {
     redirect(routes.storefrontCart(shop.slug));
 
   const money = (n: number) => formatMoney(n, shop.currency);
-  const subtotal = items.reduce((n, i) => n + i.price * i.quantity, 0);
-  const shipping = shippingFor(subtotal, shop);
+  const quote = await getQuote(shop.id, { email: shopper?.email });
 
   return (
     <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_22rem]">
@@ -49,7 +49,7 @@ async function Checkout({ params }: Pick<Props, "params">) {
           <SignedInCheckout
             shopSlug={shop.slug}
             currency={shop.currency}
-            total={subtotal + shipping}
+            total={quote.total}
             email={shopper.email}
             name={shopper.name}
             phone={shopper.phone}
@@ -72,7 +72,7 @@ async function Checkout({ params }: Pick<Props, "params">) {
             <CheckoutFlow
               shopSlug={shop.slug}
               currency={shop.currency}
-              total={subtotal + shipping}
+              total={quote.total}
               paymentMethods={shop.paymentMethods}
               codLimit={shop.codLimit}
             />
@@ -97,20 +97,15 @@ async function Checkout({ params }: Pick<Props, "params">) {
               </li>
             ))}
           </ul>
-          <dl className="space-y-2 border-t pt-3 text-sm">
-            <div className="flex justify-between">
-              <dt className="text-muted-foreground">Subtotal</dt>
-              <dd className="tabular-nums">{money(subtotal)}</dd>
-            </div>
-            <div className="flex justify-between">
-              <dt className="text-muted-foreground">Delivery</dt>
-              <dd className="tabular-nums">{shipping === 0 ? "Free" : money(shipping)}</dd>
-            </div>
-            <div className="flex justify-between border-t pt-2 text-base font-semibold">
-              <dt>Total</dt>
-              <dd className="tabular-nums">{money(subtotal + shipping)}</dd>
-            </div>
-          </dl>
+          <div className="border-t pt-3">
+            <OrderSummaryLines quote={quote} currency={shop.currency} />
+          </div>
+          <DiscountCodeForm
+            shopSlug={shop.slug}
+            appliedCode={quote.code}
+            appliedTitle={quote.discount?.title ?? null}
+            problem={quote.error}
+          />
           <Link
             href={routes.storefrontCart(shop.slug)}
             className="block text-center text-sm text-muted-foreground hover:underline"

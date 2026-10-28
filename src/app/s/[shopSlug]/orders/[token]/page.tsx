@@ -214,6 +214,16 @@ async function CustomerOrder({ params }: Pick<Props, "params">) {
               <dt className="text-muted-foreground">Subtotal</dt>
               <dd className="tabular-nums">{money(order.subtotal)}</dd>
             </div>
+            {order.discount_total > 0 && (
+              <div className="flex justify-between text-emerald-700 dark:text-emerald-400">
+                <dt>
+                  {order.discount_code
+                    ? `Discount (${order.discount_code})`
+                    : (order.discount_title ?? "Discount")}
+                </dt>
+                <dd className="tabular-nums">−{money(order.discount_total)}</dd>
+              </div>
+            )}
             <div className="flex justify-between">
               <dt className="text-muted-foreground">Delivery</dt>
               <dd className="tabular-nums">

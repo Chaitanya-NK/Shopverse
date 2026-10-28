@@ -25,7 +25,12 @@ import {
   setShopperToken,
   signInCookie,
 } from "@/features/shopper/session";
-import { clearCart, readCartLines, writeCartLines } from "@/features/storefront/cart-cookie";
+import {
+  clearCart,
+  readCartLines,
+  readDiscountCode,
+  writeCartLines,
+} from "@/features/storefront/cart-cookie";
 import { signInCodeEmail } from "@/features/storefront/emails";
 import { getCart, getStorefrontShop } from "@/features/storefront/queries";
 import {
@@ -398,6 +403,7 @@ export const placeSignedInOrder = createAction({
       },
       p_payment_method: input.paymentMethod,
       p_save_address: !saved && input.saveAddress,
+      p_discount_code: (await readDiscountCode()) ?? undefined,
     });
     if (error) throw await shopperError(shop.slug, error);
 

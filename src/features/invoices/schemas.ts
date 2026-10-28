@@ -39,6 +39,7 @@ export const invoiceSchema = z
     buyer: party,
     subtotal: money,
     discount_total: money,
+    discount_code: z.string().nullable().optional().default(null),
     shipping_total: money,
     grand_total: money,
     items: z.array(
@@ -51,6 +52,7 @@ export const invoiceSchema = z
         total: money,
         gst_rate: money,
         tax_amount: money,
+        discount_amount: money.optional().default(0),
       }),
     ),
   })
@@ -84,6 +86,7 @@ export const invoiceSchema = z
     },
     subtotal: i.subtotal,
     discountTotal: i.discount_total,
+    discountCode: i.discount_code,
     shippingTotal: i.shipping_total,
     grandTotal: i.grand_total,
     items: i.items.map((l) => ({
@@ -95,6 +98,7 @@ export const invoiceSchema = z
       total: l.total,
       gstRate: l.gst_rate,
       taxAmount: l.tax_amount,
+      discountAmount: l.discount_amount,
     })),
   }));
 export type Invoice = z.output<typeof invoiceSchema>;

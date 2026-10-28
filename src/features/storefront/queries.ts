@@ -11,10 +11,12 @@ import {
   cartVariantsSchema,
   customerOrderSchema,
   productSchema,
+  quoteSchema,
   storefrontShopSchema,
 } from "@/features/storefront/schemas";
-import { readCartLines } from "@/features/storefront/cart-cookie";
+import { readCartLines, readDiscountCode } from "@/features/storefront/cart-cookie";
 import { fromPostgrestError } from "@/lib/errors";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 
 /** A live shop (or a draft one, for its own staff). Null when not visible. */
@@ -126,3 +128,23 @@ export const getSitemapProducts = cache(async (shopId: string) => {
   if (error) throw fromPostgrestError(error);
   return z.array(z.object({ slug: z.string(), updated_at: z.string() })).parse(data ?? []);
 });
+
+/**
+ * What the cart costs right now, priced by the database, with the discount
+ * that applies: the shopper's code if valid, otherwise the best automatic
+ * offer. `code` overrides the remembered one (used when applying a new code).
+ */
+export const getQuote = cache(
+  async (shopId: string, options: { email?: string | null; code?: string | null } = {}) => {
+    const lines = await readCartLines();
+    const code = options.code === undefined ? await readDiscountCode() : options.code;
+    const { data, error } = await createAdminClient().rpc("storefront_quote", {
+      p_shop_id: shopId,
+      p_lines: lines.map((l) => ({ variant_id: l.v, quantity: l.q })),
+      p_code: code ?? undefined,
+      p_email: options.email ?? undefined,
+    });
+    if (error) throw fromPostgrestError(error);
+    return { ...quoteSchema.parse(data), code };
+  },
+);

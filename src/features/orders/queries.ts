@@ -187,6 +187,8 @@ export type OrderDetail = {
   currency: string;
   subtotal: number;
   discountTotal: number;
+  /** The code the customer used, if any. */
+  discountCode: string | null;
   shippingTotal: number;
   taxTotal: number;
   grandTotal: number;
@@ -226,7 +228,7 @@ export const getOrder = cache(
       .from("orders")
       .select(
         `id, number, shop_id, status, payment_status, payment_method, fulfillment_status, currency,
-       subtotal, discount_total, shipping_total, tax_total, grand_total, shipping_address, notes,
+       subtotal, discount_total, discount_code, shipping_total, tax_total, grand_total, shipping_address, notes,
        cancel_reason, placed_at, updated_at, invoice_number, payment_due_at,
        shop:shops!orders_organization_id_shop_id_fkey (name),
        customer:customers (id, full_name, email, phone),
@@ -294,6 +296,7 @@ export const getOrder = cache(
       currency: order.currency,
       subtotal: order.subtotal,
       discountTotal: order.discount_total,
+      discountCode: order.discount_code,
       shippingTotal: order.shipping_total,
       taxTotal: order.tax_total,
       grandTotal: order.grand_total,

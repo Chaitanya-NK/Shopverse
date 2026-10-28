@@ -100,8 +100,11 @@ select pg_temp.assert((select status = 'confirmed' and number = 'ORD-000001' fro
   'order created, numbered and confirmed');
 select pg_temp.assert(
   (select subtotal = 21575 and discount_total = 525 and shipping_total = 99 and grand_total = 21149
-     and tax_total = 75 from public.orders where id = (select id from o1)),
-  'totals: subtotal, discount, shipping; GST-inclusive tax only on the 5% line (1575 * 5/105 = 75)');
+     and tax_total = 73.17 from public.orders where id = (select id from o1)),
+  'totals: subtotal, discount, shipping; the discount is spread by value, so the 5% tee line keeps 1575 - 38.33 and its GST is 1536.67 * 5/105 = 73.17');
+select pg_temp.assert(
+  (select sum(discount_amount) = 525 and bool_and(discount_amount <= total) from public.order_items where order_id = (select id from o1)),
+  'line discounts add up to the order discount');
 select pg_temp.assert((select count(*) = 1 and min(email::text) = 'asha@example.com' and min(phone) = '+919800000001'
   from public.customers), 'customer created with normalised email and phone');
 select pg_temp.assert(pg_temp.level('TEE', (select wh1 from ids)) = '2/2' and pg_temp.level('TEE', (select wh2 from ids)) = '5/1',

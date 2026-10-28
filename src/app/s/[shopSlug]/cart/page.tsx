@@ -18,8 +18,11 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { routes } from "@/config/routes";
 import { CartLineControls } from "@/features/storefront/components/cart-line-controls";
 import { ProductVisual } from "@/features/storefront/components/product-visual";
-import { getCart, getStorefrontShop } from "@/features/storefront/queries";
-import { MAX_LINE_QUANTITY, shippingFor } from "@/features/storefront/schemas";
+import { getShopper } from "@/features/shopper/session";
+import { DiscountCodeForm } from "@/features/storefront/components/discount-code-form";
+import { OrderSummaryLines } from "@/features/storefront/components/order-summary-lines";
+import { getCart, getQuote, getStorefrontShop } from "@/features/storefront/queries";
+import { MAX_LINE_QUANTITY } from "@/features/storefront/schemas";
 import { formatMoney } from "@/lib/format";
 
 export const metadata: Metadata = { title: "Cart", robots: { index: false } };
@@ -38,7 +41,7 @@ async function Cart({ params }: Pick<Props, "params">) {
   const { shopSlug } = await params;
   const shop = await getStorefrontShop(shopSlug);
   if (!shop) notFound();
-  const items = await getCart(shop.id);
+  const [items, shopper] = await Promise.all([getCart(shop.id), getShopper(shop.id)]);
   const money = (n: number) => formatMoney(n, shop.currency);
 
   if (items.length === 0) {
@@ -60,11 +63,12 @@ async function Cart({ params }: Pick<Props, "params">) {
     );
   }
 
-  const subtotal = items.reduce((n, i) => n + i.price * i.quantity, 0);
-  const shipping = shippingFor(subtotal, shop);
+  const quote = await getQuote(shop.id, { email: shopper?.email });
   const blocked = items.some((i) => i.quantity > i.available);
   const toFree =
-    shop.freeShippingOver !== null && shipping > 0 ? shop.freeShippingOver - subtotal : null;
+    shop.freeShippingOver !== null && quote.shipping > 0
+      ? shop.freeShippingOver - quote.subtotal
+      : null;
 
   return (
     <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_22rem]">
@@ -136,20 +140,13 @@ async function Cart({ params }: Pick<Props, "params">) {
           <CardTitle>Order summary</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <dl className="space-y-2 text-sm">
-            <div className="flex justify-between">
-              <dt className="text-muted-foreground">Subtotal</dt>
-              <dd className="tabular-nums">{money(subtotal)}</dd>
-            </div>
-            <div className="flex justify-between">
-              <dt className="text-muted-foreground">Delivery</dt>
-              <dd className="tabular-nums">{shipping === 0 ? "Free" : money(shipping)}</dd>
-            </div>
-            <div className="flex justify-between border-t pt-2 text-base font-semibold">
-              <dt>Total</dt>
-              <dd className="tabular-nums">{money(subtotal + shipping)}</dd>
-            </div>
-          </dl>
+          <OrderSummaryLines quote={quote} currency={shop.currency} />
+          <DiscountCodeForm
+            shopSlug={shop.slug}
+            appliedCode={quote.code}
+            appliedTitle={quote.discount?.title ?? null}
+            problem={quote.error}
+          />
           {toFree !== null && toFree > 0 && (
             <p className="rounded-lg bg-muted p-3 text-sm">
               Add {money(toFree)} more for free delivery.
@@ -165,7 +162,12 @@ async function Cart({ params }: Pick<Props, "params">) {
             </Button>
           )}
           <p className="text-center text-xs text-muted-foreground">
-            Prices include GST. Pay cash on delivery.
+            Prices include GST.{" "}
+            {shop.paymentMethods.includes("online")
+              ? shop.paymentMethods.includes("cod")
+                ? "Pay online or cash on delivery."
+                : "Pay online with UPI, card or net banking."
+              : "Pay cash on delivery."}
           </p>
         </CardContent>
       </Card>

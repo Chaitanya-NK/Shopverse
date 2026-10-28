@@ -15,10 +15,13 @@ export function formatMoney(
   currency = "INR",
   options?: { compact?: boolean },
 ): string {
+  // Whole amounts stay clean ("₹499"); paise are shown when there are any ("₹947.20").
+  const hasPaise = !options?.compact && Math.round(Math.abs(amount) * 100) % 100 !== 0;
   return new Intl.NumberFormat(currency === "INR" ? "en-IN" : "en-US", {
     style: "currency",
     currency,
-    maximumFractionDigits: options?.compact ? 1 : 0,
+    minimumFractionDigits: hasPaise ? 2 : 0,
+    maximumFractionDigits: options?.compact ? 1 : hasPaise ? 2 : 0,
     notation: options?.compact ? "compact" : "standard",
   }).format(amount);
 }

@@ -12,6 +12,8 @@ const ctx: OrderEmailContext = {
   orderUrl: "https://shop.example/s/urban-threads/orders/abc",
   invoiceUrl: null,
   total: 548,
+  shipping: 49,
+  discount: null,
   currency: "INR",
   cashOnDelivery: true,
   items: [{ title: "Tee <M>", quantity: 1, total: 499 }],
@@ -45,6 +47,15 @@ describe("orderEventEmail", () => {
     expect(orderEventEmail(ctx, { type: "cancelled", byCustomer: false }).text).toMatch(
       /cancelled by/,
     );
+  });
+
+  it("shows the discount and its code", () => {
+    const mail = orderEventEmail(
+      { ...ctx, discount: { amount: 50, code: "WELCOME<10>" } },
+      { type: "confirmed" },
+    );
+    expect(mail.html).toContain("Discount (WELCOME&lt;10&gt;)");
+    expect(mail.html).toContain("−₹50");
   });
 
   it("links the invoice once there is one", () => {

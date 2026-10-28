@@ -52,6 +52,17 @@ const policyText = optionalText(POLICY_MAX, "Keep it under 20,000 characters");
 export const storefrontSettingsSchema = z
   .object({
     tagline: optionalText(120, "Keep it under 120 characters"),
+    announcement: optionalText(140, "Keep it under 140 characters"),
+    announcementLink: z
+      .string()
+      .trim()
+      .max(300)
+      .refine(
+        (v) => v === "" || v.startsWith("/") || /^https:\/\/[^\s]+$/.test(v),
+        "Use a link starting with https:// or a path like /s/your-shop",
+      )
+      .optional()
+      .default(""),
     shippingFee: optionalAmount,
     freeShippingOver: optionalAmount,
     codLimit: optionalAmount,
@@ -162,6 +173,8 @@ export function readStorefrontSettings(value: unknown): StorefrontSettings {
   ) as Record<string, unknown>;
   return {
     tagline: str("tagline"),
+    announcement: str("announcement"),
+    announcementLink: str("announcement_link"),
     shippingFee: num("shipping_fee"),
     freeShippingOver: num("free_shipping_over"),
     codLimit: num("cod_limit"),
@@ -195,6 +208,8 @@ export function toSettingsJson(settings: StorefrontSettings): Record<string, Set
   const hasAddress = Boolean(a.line1 || a.city || a.state || a.postalCode);
   return {
     tagline: settings.tagline || null,
+    announcement: settings.announcement || null,
+    announcement_link: settings.announcementLink || null,
     shipping_fee: settings.shippingFee,
     free_shipping_over: settings.freeShippingOver,
     cod_limit: settings.codLimit,

@@ -4,38 +4,39 @@ Multi-shop commerce SaaS for businesses that sell **anything**: clothing, electr
 
 **Stack:** Next.js 16 (App Router, Cache Components, Server Actions) · React 19 · TypeScript (strict) · Supabase (Postgres, Auth, RLS, Storage) · shadcn/ui + Tailwind CSS 4 · Zod 4 · React Hook Form · Vitest
 
-## Status: Phase 6 (online payments)
+## Status: Phase 7 (discounts & promotions)
 
-| Area       | What's in place                                                                                                                                                                                                  |
-| ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Auth       | Email OTP sign-up and sign-in (6-digit code, 10-minute expiry, resend cooldown), no passwords, no account enumeration, open-redirect protection                                                                  |
-| Tenancy    | Organisations → shops and warehouses, roles (owner, admin, manager, staff, support), per-shop access for restricted staff                                                                                        |
-| Onboarding | One transaction creates the organisation, owner membership, first shop, first warehouse and the audit entries                                                                                                    |
-| App shell  | Collapsible sidebar, workspace switcher, user menu, shop switcher (`?shop=` in the URL), dark mode                                                                                                               |
-| Dashboard  | Live stats from a single RLS-aware RPC, shops table, setup checklist                                                                                                                                             |
-| Shops      | List and create, with field-level conflict errors                                                                                                                                                                |
-| Categories | Multi-industry category tree; add, edit and delete categories and their fields (typed, with options, units, required, "creates variants")                                                                        |
-| Products   | Searchable, filterable list; a form generated from the category's fields; variant matrix (e.g. Storage × Colour) with SKUs and prices; publish to shops                                                          |
-| Inventory  | Receive, remove and transfer stock by quantity, serial/IMEI (scan to pick) or batch with expiry (FEFO); reorder points and low-stock alerts; movement history                                                    |
-| Warehouses | Create and edit, per-warehouse stock summary, which shops each one fulfils; inactive warehouses take in no new stock                                                                                             |
-| Orders     | Enter phone, WhatsApp and counter orders; live GST-inclusive totals; customers matched by email or phone; confirm (reserve stock), mark paid, cancel                                                             |
-| Routing    | Stock is reserved in one warehouse that can ship the whole order, or split across the shop's warehouses by priority                                                                                              |
-| Shipments  | Pack per warehouse (scan IMEIs; batches picked first-expiry-first-out); picked up → in transit → out for delivery → delivered; failed attempts, returns                                                          |
-| Delivery   | 6-digit delivery OTP, shown once to staff and shareable on WhatsApp; stored only as a bcrypt hash; 24-hour expiry; locked after 5 wrong tries; COD auto-paid                                                     |
-| Tracking   | Deliveries board by stage; a public tracking page per parcel (`/track/<token>`) with no personal details                                                                                                         |
-| Storefront | Each shop at `/s/<shop-handle>`: search, categories, sorting, product pages with variant pickers and live stock, cart; drafts are staff-only previews                                                            |
-| Checkout   | Cash on delivery confirmed by a 6-digit email code (hashed, 10-minute expiry, 5 tries, resend limits, per-email rate limit); shipping fee, free-shipping threshold and COD limit per shop                        |
-| Customers  | Customer list with orders and spend; customer page with order history; verified-email badge; customer order page by private link                                                                                 |
-| Team       | Invite by email (single-use link, 7-day expiry, token stored hashed), resend and revoke; change roles and shop access; remove members or leave; admins can't touch owners and nobody edits their own role        |
-| Audit log  | Every change recorded by the database; filter by type, person and date; shows what changed in plain language                                                                                                     |
-| Billing    | Plans with usage meters (shops, seats incl. pending invites, products, warehouses), limits enforced in the database, trial countdown banner; upgrades by request                                                 |
-| Shoppers   | Shopper accounts separate from staff: email-code sign-in, orders with a progress tracker, wishlist, saved addresses, profile; one-click signed-in checkout; cancel before packing; buy again                     |
-| Photos     | Up to 12 photos per product, resized to WebP (1600/480px) with metadata stripped; cover, reorder, alt text; gallery on product pages                                                                             |
-| Invoices   | GST tax invoices issued at dispatch, numbered per shop per financial year; CGST/SGST or IGST by place of supply; print or save as PDF                                                                            |
-| Emails     | Order confirmed, shipped, out for delivery (with the delivery code), missed delivery, delivered, cancelled; shops can turn them off                                                                              |
-| Shop pages | Shipping/returns/privacy/terms pages, contact page, footer; price and in-stock filters; Open Graph, product JSON-LD, sitemap and robots.txt                                                                      |
-| Payments   | Each business connects its own Razorpay account (keys encrypted); UPI, cards, net banking at checkout; stock held 30 min; webhook; automatic refunds on cancel                                                   |
-| Quality    | Strict TypeScript, ESLint and Prettier, 160 unit tests, nine SQL test suites (RLS, stock, order flow, storefront and checkout, team and billing, shopper accounts, photos, invoices, payments), CI, commit hooks |
+| Area       | What's in place                                                                                                                                                                                                            |
+| ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Auth       | Email OTP sign-up and sign-in (6-digit code, 10-minute expiry, resend cooldown), no passwords, no account enumeration, open-redirect protection                                                                            |
+| Tenancy    | Organisations → shops and warehouses, roles (owner, admin, manager, staff, support), per-shop access for restricted staff                                                                                                  |
+| Onboarding | One transaction creates the organisation, owner membership, first shop, first warehouse and the audit entries                                                                                                              |
+| App shell  | Collapsible sidebar, workspace switcher, user menu, shop switcher (`?shop=` in the URL), dark mode                                                                                                                         |
+| Dashboard  | Live stats from a single RLS-aware RPC, shops table, setup checklist                                                                                                                                                       |
+| Shops      | List and create, with field-level conflict errors                                                                                                                                                                          |
+| Categories | Multi-industry category tree; add, edit and delete categories and their fields (typed, with options, units, required, "creates variants")                                                                                  |
+| Products   | Searchable, filterable list; a form generated from the category's fields; variant matrix (e.g. Storage × Colour) with SKUs and prices; publish to shops                                                                    |
+| Inventory  | Receive, remove and transfer stock by quantity, serial/IMEI (scan to pick) or batch with expiry (FEFO); reorder points and low-stock alerts; movement history                                                              |
+| Warehouses | Create and edit, per-warehouse stock summary, which shops each one fulfils; inactive warehouses take in no new stock                                                                                                       |
+| Orders     | Enter phone, WhatsApp and counter orders; live GST-inclusive totals; customers matched by email or phone; confirm (reserve stock), mark paid, cancel                                                                       |
+| Routing    | Stock is reserved in one warehouse that can ship the whole order, or split across the shop's warehouses by priority                                                                                                        |
+| Shipments  | Pack per warehouse (scan IMEIs; batches picked first-expiry-first-out); picked up → in transit → out for delivery → delivered; failed attempts, returns                                                                    |
+| Delivery   | 6-digit delivery OTP, shown once to staff and shareable on WhatsApp; stored only as a bcrypt hash; 24-hour expiry; locked after 5 wrong tries; COD auto-paid                                                               |
+| Tracking   | Deliveries board by stage; a public tracking page per parcel (`/track/<token>`) with no personal details                                                                                                                   |
+| Storefront | Each shop at `/s/<shop-handle>`: search, categories, sorting, product pages with variant pickers and live stock, cart; drafts are staff-only previews                                                                      |
+| Checkout   | Cash on delivery confirmed by a 6-digit email code (hashed, 10-minute expiry, 5 tries, resend limits, per-email rate limit); shipping fee, free-shipping threshold and COD limit per shop                                  |
+| Customers  | Customer list with orders and spend; customer page with order history; verified-email badge; customer order page by private link                                                                                           |
+| Team       | Invite by email (single-use link, 7-day expiry, token stored hashed), resend and revoke; change roles and shop access; remove members or leave; admins can't touch owners and nobody edits their own role                  |
+| Audit log  | Every change recorded by the database; filter by type, person and date; shows what changed in plain language                                                                                                               |
+| Billing    | Plans with usage meters (shops, seats incl. pending invites, products, warehouses), limits enforced in the database, trial countdown banner; upgrades by request                                                           |
+| Shoppers   | Shopper accounts separate from staff: email-code sign-in, orders with a progress tracker, wishlist, saved addresses, profile; one-click signed-in checkout; cancel before packing; buy again                               |
+| Photos     | Up to 12 photos per product, resized to WebP (1600/480px) with metadata stripped; cover, reorder, alt text; gallery on product pages                                                                                       |
+| Invoices   | GST tax invoices issued at dispatch, numbered per shop per financial year; CGST/SGST or IGST by place of supply; print or save as PDF                                                                                      |
+| Emails     | Order confirmed, shipped, out for delivery (with the delivery code), missed delivery, delivered, cancelled; shops can turn them off                                                                                        |
+| Shop pages | Shipping/returns/privacy/terms pages, contact page, footer; price and in-stock filters; Open Graph, product JSON-LD, sitemap and robots.txt                                                                                |
+| Payments   | Each business connects its own Razorpay account (keys encrypted); UPI, cards, net banking at checkout; stock held 30 min; webhook; automatic refunds on cancel                                                             |
+| Discounts  | Codes and automatic offers (percent with cap, amount, free delivery), minimum order, dates, overall and per-customer limits, first order only, per shop; GST on the discounted price; announcement bar                     |
+| Quality    | Strict TypeScript, ESLint and Prettier, 160 unit tests, ten SQL test suites (RLS, stock, order flow, storefront and checkout, team and billing, shopper accounts, photos, invoices, payments, discounts), CI, commit hooks |
 
 ## Quick start in GitHub Codespaces
 
@@ -131,6 +132,10 @@ Add photos from a product's **Photos** tab. Set `NEXT_PUBLIC_APP_URL` to your re
 
 Online orders hold stock for 30 minutes. Unpaid ones are cancelled the next time someone tries to pay, or every 5 minutes if `pg_cron` is enabled (Supabase → Database → Extensions) before you push. Cancelling a paid order refunds it automatically. Switch to live keys when you're ready.
 
+### Discounts (Phase 7)
+
+Run `npx supabase db push` (migration 019). In **Discounts**, create codes (e.g. `WELCOME10`) or automatic offers. Shoppers enter codes in the cart or at checkout; one discount applies per order (a valid code, otherwise the best automatic offer). Limits are checked again when the order is placed. The **announcement bar** is in each shop's settings.
+
 ## Scripts
 
 | Command                                     | Purpose                                                          |
@@ -181,7 +186,7 @@ See **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)** for the design decisions an
 - **Phase 5 (done):** team invitations and roles UI, audit log viewer, billing (plans and limits)
 - **Phase 5.5 (done):** shopper accounts, wishlist and address book, self-service cancel and reorder, product photos, GST invoices, order emails, policy pages, filters, SEO
 - **Phase 6 (done):** online payments with each business's own Razorpay account, webhooks, automatic refunds
-- **Phase 7 — Discounts & promotions:** coupon codes (percentage or flat, minimum order, cap, validity, usage limits overall and per customer, first order only, per shop), automatic offers, discounts applied server-side and spread across lines so GST invoices stay correct, an announcement bar and homepage banners
+- **Phase 7 (done) — Discounts & promotions:** coupon codes (percentage or flat, minimum order, cap, validity, usage limits overall and per customer, first order only, per shop), automatic offers, discounts applied server-side and spread across lines so GST invoices stay correct, an announcement bar and homepage banners
 - **Phase 8 — Analytics & reports:** sales dashboard (revenue, orders, average order value, by day and by shop, top products, COD vs online, return-to-origin rate), GST reports (B2C by state and rate, HSN summary for GSTR-1), CSV exports of orders, invoices, stock and customers
 - **Phase 9 — Returns & credit notes:** return and exchange requests within a window set by the shop, approval, reverse pickup, restocking on receipt, refunds (online automatically, COD by UPI), numbered GST credit notes
 - **Phase 10 — Shopverse billing & platform admin:** plan subscriptions through Razorpay Subscriptions, upgrades and downgrades, GST invoices to businesses, failed-payment handling, a platform admin console (businesses, usage, plans)
