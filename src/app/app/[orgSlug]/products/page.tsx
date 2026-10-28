@@ -1,4 +1,11 @@
-import { PackageIcon, PlusIcon } from "lucide-react";
+import {
+  ChevronDownIcon,
+  DownloadIcon,
+  FileSpreadsheetIcon,
+  PackageIcon,
+  PlusIcon,
+  UploadIcon,
+} from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
@@ -6,6 +13,12 @@ import { Suspense } from "react";
 import { PageHeader } from "@/components/shared/page-header";
 import { SimplePagination } from "@/components/shared/simple-pagination";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   Empty,
   EmptyContent,
@@ -76,7 +89,36 @@ async function ProductsContent({ params, searchParams }: Props) {
       <PageHeader
         title="Products"
         description="Everything you sell, across every shop, with live stock."
-        actions={newButton}
+        actions={
+          canManage && (
+            <>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline">
+                    <FileSpreadsheetIcon />
+                    CSV
+                    <ChevronDownIcon />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem asChild>
+                    <Link href={routes.orgProductImport(orgSlug)}>
+                      <UploadIcon />
+                      Import products
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <a href={routes.orgProductExport(orgSlug)} download>
+                      <DownloadIcon />
+                      Export all products
+                    </a>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+              {newButton}
+            </>
+          )
+        }
       />
       <ProductFilters categories={categories} />
       {result.items.length > 0 ? (

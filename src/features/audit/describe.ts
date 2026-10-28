@@ -12,6 +12,8 @@ export const AUDIT_ENTITY_LABELS: Record<string, string> = {
   product_image: "Product photo",
   payments: "Payment settings",
   return: "Return",
+  collection: "Collection",
+  review: "Review",
 };
 
 const VERBS: Record<string, string> = {
@@ -21,6 +23,9 @@ const VERBS: Record<string, string> = {
   sent: "sent",
   accepted: "accepted",
   revoked: "revoked",
+  replied: "replied to",
+  hidden: "hid",
+  published: "published",
 };
 
 const FIELD_LABELS: Record<string, string> = {
@@ -34,6 +39,7 @@ const FIELD_LABELS: Record<string, string> = {
   refunded_amount: "refunded",
   credit_note_number: "credit note",
   returnable: "returnable",
+  featured: "on homepage",
 };
 
 function formatValue(value: unknown): string {

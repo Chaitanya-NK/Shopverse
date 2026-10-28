@@ -13,7 +13,7 @@ import {
 import { createAction } from "@/lib/actions/create-action";
 import { Errors, fromPostgrestError } from "@/lib/errors";
 import { type ServerSupabaseClient } from "@/lib/supabase/server";
-import { type Json } from "@/types/database.types";
+import { toProductJson, toVariantJson } from "@/features/products/rpc";
 
 const FORBIDDEN = "Only owners, admins and managers can edit products.";
 
@@ -127,33 +127,4 @@ function parseWithCategory<T extends typeof createProductSchema | typeof updateP
     throw Errors.validation(fieldErrors);
   }
   return parsed.data as z.output<T>;
-}
-
-type ParsedProduct = Omit<z.output<typeof updateProductSchema>, "productId">;
-type JsonObject = { [key: string]: Json };
-
-function toProductJson(product: ParsedProduct): JsonObject {
-  return {
-    title: product.title,
-    slug: product.slug,
-    description: product.description,
-    status: product.status,
-    attributes: product.attributes as Json,
-    tags: product.tags,
-    hsn_code: product.hsnCode,
-    gst_rate: product.gstRate,
-  };
-}
-
-function toVariantJson(variant: ParsedProduct["variants"][number]): JsonObject {
-  return {
-    id: variant.id ?? null,
-    sku: variant.sku,
-    title: variant.title,
-    options: variant.options,
-    price: variant.price,
-    compare_at_price: variant.compareAtPrice,
-    cost_price: variant.costPrice,
-    barcode: variant.barcode,
-  };
 }

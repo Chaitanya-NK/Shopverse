@@ -220,6 +220,8 @@ export type ProductPhoto = {
   alt: string | null;
   width: number;
   height: number;
+  /** The option this photo shows; null for the product in general. */
+  variantId: string | null;
 };
 
 /** A product's photos in display order (the first is the cover). */
@@ -227,7 +229,7 @@ export const listProductImages = cache(async (productId: string): Promise<Produc
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("product_images")
-    .select("id, organization_id, product_id, alt, width, height")
+    .select("id, organization_id, product_id, alt, width, height, variant_id")
     .eq("product_id", productId)
     .order("sort_order")
     .order("created_at");
@@ -238,5 +240,6 @@ export const listProductImages = cache(async (productId: string): Promise<Produc
     alt: i.alt,
     width: i.width,
     height: i.height,
+    variantId: i.variant_id,
   }));
 });

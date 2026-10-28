@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { imageObjectKey, productImageSchema } from "@/features/products/images";
+import { imageObjectKey, orderForVariant, productImageSchema } from "@/features/products/images";
 
 const path =
   "11111111-1111-1111-1111-111111111111/22222222-2222-2222-2222-222222222222/33333333-3333-3333-3333-333333333333";
@@ -23,5 +23,21 @@ describe("product images", () => {
     expect(() =>
       productImageSchema.parse({ path: "../../etc/passwd", alt: null, width: 1, height: 1 }),
     ).toThrow();
+  });
+});
+
+describe("orderForVariant", () => {
+  const imgs = [
+    { id: "a", variant_id: null },
+    { id: "b", variant_id: "red" },
+    { id: "c", variant_id: "blue" },
+    { id: "d", variant_id: null },
+  ];
+  it("puts the chosen variant's photos first, then shared, then others", () => {
+    expect(orderForVariant(imgs, "blue").map((i) => i.id)).toEqual(["c", "a", "d", "b"]);
+  });
+  it("keeps the original order when the variant has no photos of its own", () => {
+    expect(orderForVariant(imgs, "green")).toBe(imgs);
+    expect(orderForVariant(imgs, null)).toBe(imgs);
   });
 });

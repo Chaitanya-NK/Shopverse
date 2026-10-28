@@ -192,6 +192,27 @@ export const reorderProductImages = createAction({
   },
 });
 
+export const setProductImageVariant = createAction({
+  name: "products.setImageVariant",
+  schema: imageRefSchema.extend({ variantId: z.uuid().nullable() }),
+  handler: async (input, { supabase, user }) => {
+    const { productId } = await requireProduct(
+      supabase,
+      user.id,
+      input.organizationSlug,
+      input.productId,
+    );
+    const { error } = await supabase
+      .from("product_images")
+      .update({ variant_id: input.variantId })
+      .eq("id", input.imageId)
+      .eq("product_id", productId);
+    if (error) throw fromPostgrestError(error);
+    refresh();
+    return null;
+  },
+});
+
 export const updateProductImageAlt = createAction({
   name: "products.updateImageAlt",
   schema: imageRefSchema.extend({ alt: altSchema }),

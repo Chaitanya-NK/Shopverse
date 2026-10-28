@@ -179,6 +179,111 @@ export type Database = {
           },
         ];
       };
+      collection_products: {
+        Row: {
+          added_at: string;
+          collection_id: string;
+          organization_id: string;
+          position: number;
+          product_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          added_at?: string;
+          collection_id: string;
+          organization_id: string;
+          position?: number;
+          product_id: string;
+        };
+        Update: {
+          added_at?: string;
+          collection_id?: string;
+          organization_id?: string;
+          position?: number;
+          product_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "collection_products_organization_id_collection_id_fkey";
+            columns: ["organization_id", "collection_id"];
+            isOneToOne: false;
+            referencedRelation: "collections";
+            referencedColumns: ["organization_id", "id"];
+          },
+          {
+            foreignKeyName: "collection_products_organization_id_product_id_fkey";
+            columns: ["organization_id", "product_id"];
+            isOneToOne: false;
+            referencedRelation: "product_overview";
+            referencedColumns: ["organization_id", "id"];
+          },
+          {
+            foreignKeyName: "collection_products_organization_id_product_id_fkey";
+            columns: ["organization_id", "product_id"];
+            isOneToOne: false;
+            referencedRelation: "products";
+            referencedColumns: ["organization_id", "id"];
+          },
+        ];
+      };
+      collections: {
+        Row: {
+          created_at: string;
+          description: string | null;
+          featured: boolean;
+          id: string;
+          is_active: boolean;
+          organization_id: string;
+          shop_id: string;
+          slug: string;
+          sort_order: number;
+          title: string;
+          updated_at: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          created_at?: string;
+          description?: string | null;
+          featured?: boolean;
+          id?: string;
+          is_active?: boolean;
+          organization_id: string;
+          shop_id: string;
+          slug: string;
+          sort_order?: number;
+          title: string;
+          updated_at?: string;
+        };
+        Update: {
+          created_at?: string;
+          description?: string | null;
+          featured?: boolean;
+          id?: string;
+          is_active?: boolean;
+          organization_id?: string;
+          shop_id?: string;
+          slug?: string;
+          sort_order?: number;
+          title?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "collections_organization_id_fkey";
+            columns: ["organization_id"];
+            isOneToOne: false;
+            referencedRelation: "organizations";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "collections_organization_id_shop_id_fkey";
+            columns: ["organization_id", "shop_id"];
+            isOneToOne: false;
+            referencedRelation: "shops";
+            referencedColumns: ["organization_id", "id"];
+          },
+        ];
+      };
       customer_addresses: {
         Row: {
           city: string;
@@ -1346,6 +1451,7 @@ export type Database = {
           organization_id: string;
           product_id: string;
           sort_order: number;
+          variant_id: string | null;
           width: number;
         };
         ComputedFields: never;
@@ -1358,6 +1464,7 @@ export type Database = {
           organization_id: string;
           product_id: string;
           sort_order?: number;
+          variant_id?: string | null;
           width: number;
         };
         Update: {
@@ -1369,6 +1476,7 @@ export type Database = {
           organization_id?: string;
           product_id?: string;
           sort_order?: number;
+          variant_id?: string | null;
           width?: number;
         };
         Relationships: [
@@ -1384,6 +1492,105 @@ export type Database = {
             columns: ["organization_id", "product_id"];
             isOneToOne: false;
             referencedRelation: "products";
+            referencedColumns: ["organization_id", "id"];
+          },
+          {
+            foreignKeyName: "product_images_variant_fk";
+            columns: ["organization_id", "variant_id"];
+            isOneToOne: false;
+            referencedRelation: "product_variants";
+            referencedColumns: ["organization_id", "id"];
+          },
+          {
+            foreignKeyName: "product_images_variant_fk";
+            columns: ["organization_id", "variant_id"];
+            isOneToOne: false;
+            referencedRelation: "variant_search";
+            referencedColumns: ["organization_id", "id"];
+          },
+        ];
+      };
+      product_reviews: {
+        Row: {
+          body: string | null;
+          created_at: string;
+          customer_id: string;
+          id: string;
+          organization_id: string;
+          product_id: string;
+          rating: number;
+          replied_at: string | null;
+          reply: string | null;
+          shop_id: string;
+          status: string;
+          title: string | null;
+          updated_at: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          body?: string | null;
+          created_at?: string;
+          customer_id: string;
+          id?: string;
+          organization_id: string;
+          product_id: string;
+          rating: number;
+          replied_at?: string | null;
+          reply?: string | null;
+          shop_id: string;
+          status?: string;
+          title?: string | null;
+          updated_at?: string;
+        };
+        Update: {
+          body?: string | null;
+          created_at?: string;
+          customer_id?: string;
+          id?: string;
+          organization_id?: string;
+          product_id?: string;
+          rating?: number;
+          replied_at?: string | null;
+          reply?: string | null;
+          shop_id?: string;
+          status?: string;
+          title?: string | null;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "product_reviews_customer_id_fkey";
+            columns: ["customer_id"];
+            isOneToOne: false;
+            referencedRelation: "customer_overview";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "product_reviews_customer_id_fkey";
+            columns: ["customer_id"];
+            isOneToOne: false;
+            referencedRelation: "customers";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "product_reviews_organization_id_product_id_fkey";
+            columns: ["organization_id", "product_id"];
+            isOneToOne: false;
+            referencedRelation: "product_overview";
+            referencedColumns: ["organization_id", "id"];
+          },
+          {
+            foreignKeyName: "product_reviews_organization_id_product_id_fkey";
+            columns: ["organization_id", "product_id"];
+            isOneToOne: false;
+            referencedRelation: "products";
+            referencedColumns: ["organization_id", "id"];
+          },
+          {
+            foreignKeyName: "product_reviews_organization_id_shop_id_fkey";
+            columns: ["organization_id", "shop_id"];
+            isOneToOne: false;
+            referencedRelation: "shops";
             referencedColumns: ["organization_id", "id"];
           },
         ];
@@ -2796,6 +3003,49 @@ export type Database = {
           },
         ];
       };
+      review_overview: {
+        Row: {
+          body: string | null;
+          created_at: string;
+          customer_email: string | null;
+          customer_name: string | null;
+          id: string;
+          organization_id: string;
+          product_id: string;
+          product_slug: string;
+          product_title: string;
+          rating: number;
+          reply: string | null;
+          shop_id: string;
+          shop_name: string;
+          status: string;
+          title: string | null;
+        };
+        ComputedFields: never;
+        Relationships: [
+          {
+            foreignKeyName: "product_reviews_organization_id_product_id_fkey";
+            columns: ["organization_id", "product_id"];
+            isOneToOne: false;
+            referencedRelation: "product_overview";
+            referencedColumns: ["organization_id", "id"];
+          },
+          {
+            foreignKeyName: "product_reviews_organization_id_product_id_fkey";
+            columns: ["organization_id", "product_id"];
+            isOneToOne: false;
+            referencedRelation: "products";
+            referencedColumns: ["organization_id", "id"];
+          },
+          {
+            foreignKeyName: "product_reviews_organization_id_shop_id_fkey";
+            columns: ["organization_id", "shop_id"];
+            isOneToOne: false;
+            referencedRelation: "shops";
+            referencedColumns: ["organization_id", "id"];
+          },
+        ];
+      };
       shipment_overview: {
         Row: {
           carrier: string | null;
@@ -3099,6 +3349,10 @@ export type Database = {
         Args: { p_provider_subscription_id: string };
         Returns: undefined;
       };
+      moderate_review: {
+        Args: { p_reply?: string; p_review_id: string; p_status: string };
+        Returns: undefined;
+      };
       order_invoice: { Args: { p_order_id: string }; Returns: Json };
       order_return_options: { Args: { p_order_id: string }; Returns: Json };
       payment_account_credentials: { Args: { p_organization_id: string }; Returns: Json };
@@ -3222,6 +3476,10 @@ export type Database = {
           isSetofReturn: false;
         };
       };
+      reorder_collection: {
+        Args: { p_collection_id: string; p_product_ids: string[] };
+        Returns: undefined;
+      };
       reorder_product_images: {
         Args: { p_image_ids: string[]; p_product_id: string };
         Returns: undefined;
@@ -3320,9 +3578,24 @@ export type Database = {
         Args: { p_order_token: string; p_shop_id: string; p_token: string };
         Returns: Json;
       };
+      shopper_review_status: {
+        Args: { p_product_id: string; p_shop_id: string; p_token: string };
+        Returns: Json;
+      };
       shopper_save_address: {
         Args: { p_address: Json; p_address_id?: string; p_shop_id: string; p_token: string };
         Returns: string;
+      };
+      shopper_save_review: {
+        Args: {
+          p_body: string;
+          p_product_id: string;
+          p_rating: number;
+          p_shop_id: string;
+          p_title: string;
+          p_token: string;
+        };
+        Returns: undefined;
       };
       shopper_set_default_address: {
         Args: { p_address_id: string; p_shop_id: string; p_token: string };
@@ -3348,6 +3621,7 @@ export type Database = {
       storefront_catalog: {
         Args: {
           p_category_id?: string;
+          p_collection_id?: string;
           p_in_stock?: boolean;
           p_limit?: number;
           p_max_price?: number;
@@ -3376,6 +3650,7 @@ export type Database = {
         };
         Returns: Json;
       };
+      storefront_collections: { Args: { p_shop_id: string }; Returns: Json };
       storefront_credit_note: {
         Args: { p_full_buyer: boolean; p_order_token: string; p_return_id: string };
         Returns: Json;
@@ -3386,6 +3661,14 @@ export type Database = {
       storefront_product: { Args: { p_shop_id: string; p_slug: string }; Returns: Json };
       storefront_quote: {
         Args: { p_code?: string; p_email?: string; p_lines: Json; p_shop_id: string };
+        Returns: Json;
+      };
+      storefront_related: {
+        Args: { p_limit?: number; p_product_id: string; p_shop_id: string };
+        Returns: Json;
+      };
+      storefront_reviews: {
+        Args: { p_limit?: number; p_offset?: number; p_product_id: string; p_shop_id: string };
         Returns: Json;
       };
       storefront_shop: { Args: { p_slug: string }; Returns: Json };

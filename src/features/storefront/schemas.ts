@@ -81,39 +81,50 @@ export const storefrontShopSchema = z
   }));
 export type StorefrontShop = z.output<typeof storefrontShopSchema>;
 
+/** Average stars and number of published reviews (null: no reviews yet). */
+export const ratingSchema = z
+  .object({ average: z.coerce.number(), count: z.coerce.number() })
+  .nullable()
+  .optional()
+  .transform((v) => v ?? null);
+export type Rating = z.output<typeof ratingSchema>;
+
+const catalogItemSchema = z
+  .object({
+    id: z.uuid(),
+    slug: z.string(),
+    title: z.string(),
+    category: z.string().nullable(),
+    industry: z.string().nullable(),
+    min_price: money,
+    max_price: money,
+    compare_at: nullableMoney,
+    in_stock: z.boolean().nullable(),
+    image: productImageSchema,
+    rating: ratingSchema,
+  })
+  .transform((p) => ({
+    id: p.id,
+    slug: p.slug,
+    title: p.title,
+    category: p.category,
+    industry: p.industry,
+    minPrice: p.min_price,
+    maxPrice: p.max_price,
+    compareAt: p.compare_at,
+    inStock: Boolean(p.in_stock),
+    image: p.image,
+    rating: p.rating,
+  }));
+export const catalogItemsSchema = z.array(catalogItemSchema);
+
 export const catalogSchema = z.object({
   total: z.coerce.number(),
   price_range: z
     .object({ min: nullableMoney, max: nullableMoney })
     .optional()
     .default({ min: null, max: null }),
-  items: z.array(
-    z
-      .object({
-        id: z.uuid(),
-        slug: z.string(),
-        title: z.string(),
-        category: z.string().nullable(),
-        industry: z.string().nullable(),
-        min_price: money,
-        max_price: money,
-        compare_at: nullableMoney,
-        in_stock: z.boolean().nullable(),
-        image: productImageSchema,
-      })
-      .transform((p) => ({
-        id: p.id,
-        slug: p.slug,
-        title: p.title,
-        category: p.category,
-        industry: p.industry,
-        minPrice: p.min_price,
-        maxPrice: p.max_price,
-        compareAt: p.compare_at,
-        inStock: Boolean(p.in_stock),
-        image: p.image,
-      })),
-  ),
+  items: catalogItemsSchema,
 });
 export type CatalogItem = z.output<typeof catalogSchema>["items"][number];
 
@@ -139,6 +150,7 @@ export const productSchema = z
     description: z.string().nullable(),
     tracking: z.enum(Constants.public.Enums.inventory_tracking),
     images: z.array(productImageObjectSchema).optional().default([]),
+    rating: ratingSchema,
     category: z
       .object({ id: z.uuid(), name: z.string(), industry: z.string().nullable() })
       .nullable(),
@@ -320,10 +332,12 @@ export function setCartLine(
 // ---------------------------------------------------------------------------
 
 export const CATALOG_SORTS = {
-  newest: "Newest",
+  // Newest first; most relevant first when searching; the shop's order in a collection.
+  newest: "Recommended",
   price_asc: "Price: low to high",
   price_desc: "Price: high to low",
   name: "Name",
+  rating: "Top rated",
 } as const;
 export type CatalogSort = keyof typeof CATALOG_SORTS;
 export const CATALOG_PAGE_SIZE = 24;

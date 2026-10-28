@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { routes } from "@/config/routes";
+import { StarRating } from "@/features/reviews/components/star-rating";
 import { Price } from "@/features/storefront/components/price";
 import { ProductVisual } from "@/features/storefront/components/product-visual";
 import { type CatalogItem } from "@/features/storefront/schemas";
@@ -45,6 +46,12 @@ export function ProductCard({
         <div className="space-y-1 px-0.5">
           {product.category && <p className="text-xs text-muted-foreground">{product.category}</p>}
           <h3 className="line-clamp-2 font-medium group-hover:underline">{product.title}</h3>
+          {product.rating && (
+            <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <StarRating value={product.rating.average} />
+              <span className="tabular-nums">({product.rating.count})</span>
+            </p>
+          )}
           <Price
             price={product.minPrice}
             maxPrice={product.maxPrice}

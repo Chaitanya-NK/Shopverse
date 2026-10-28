@@ -6,6 +6,7 @@ import {
   ImageIcon,
   ImagePlusIcon,
   MoreVerticalIcon,
+  PaletteIcon,
   StarIcon,
   TextIcon,
   Trash2Icon,
@@ -30,7 +31,13 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
   DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Field, FieldDescription, FieldLabel } from "@/components/ui/field";
@@ -39,6 +46,7 @@ import { Spinner } from "@/components/ui/spinner";
 import {
   deleteProductImage,
   reorderProductImages,
+  setProductImageVariant,
   updateProductImageAlt,
   uploadProductImage,
 } from "@/features/products/image-actions";
@@ -58,12 +66,29 @@ export function ProductPhotos({
   productId,
   productTitle,
   photos,
+  variants = [],
 }: {
   organizationSlug: string;
   productId: string;
   productTitle: string;
   photos: ProductPhoto[];
+  /** The product's options, to say which one a photo shows. */
+  variants?: { id: string; title: string }[];
 }) {
+  const variantTitles = new Map(variants.map((v) => [v.id, v.title]));
+  const assignVariant = async (photo: ProductPhoto, variantId: string | null) => {
+    const result = await setProductImageVariant({
+      organizationSlug,
+      productId,
+      imageId: photo.id,
+      variantId,
+    });
+    if (!result.ok) toast.error(result.error.message);
+    else
+      toast.success(
+        variantId ? `Shown first for ${variantTitles.get(variantId)}` : "Shown for all options",
+      );
+  };
   const inputRef = useRef<HTMLInputElement>(null);
   const [pending, setPending] = useState<Pending[]>([]);
   const [dragging, setDragging] = useState(false);
@@ -148,6 +173,11 @@ export function ProductPhotos({
               className="object-cover"
             />
             {index === 0 && <Badge className="absolute top-2 left-2">Cover</Badge>}
+            {photo.variantId && variantTitles.get(photo.variantId) && (
+              <Badge variant="secondary" className="absolute bottom-2 left-2 max-w-[80%] truncate">
+                {variantTitles.get(photo.variantId)}
+              </Badge>
+            )}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button
@@ -179,6 +209,27 @@ export function ProductPhotos({
                 <DropdownMenuItem onSelect={() => setEditing(photo)}>
                   <TextIcon /> Describe photo
                 </DropdownMenuItem>
+                {variants.length > 1 && (
+                  <DropdownMenuSub>
+                    <DropdownMenuSubTrigger>
+                      <PaletteIcon /> Shows option
+                    </DropdownMenuSubTrigger>
+                    <DropdownMenuSubContent>
+                      <DropdownMenuLabel>Shown first when chosen</DropdownMenuLabel>
+                      <DropdownMenuRadioGroup
+                        value={photo.variantId ?? "all"}
+                        onValueChange={(v) => assignVariant(photo, v === "all" ? null : v)}
+                      >
+                        <DropdownMenuRadioItem value="all">All options</DropdownMenuRadioItem>
+                        {variants.map((v) => (
+                          <DropdownMenuRadioItem key={v.id} value={v.id}>
+                            {v.title}
+                          </DropdownMenuRadioItem>
+                        ))}
+                      </DropdownMenuRadioGroup>
+                    </DropdownMenuSubContent>
+                  </DropdownMenuSub>
+                )}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem variant="destructive" onSelect={() => setDeleting(photo)}>
                   <Trash2Icon /> Delete

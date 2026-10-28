@@ -40,6 +40,8 @@ export const routes = {
   storefrontCreditNote: (shopSlug: string, token: string, returnId: string) =>
     `/s/${shopSlug}/orders/${token}/returns/${returnId}/credit-note`,
   storefrontPolicy: (shopSlug: string, page: string) => `/s/${shopSlug}/pages/${page}`,
+  storefrontCollection: (shopSlug: string, collectionSlug: string) =>
+    `/s/${shopSlug}/c/${collectionSlug}`,
   storefrontContact: (shopSlug: string) => `/s/${shopSlug}/contact`,
   storefrontSitemap: (shopSlug: string) => `/s/${shopSlug}/sitemap.xml`,
   // Shopper accounts (separate from staff sign-in)
@@ -51,6 +53,13 @@ export const routes = {
   storefrontProfile: (shopSlug: string) => `/s/${shopSlug}/account/profile`,
   orgCustomers: (orgSlug: string) => `/app/${orgSlug}/customers`,
   orgDiscounts: (orgSlug: string) => `/app/${orgSlug}/discounts`,
+  orgCollections: (orgSlug: string) => `/app/${orgSlug}/collections`,
+  orgCollection: (orgSlug: string, collectionId: string) =>
+    `/app/${orgSlug}/collections/${collectionId}`,
+  orgReviews: (orgSlug: string) => `/app/${orgSlug}/reviews`,
+  orgProductImport: (orgSlug: string) => `/app/${orgSlug}/products/import`,
+  orgProductExport: (orgSlug: string, template = false) =>
+    `/app/${orgSlug}/products/export${template ? "?template=1" : ""}`,
   orgReturns: (orgSlug: string) => `/app/${orgSlug}/returns`,
   orgReturn: (orgSlug: string, returnId: string) => `/app/${orgSlug}/returns/${returnId}`,
   orgCreditNote: (orgSlug: string, returnId: string) =>

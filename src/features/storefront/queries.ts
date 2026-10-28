@@ -5,6 +5,7 @@ import { z } from "zod";
 
 import {
   CATALOG_PAGE_SIZE,
+  catalogItemsSchema,
   type CatalogSort,
   catalogSchema,
   categoriesSchema,
@@ -41,11 +42,13 @@ export const getCatalog = cache(
     filters: {
       category: string | null;
       q: string;
-      sort: CatalogSort;
+      sort: CatalogSort | "featured";
       page: number;
       min?: number | null;
       max?: number | null;
       stock?: boolean;
+      collection?: string | null;
+      limit?: number;
     },
   ) => {
     const supabase = await createClient();
@@ -55,11 +58,12 @@ export const getCatalog = cache(
       p_category_id: filters.category ?? undefined,
       p_search: filters.q.slice(0, 100) || undefined,
       p_sort: filters.sort,
-      p_limit: CATALOG_PAGE_SIZE,
-      p_offset: (page - 1) * CATALOG_PAGE_SIZE,
+      p_limit: filters.limit ?? CATALOG_PAGE_SIZE,
+      p_offset: (page - 1) * (filters.limit ?? CATALOG_PAGE_SIZE),
       p_min_price: typeof filters.min === "number" && filters.min >= 0 ? filters.min : undefined,
       p_max_price: typeof filters.max === "number" && filters.max >= 0 ? filters.max : undefined,
       p_in_stock: filters.stock || undefined,
+      p_collection_id: filters.collection ?? undefined,
     });
     if (error) throw fromPostgrestError(error);
     const catalog = catalogSchema.parse(data);
@@ -148,3 +152,34 @@ export const getQuote = cache(
     return { ...quoteSchema.parse(data), code };
   },
 );
+
+export const storefrontCollectionsSchema = z.array(
+  z.object({
+    id: z.uuid(),
+    slug: z.string(),
+    title: z.string(),
+    description: z.string().nullable(),
+    featured: z.boolean(),
+  }),
+);
+export type StorefrontCollection = z.output<typeof storefrontCollectionsSchema>[number];
+
+/** The shop's collections that have something to show. */
+export const getStorefrontCollections = cache(async (shopId: string) => {
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("storefront_collections", { p_shop_id: shopId });
+  if (error) throw fromPostgrestError(error);
+  return storefrontCollectionsSchema.parse(data ?? []);
+});
+
+/** "You may also like": same category, shared tags or collections. */
+export const getRelatedProducts = cache(async (shopId: string, productId: string) => {
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("storefront_related", {
+    p_shop_id: shopId,
+    p_product_id: productId,
+    p_limit: 8,
+  });
+  if (error) throw fromPostgrestError(error);
+  return catalogItemsSchema.parse(data ?? []);
+});

@@ -25,6 +25,7 @@ const CAPABILITIES = {
   // Handling returns is everyday work; giving money back is for managers up.
   "returns.manage": ["owner", "admin", "manager", "staff"],
   "returns.refund": ["owner", "admin", "manager"],
+  "reviews.manage": ["owner", "admin", "manager", "support"],
 } as const satisfies Record<string, readonly OrgRole[]>;
 
 export type Capability = keyof typeof CAPABILITIES;

@@ -3,13 +3,19 @@
 import Image from "next/image";
 import { useState } from "react";
 
-import { type ProductImage, productImageUrl } from "@/features/products/images";
+import { useSelectedVariant } from "@/features/storefront/components/selected-variant";
+
+import { orderForVariant, type ProductImage, productImageUrl } from "@/features/products/images";
 import { ProductArt } from "@/features/storefront/components/product-art";
 import { cn } from "@/lib/utils";
 
+/**
+ * Photos for the chosen option first (e.g. the red ones when Red is picked),
+ * then the general ones, then other options'.
+ */
 /** Large photo with a row of thumbnails to switch between them. */
 export function ProductGallery({
-  images,
+  images: allImages,
   title,
   seed,
   industry,
@@ -19,7 +25,15 @@ export function ProductGallery({
   seed: string;
   industry: string | null;
 }) {
-  const [selected, setSelected] = useState(0);
+  const { variantId } = useSelectedVariant();
+  // The chosen photo, remembered per option: picking another option starts at its first photo.
+  const [choice, setChoice] = useState<{ variantId: string | null; index: number }>({
+    variantId,
+    index: 0,
+  });
+  const selected = choice.variantId === variantId ? choice.index : 0;
+  const setSelected = (index: number) => setChoice({ variantId, index });
+  const images = orderForVariant(allImages, variantId);
   if (images.length === 0)
     return <ProductArt seed={seed} industry={industry} size="lg" className="rounded-3xl" />;
 

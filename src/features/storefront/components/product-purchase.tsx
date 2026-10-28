@@ -2,7 +2,7 @@
 
 import { CheckIcon, MinusIcon, PlusIcon, ShoppingBagIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -10,6 +10,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { routes } from "@/config/routes";
 import { changeCart } from "@/features/storefront/actions";
 import { Price } from "@/features/storefront/components/price";
+import { useSelectedVariant } from "@/features/storefront/components/selected-variant";
 import { type StorefrontProduct } from "@/features/storefront/schemas";
 import {
   axisValues,
@@ -34,6 +35,9 @@ export function ProductPurchase({ shopSlug, product, currency }: ProductPurchase
   const variant = findVariant(product.variants, selected);
   const maxQty = Math.max(1, Math.min(variant?.available ?? 1, 10));
   const soldOut = !variant || variant.available <= 0;
+  const { setVariantId } = useSelectedVariant();
+  const variantId = variant?.id ?? null;
+  useEffect(() => setVariantId(variantId), [variantId, setVariantId]);
 
   const add = () =>
     startTransition(async () => {

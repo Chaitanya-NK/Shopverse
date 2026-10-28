@@ -4,7 +4,7 @@ Multi-shop commerce SaaS for businesses that sell **anything**: clothing, electr
 
 **Stack:** Next.js 16 (App Router, Cache Components, Server Actions) · React 19 · TypeScript (strict) · Supabase (Postgres, Auth, RLS, Storage) · shadcn/ui + Tailwind CSS 4 · Zod 4 · React Hook Form · Vitest
 
-## Status: Phase 10 (Shopverse billing & platform admin)
+## Status: Phase 11 (catalogue power tools)
 
 | Area         | What's in place                                                                                                                                                                                                                                                                                                                               |
 | ------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -41,7 +41,9 @@ Multi-shop commerce SaaS for businesses that sell **anything**: clothing, electr
 | GST          | Monthly B2C summary by place of supply and rate, HSN summary, invoice register, built from the issued invoices; CSV exports of orders, customers and stock (safe against spreadsheet formulas)                                                                                                                                                |
 | Returns      | Shoppers ask to return or exchange delivered items within the shop's window (categories can be non-returnable); approve or decline, pickup, receive back into stock (serials and batches too), refunds to the original payment or recorded UPI/bank/cash refunds, replacement orders for exchanges; undelivered parcels handled automatically |
 | Credit notes | Numbered GST credit notes against the invoice for every return, printable by staff and shoppers, netted off the monthly GST report                                                                                                                                                                                                            |
-| Quality      | Strict TypeScript, ESLint and Prettier, 203 unit tests, thirteen SQL test suites (RLS, stock, order flow, storefront and checkout, team and billing, shopper accounts, photos, invoices, payments, discounts, analytics, returns, platform billing), CI, commit hooks                                                                         |
+| Catalogue    | CSV import (preview first; new products and updates matched by handle and SKU, blank cells keep values) and export; photos per variant; collections with their own pages and homepage rows; typo-tolerant search and SKU lookup                                                                                                               |
+| Reviews      | Star ratings and reviews from customers who received the product (verified-buyer badge), ratings on product cards and in search results, public replies and hiding by staff; related products                                                                                                                                                 |
+| Quality      | Strict TypeScript, ESLint and Prettier, 222 unit tests, fourteen SQL test suites (RLS, stock, order flow, storefront and checkout, team and billing, shopper accounts, photos, invoices, payments, discounts, analytics, returns, platform billing, catalogue tools), CI, commit hooks                                                        |
 
 ## Quick start in GitHub Codespaces
 
@@ -166,6 +168,15 @@ select id from auth.users where email = 'you@example.com';
 
 This migration also closes a gap where owners and admins could change their organisation's plan through the API: only the name can be edited directly now.
 
+### Catalogue power tools (Phase 11)
+
+Run `npx supabase db push` (migration 023, which turns on the `pg_trgm` extension for typo-tolerant search). Then:
+
+- **Products → CSV** exports every product, or opens **Import products**. The file has one row per variant; rows sharing a `handle` are one product. Existing handles are updated (blank cells keep their values, variants are matched by SKU, new SKUs are added), new handles are created. Variant options go in `option:<field>` columns and product details in `attribute:<field>` columns; separate several values with `|`. You see every problem before anything is saved. Stock is still received in **Inventory**.
+- **Collections** groups products by hand, in your order, with a page at `/s/<shop>/c/<collection>`. Turn on "Show on the homepage" to add a row to the shop's front page.
+- On a product's photos, **Shows option** links a photo to a variant, so choosing that option shows its photos first.
+- Shoppers who received a product can rate and review it from the product page. **Reviews** lets owners, admins, managers and support staff reply in public or hide a review.
+
 ## Scripts
 
 | Command                                     | Purpose                                                          |
@@ -220,7 +231,7 @@ See **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)** for the design decisions an
 - **Phase 8 (done) — Analytics & reports:** sales dashboard (sales, orders, average order, customers vs the previous period, by day, top products, payment methods, states, shops, delivered/returned/cancelled), GST reports (B2C by state and rate, HSN summary, invoice register), CSV exports of orders, invoices, stock and customers
 - **Phase 9 (done) — Returns & credit notes:** return and exchange requests within a window set by the shop, approval, reverse pickup, restocking on receipt, refunds (online to the original payment, COD by UPI), numbered GST credit notes, credit notes netted in the GST report
 - **Phase 10 (done) — Shopverse billing & platform admin:** plan subscriptions through Razorpay Subscriptions (monthly or yearly), upgrades and downgrades, GST invoices to businesses, failed-payment grace period, a platform admin console (businesses, usage, plans)
-- **Phase 11 — Catalogue power tools:** CSV bulk import and export, photos per variant, collections, verified-buyer reviews and ratings, related products, typo-tolerant search
+- **Phase 11 (done) — Catalogue power tools:** CSV bulk import and export, photos per variant, collections, verified-buyer reviews and ratings, related products, typo-tolerant search
 - **Phase 12 — Operations:** suppliers and purchase orders, low-stock email alerts and a daily digest, courier integration (rates, AWB, labels, tracking updates), packing slips and shipping labels, barcode labels
 - **Phase 13 — Brand & reach:** per-shop logo, colours and banners, custom domains, WhatsApp and SMS order updates, abandoned-cart reminders, installable app (PWA)
 - **Phase 14 — Hardening:** background job queue for emails and webhooks, edge rate limiting, error tracking and tracing, backup and recovery runbook, accessibility audit, Hindi interface

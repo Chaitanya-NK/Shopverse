@@ -1,20 +1,28 @@
 import { env } from "@/env";
 import { routes } from "@/config/routes";
 import { escapeHtml } from "@/lib/html";
-import { getSitemapProducts, getStorefrontShop } from "@/features/storefront/queries";
+import {
+  getSitemapProducts,
+  getStorefrontCollections,
+  getStorefrontShop,
+} from "@/features/storefront/queries";
 
-/** A live shop's sitemap: home, contact, policy pages and every product. */
+/** A live shop's sitemap: home, contact, policy pages, collections and every product. */
 export async function GET(_request: Request, ctx: RouteContext<"/s/[shopSlug]/sitemap.xml">) {
   const { shopSlug } = await ctx.params;
   const shop = await getStorefrontShop(shopSlug);
   if (!shop || !shop.live) return new Response("Not found", { status: 404 });
 
-  const products = await getSitemapProducts(shop.id);
+  const [products, collections] = await Promise.all([
+    getSitemapProducts(shop.id),
+    getStorefrontCollections(shop.id),
+  ]);
   const abs = (path: string) => new URL(path, env.NEXT_PUBLIC_APP_URL).toString();
   const entries = [
     { loc: abs(routes.storefront(shop.slug)), lastmod: products[0]?.updated_at },
     { loc: abs(routes.storefrontContact(shop.slug)) },
     ...shop.policies.map((p) => ({ loc: abs(routes.storefrontPolicy(shop.slug, p)) })),
+    ...collections.map((c) => ({ loc: abs(routes.storefrontCollection(shop.slug, c.slug)) })),
     ...products.map((p) => ({
       loc: abs(routes.storefrontProduct(shop.slug, p.slug)),
       lastmod: p.updated_at,

@@ -116,6 +116,7 @@ async function ProductContent({ params }: Pick<Props, "params">) {
               productId={product.id}
               productTitle={product.title}
               photos={photos}
+              variants={product.variants.map((v) => ({ id: v.id, title: v.title }))}
             />
           ) : (
             <p className="text-sm text-muted-foreground">

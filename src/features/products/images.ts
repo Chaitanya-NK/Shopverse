@@ -27,6 +27,8 @@ export const productImageObjectSchema = z.object({
   alt: z.string().nullable(),
   width: z.number().int().positive(),
   height: z.number().int().positive(),
+  /** The option this photo shows (null: the product in general). */
+  variant_id: z.uuid().nullable().optional(),
 });
 export type ProductImage = z.output<typeof productImageObjectSchema>;
 
@@ -35,3 +37,13 @@ export const productImageSchema = productImageObjectSchema
   .nullable()
   .optional()
   .transform((v) => v ?? null);
+
+/** A variant's own photos first, then shared ones, then other variants' photos. */
+export function orderForVariant<T extends { variant_id?: string | null }>(
+  images: T[],
+  variantId: string | null,
+) {
+  if (!variantId || !images.some((i) => i.variant_id === variantId)) return images;
+  const rank = (i: T) => (i.variant_id === variantId ? 0 : i.variant_id ? 2 : 1);
+  return [...images].sort((a, b) => rank(a) - rank(b));
+}

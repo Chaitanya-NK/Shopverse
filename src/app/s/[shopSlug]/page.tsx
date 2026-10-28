@@ -22,7 +22,9 @@ import { SortSelect } from "@/features/storefront/components/sort-select";
 import {
   getCatalog,
   getStorefrontCategories,
+  getStorefrontCollections,
   getStorefrontShop,
+  type StorefrontCollection,
 } from "@/features/storefront/queries";
 import { loadCatalogParams, serializeCatalogParams } from "@/features/storefront/search-params";
 import { formatMoney } from "@/lib/format";
@@ -44,10 +46,11 @@ async function Catalog({ params, searchParams }: Props) {
   const shop = await getStorefrontShop(shopSlug);
   if (!shop) notFound();
 
-  const [catalog, categories, shopper] = await Promise.all([
+  const [catalog, categories, shopper, collections] = await Promise.all([
     getCatalog(shop.id, filters),
     getStorefrontCategories(shop.id),
     getShopper(shop.id),
+    getStorefrontCollections(shop.id),
   ]);
   const saved = new Set(shopper?.wishlist);
   const activeCategory = categories.find((c) => c.id === filters.category);
@@ -76,7 +79,21 @@ async function Catalog({ params, searchParams }: Props) {
         </section>
       )}
 
-      {categories.length > 0 && (
+      {!browsing &&
+        collections
+          .filter((c) => c.featured)
+          .map((c) => (
+            <Suspense key={c.id} fallback={<Skeleton className="h-72 rounded-xl" />}>
+              <FeaturedCollection
+                shop={shop}
+                collection={c}
+                saved={saved}
+                signedIn={Boolean(shopper)}
+              />
+            </Suspense>
+          ))}
+
+      {(categories.length > 0 || collections.length > 0) && (
         <nav aria-label="Categories" className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1">
           <CategoryChip href={href({ category: null })} active={!filters.category}>
             All
@@ -88,6 +105,15 @@ async function Catalog({ params, searchParams }: Props) {
               active={c.id === filters.category}
             >
               {c.name}
+            </CategoryChip>
+          ))}
+          {collections.map((c) => (
+            <CategoryChip
+              key={c.id}
+              href={routes.storefrontCollection(shop.slug, c.slug)}
+              active={false}
+            >
+              {c.title}
             </CategoryChip>
           ))}
         </nav>
@@ -165,6 +191,73 @@ async function Catalog({ params, searchParams }: Props) {
         </Empty>
       )}
     </div>
+  );
+}
+
+/** A homepage section: the first products of a featured collection. */
+async function FeaturedCollection({
+  shop,
+  collection,
+  saved,
+  signedIn,
+}: {
+  shop: { id: string; slug: string; currency: string; live: boolean };
+  collection: StorefrontCollection;
+  saved: Set<string>;
+  signedIn: boolean;
+}) {
+  const catalog = await getCatalog(shop.id, {
+    category: null,
+    q: "",
+    sort: "featured",
+    page: 1,
+    collection: collection.id,
+    limit: 4,
+  });
+  if (catalog.items.length === 0) return null;
+  return (
+    <section aria-labelledby={`collection-${collection.id}`} className="space-y-4">
+      <div className="flex items-end justify-between gap-4">
+        <div>
+          <h2 id={`collection-${collection.id}`} className="text-xl font-semibold tracking-tight">
+            {collection.title}
+          </h2>
+          {collection.description && (
+            <p className="line-clamp-1 text-sm text-muted-foreground">{collection.description}</p>
+          )}
+        </div>
+        {catalog.total > catalog.items.length && (
+          <Link
+            href={routes.storefrontCollection(shop.slug, collection.slug)}
+            className="shrink-0 text-sm font-medium hover:underline"
+          >
+            See all {catalog.total}
+          </Link>
+        )}
+      </div>
+      <div className="grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3 lg:grid-cols-4">
+        {catalog.items.map((p) => (
+          <ProductCard
+            key={p.id}
+            shopSlug={shop.slug}
+            product={p}
+            currency={shop.currency}
+            action={
+              shop.live && (
+                <WishlistButton
+                  variant="overlay"
+                  shopSlug={shop.slug}
+                  productId={p.id}
+                  productTitle={p.title}
+                  saved={saved.has(p.id)}
+                  signedIn={signedIn}
+                />
+              )
+            }
+          />
+        ))}
+      </div>
+    </section>
   );
 }
 
