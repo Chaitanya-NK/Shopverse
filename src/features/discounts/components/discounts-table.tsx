@@ -99,7 +99,7 @@ export function DiscountsTable({
               <TableHead>Status</TableHead>
               <TableHead className="hidden md:table-cell">When</TableHead>
               <TableHead className="text-right">Used</TableHead>
-              <TableHead className="hidden text-right sm:table-cell">Saved customers</TableHead>
+              <TableHead className="hidden text-right sm:table-cell">Customers saved</TableHead>
               {canManage && <TableHead className="w-12 pr-4" />}
             </TableRow>
           </TableHeader>
