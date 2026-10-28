@@ -26,7 +26,7 @@ export function RetryRefundsButton({
           const result = await retryRefunds({ organizationSlug, orderId });
           if (!result.ok) toast.error(result.error.message);
           else if (result.data.failed > 0)
-            toast.error("Razorpay didn't accept the refund. Try again shortly.");
+            toast.error("Stripe didn't accept the refund. Try again shortly.");
           else toast.success("Refund started");
         })
       }

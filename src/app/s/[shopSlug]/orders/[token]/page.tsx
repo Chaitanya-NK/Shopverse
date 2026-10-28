@@ -18,6 +18,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { routes } from "@/config/routes";
 import { SHIPMENT_STATUS_LABELS } from "@/features/orders/schemas";
 import { PayNowButton } from "@/features/payments/components/pay-now-button";
+import { PaymentReturn } from "@/features/payments/components/payment-return";
 import { OrderProgress } from "@/features/shopper/components/order-progress";
 import { type OrderStage } from "@/features/shopper/stages";
 import { ProductVisual } from "@/features/storefront/components/product-visual";
@@ -61,16 +62,17 @@ const HEADLINE: Record<OrderStage, string> = {
   cancelled: "Order cancelled",
 };
 
-export default function CustomerOrderPage({ params }: Props) {
+export default function CustomerOrderPage({ params, searchParams }: Props) {
   return (
     <Suspense fallback={<Skeleton className="mx-auto h-[32rem] max-w-2xl rounded-xl" />}>
-      <CustomerOrder params={params} />
+      <CustomerOrder params={params} searchParams={searchParams} />
     </Suspense>
   );
 }
 
-async function CustomerOrder({ params }: Pick<Props, "params">) {
+async function CustomerOrder({ params, searchParams }: Props) {
   const { shopSlug, token } = await params;
+  const { checkout } = await searchParams;
   const [order, shop] = await Promise.all([getCustomerOrder(token), getStorefrontShop(shopSlug)]);
   if (!order || !shop || order.shop.slug !== shopSlug) notFound();
   const [access, shopper] = await Promise.all([
@@ -81,6 +83,13 @@ async function CustomerOrder({ params }: Pick<Props, "params">) {
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
+      {typeof checkout === "string" && /^(cancelled|cs_[A-Za-z0-9_]{8,200})$/.test(checkout) && (
+        <PaymentReturn
+          orderToken={token}
+          checkout={checkout}
+          path={routes.storefrontOrder(shopSlug, token)}
+        />
+      )}
       <div className="space-y-2 text-center">
         {order.status === "cancelled" ? (
           <XCircleIcon className="mx-auto size-12 text-muted-foreground" aria-hidden />

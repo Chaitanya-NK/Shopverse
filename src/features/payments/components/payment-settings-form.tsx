@@ -35,8 +35,7 @@ export function PaymentSettingsForm({
     resolver: zodResolver(paymentSettingsSchema),
     defaultValues: {
       organizationSlug,
-      keyId: connected ? settings.key_id : "",
-      keySecret: "",
+      secretKey: "",
       webhookSecret: "",
       enabled: connected ? settings.enabled : true,
     },
@@ -44,8 +43,8 @@ export function PaymentSettingsForm({
 
   const onSubmit = form.handleSubmit((values) =>
     startTransition(async () => {
-      if (!connected && !values.keySecret) {
-        form.setError("keySecret", { message: "Enter the key secret" });
+      if (!connected && !values.secretKey) {
+        form.setError("secretKey", { message: "Enter the secret key" });
         return;
       }
       const result = await savePaymentSettings(values);
@@ -55,15 +54,15 @@ export function PaymentSettingsForm({
       }
       toast.success(
         result.data.mode === "live"
-          ? "Razorpay connected in live mode"
-          : "Razorpay connected in test mode",
+          ? "Stripe connected in live mode"
+          : "Stripe connected in test mode",
       );
-      form.reset({ ...values, keySecret: "", webhookSecret: "" });
+      form.reset({ ...values, secretKey: "", webhookSecret: "" });
     }),
   );
 
   const secret = (
-    name: "keySecret" | "webhookSecret",
+    name: "secretKey" | "webhookSecret",
     label: string,
     hint: string,
     saved: boolean,
@@ -93,37 +92,16 @@ export function PaymentSettingsForm({
   return (
     <form onSubmit={onSubmit} noValidate className="space-y-6">
       <FieldGroup>
-        <Controller
-          name="keyId"
-          control={form.control}
-          render={({ field, fieldState }) => (
-            <Field data-invalid={fieldState.invalid}>
-              <FieldLabel htmlFor="pay-keyId">Key id</FieldLabel>
-              <Input
-                {...field}
-                id="pay-keyId"
-                autoComplete="off"
-                className="font-mono"
-                placeholder="rzp_test_…"
-                aria-invalid={fieldState.invalid}
-              />
-              <FieldDescription>
-                Use test keys first; switch to live keys when you&apos;re ready.
-              </FieldDescription>
-              {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
-            </Field>
-          )}
-        />
         {secret(
-          "keySecret",
-          "Key secret",
-          "Shown once in Razorpay when you generate the key.",
+          "secretKey",
+          "Secret key",
+          "In Stripe: Developers → API keys. Use the test key (sk_test_…) to try things out; no business verification is needed.",
           connected,
         )}
         {secret(
           "webhookSecret",
-          "Webhook secret",
-          "The secret you set on the webhook below. It confirms payments even if the shopper closes the page.",
+          "Webhook signing secret",
+          "From the webhook endpoint below (whsec_…). It confirms payments even if the shopper closes the page.",
           connected && settings.webhook_configured,
         )}
         <Controller
@@ -147,7 +125,7 @@ export function PaymentSettingsForm({
       <div className="flex flex-wrap items-center gap-3">
         <Button type="submit" disabled={isPending}>
           {isPending && <Spinner />}
-          {connected ? "Save and check keys" : "Connect Razorpay"}
+          {connected ? "Save and check key" : "Connect Stripe"}
         </Button>
         {connected && (
           <Button
@@ -164,7 +142,7 @@ export function PaymentSettingsForm({
       <ConfirmDialog
         open={confirmOpen}
         onOpenChange={setConfirmOpen}
-        title="Disconnect Razorpay?"
+        title="Disconnect Stripe?"
         description="Shoppers won't be able to pay online. Orders already paid aren't affected, but refunds can't be sent until you connect again."
         confirmLabel="Disconnect"
         onConfirm={async () => {
@@ -173,11 +151,10 @@ export function PaymentSettingsForm({
             toast.error(result.error.message);
             return false;
           }
-          toast.success("Razorpay disconnected");
+          toast.success("Stripe disconnected");
           form.reset({
             organizationSlug,
-            keyId: "",
-            keySecret: "",
+            secretKey: "",
             webhookSecret: "",
             enabled: true,
           });

@@ -134,8 +134,7 @@ function SetPlanDialog({
         <DialogHeader>
           <DialogTitle>Set {name}&apos;s plan by hand</DialogTitle>
           <DialogDescription>
-            For deals and corrections. It isn&apos;t billed through Razorpay and stays until
-            changed.
+            For deals and corrections. It isn&apos;t billed through Stripe and stays until changed.
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4">

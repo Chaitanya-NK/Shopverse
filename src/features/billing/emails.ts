@@ -52,16 +52,16 @@ export function billingEmail(to: string, business: string, e: BillingEmail): Mai
       return {
         to,
         subject: `Action needed: your Shopverse payment didn't go through`,
-        text: `We couldn't charge for ${business}'s ${e.planName} plan. Your shops keep selling. Update your payment by ${until} to keep adding products, shops and teammates.${e.updateUrl ? `\nUpdate payment: ${e.updateUrl}` : ""}`,
+        text: `We couldn't charge for ${business}'s ${e.planName} plan. Your shops keep selling. Update your payment by ${until} to keep adding products, shops and teammates.${e.updateUrl ? `\nPay the invoice: ${e.updateUrl}` : ""}`,
         html: layout(
           "Your payment didn't go through",
           p(
-            `We couldn't charge for ${name}'s <b>${escapeHtml(e.planName)}</b> plan. Razorpay will try again.`,
+            `We couldn't charge for ${name}'s <b>${escapeHtml(e.planName)}</b> plan. Stripe will try the card again.`,
           ) +
             p(
               `Your shops keep selling. Please update your payment by <b>${escapeHtml(until)}</b>; after that, adding products, shops and teammates is paused until it's sorted.`,
             ) +
-            (e.updateUrl ? button(e.updateUrl, "Update payment") : ""),
+            (e.updateUrl ? button(e.updateUrl, "Pay the invoice") : ""),
         ),
       };
     }

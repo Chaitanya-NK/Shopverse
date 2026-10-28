@@ -82,7 +82,7 @@ export function ShopSettingsForm({
 }: {
   organizationSlug: string;
   shop: ShopSummary;
-  /** Whether the business has an enabled Razorpay account. */
+  /** Whether the business has an enabled Stripe account. */
   paymentsConnected: boolean;
 }) {
   const router = useRouter();
@@ -257,10 +257,10 @@ export function ShopSettingsForm({
                       </FieldLabel>
                       <FieldDescription>
                         {paymentsConnected ? (
-                          "Through your connected Razorpay account."
+                          "Through your connected Stripe account."
                         ) : (
                           <>
-                            Offered once you connect Razorpay in{" "}
+                            Offered once you connect Stripe in{" "}
                             <Link
                               href={routes.orgPayments(organizationSlug)}
                               className="underline underline-offset-4"

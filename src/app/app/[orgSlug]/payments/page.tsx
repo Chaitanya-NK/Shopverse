@@ -21,14 +21,19 @@ export const metadata: Metadata = { title: "Payments" };
 
 type Props = PageProps<"/app/[orgSlug]/payments">;
 
-const WEBHOOK_EVENTS = ["payment.captured", "payment.failed", "order.paid"];
+const WEBHOOK_EVENTS = [
+  "checkout.session.completed",
+  "checkout.session.async_payment_succeeded",
+  "checkout.session.async_payment_failed",
+  "checkout.session.expired",
+];
 
 export default function PaymentsPage({ params }: Props) {
   return (
     <>
       <PageHeader
         title="Payments"
-        description="Take UPI, card and net banking payments in your shops with your own Razorpay account."
+        description="Take card and other online payments in your shops with your own Stripe account."
       />
       <Suspense fallback={<Skeleton className="h-96 rounded-xl" />}>
         <Payments params={params} />
@@ -47,7 +52,7 @@ async function Payments({ params }: Pick<Props, "params">) {
 
   const settings = await getPaymentSettings(organization.id);
   const webhookUrl = new URL(
-    routes.razorpayWebhook(organization.id),
+    routes.stripeWebhook(organization.id),
     env.NEXT_PUBLIC_APP_URL,
   ).toString();
 
@@ -57,7 +62,7 @@ async function Payments({ params }: Pick<Props, "params">) {
         <CardHeader>
           <CardTitle className="flex flex-wrap items-center gap-2">
             <LandmarkIcon className="size-5" aria-hidden />
-            Razorpay
+            Stripe
             {settings.connected ? (
               <>
                 <Badge variant={settings.mode === "live" ? "default" : "secondary"}>
@@ -70,8 +75,13 @@ async function Payments({ params }: Pick<Props, "params">) {
             )}
           </CardTitle>
           <CardDescription>
-            Money goes straight to your Razorpay account. Keys are checked with Razorpay, then
-            stored encrypted; nobody can read them back here.
+            Money goes straight to your Stripe account. Keys are checked with Stripe, then stored
+            encrypted; nobody can read them back here.
+            {settings.connected && (
+              <span className="mt-1 block">
+                Connected account: <code className="text-xs">{settings.key_id}</code>
+              </span>
+            )}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
@@ -101,21 +111,21 @@ async function Payments({ params }: Pick<Props, "params">) {
 
       <Card className="h-fit">
         <CardHeader>
-          <CardTitle>Set up in Razorpay</CardTitle>
+          <CardTitle>Set up in Stripe</CardTitle>
         </CardHeader>
         <CardContent>
           <ol className="list-decimal space-y-4 pl-5 text-sm">
             <li>
-              In the Razorpay Dashboard, open <b>Account &amp; Settings → API Keys</b> and generate
-              a key. Paste the key id and secret here.
+              Sign up at stripe.com (any country; test mode needs no documents). In{" "}
+              <b>Developers → API keys</b>, copy the <b>secret key</b> and paste it here.
             </li>
             <li className="space-y-2">
               <p>
-                Open <b>Account &amp; Settings → Webhooks → Add new webhook</b> with this URL:
+                In <b>Developers → Webhooks → Add endpoint</b>, use this URL:
               </p>
               <CopyField value={webhookUrl} label="webhook URL" />
               <p>
-                Choose a secret (paste it here too) and tick these events:{" "}
+                Select these events, then copy the endpoint&apos;s <b>signing secret</b> here:{" "}
                 {WEBHOOK_EVENTS.map((e, i) => (
                   <span key={e}>
                     <code className="rounded bg-muted px-1 py-0.5 text-xs">{e}</code>

@@ -1,20 +1,29 @@
 import "server-only";
 
 import { notifyOrder } from "@/features/notifications/order-notifier";
+import { routes } from "@/config/routes";
+import { env } from "@/env";
 import { AppError, Errors, fromPostgrestError } from "@/lib/errors";
 import { logger } from "@/lib/logger";
 import {
   fromPaise,
-  razorpay,
-  type RazorpayCredentials,
-  verifyPaymentSignature,
-} from "@/lib/payments/razorpay";
+  idOf,
+  stripe,
+  type StripeCheckoutSession,
+  type StripePaymentIntent,
+  toPaise,
+} from "@/lib/payments/stripe";
 import { decryptSecret } from "@/lib/payments/secrets";
 import { createAdminClient } from "@/lib/supabase/admin";
 
-type Credentials = RazorpayCredentials & { webhookSecret: string | null; enabled: boolean };
+type Credentials = {
+  accountId: string;
+  secretKey: string;
+  webhookSecret: string | null;
+  enabled: boolean;
+};
 
-/** A business's Razorpay keys, decrypted (server only). Null if not connected. */
+/** A business's Stripe keys, decrypted (server only). Null if not connected. */
 export async function getCredentials(organizationId: string): Promise<Credentials | null> {
   const { data, error } = await createAdminClient().rpc("payment_account_credentials", {
     p_organization_id: organizationId,
@@ -28,26 +37,22 @@ export async function getCredentials(organizationId: string): Promise<Credential
     enabled: boolean;
   };
   return {
-    keyId: row.key_id,
-    keySecret: decryptSecret(row.key_secret_enc),
+    accountId: row.key_id,
+    secretKey: decryptSecret(row.key_secret_enc),
     webhookSecret: row.webhook_secret_enc ? decryptSecret(row.webhook_secret_enc) : null,
     enabled: row.enabled,
   };
 }
 
-export type CheckoutSession = {
-  keyId: string;
-  razorpayOrderId: string;
-  amountPaise: number;
-  currency: string;
-  shopName: string;
-  description: string;
-  dueAt: string;
-  prefill: { name?: string; email?: string; contact?: string };
-};
+/** Stripe asks for at least 30 minutes before a Checkout Session may expire. */
+const MIN_SESSION_SECONDS = 31 * 60;
+const absolute = (path: string) => new URL(path, env.NEXT_PUBLIC_APP_URL).toString();
 
-/** Create a Razorpay order for an order awaiting payment (a new one per attempt). */
-export async function startPayment(orderToken: string): Promise<CheckoutSession> {
+/**
+ * Start Stripe Checkout for an order awaiting payment (a new session per
+ * attempt). Returns the hosted page to send the shopper to.
+ */
+export async function startPayment(orderToken: string): Promise<{ url: string }> {
   const admin = createAdminClient();
   const { data, error } = await admin.rpc("begin_online_payment", { p_order_token: orderToken });
   if (error) throw fromPostgrestError(error);
@@ -70,61 +75,72 @@ export async function startPayment(orderToken: string): Promise<CheckoutSession>
       "The time to pay ran out, so this order was cancelled. Please order again.",
     );
 
-  const credentials = await getCredentials(order.organization_id);
+  const [credentials, shop] = await Promise.all([
+    getCredentials(order.organization_id),
+    admin.from("orders").select("shop:shops (slug)").eq("id", order.order_id).single(),
+  ]);
   if (!credentials?.enabled)
     throw new AppError(
       "UNAVAILABLE",
       "Online payment isn't available right now. Please contact the shop.",
     );
+  if (shop.error) throw fromPostgrestError(shop.error);
+  const orderPage = absolute(routes.storefrontOrder(shop.data.shop!.slug, orderToken));
 
   const amount = Number(order.amount);
-  const created = await razorpay.createOrder(credentials, {
-    amount,
-    currency: order.currency,
-    receipt: order.number,
-    notes: { shopverse_order_id: order.order_id, order_number: order.number },
+  const session = await stripe.createCheckoutSession(credentials.secretKey, {
+    mode: "payment",
+    line_items: [
+      {
+        quantity: 1,
+        price_data: {
+          currency: order.currency.toLowerCase(),
+          unit_amount: toPaise(amount),
+          product_data: { name: `Order ${order.number}`, description: order.shop_name },
+        },
+      },
+    ],
+    customer_email: order.customer.email ?? undefined,
+    client_reference_id: order.order_id,
+    metadata: { shopverse_order_id: order.order_id, order_number: order.number },
+    payment_intent_data: {
+      description: `${order.shop_name} order ${order.number}`,
+      metadata: { shopverse_order_id: order.order_id, order_number: order.number },
+    },
+    // Stock is held until the order's due time; a late payment is refunded.
+    expires_at: Math.floor(Date.now() / 1000) + MIN_SESSION_SECONDS,
+    success_url: `${orderPage}?checkout={CHECKOUT_SESSION_ID}`,
+    cancel_url: `${orderPage}?checkout=cancelled`,
   });
+  if (!session.url) throw new AppError("UNAVAILABLE", "Stripe didn't return a payment page.");
+
   const { error: recordError } = await admin.rpc("record_payment_attempt", {
     p_order_id: order.order_id,
-    p_provider_order_id: created.id,
+    p_provider_order_id: session.id,
     p_amount: amount,
     p_currency: order.currency,
   });
   if (recordError) throw fromPostgrestError(recordError);
-
-  return {
-    keyId: credentials.keyId,
-    razorpayOrderId: created.id,
-    amountPaise: created.amount,
-    currency: created.currency,
-    shopName: order.shop_name,
-    description: `Order ${order.number}`,
-    dueAt: order.due_at,
-    prefill: {
-      name: order.customer.name ?? undefined,
-      email: order.customer.email ?? undefined,
-      contact: order.customer.phone ?? undefined,
-    },
-  };
+  return { url: session.url };
 }
 
 type CaptureResult =
   "confirmed" | "already_recorded" | "duplicate" | "order_closed" | "amount_mismatch" | "unknown";
 
 /**
- * Record a captured payment (from the checkout callback or a webhook). Sends
+ * Record a paid Checkout Session (from the return page or a webhook). Sends
  * the confirmation email the first time, and refunds money that can't be kept.
  */
 export async function settleCapture(input: {
-  razorpayOrderId: string;
-  paymentId: string;
+  sessionId: string;
+  paymentIntentId: string;
   amount: number;
   method: string | null;
 }): Promise<{ result: CaptureResult; orderId: string | null }> {
   const admin = createAdminClient();
   const { data, error } = await admin.rpc("record_payment_captured", {
-    p_provider_order_id: input.razorpayOrderId,
-    p_provider_payment_id: input.paymentId,
+    p_provider_order_id: input.sessionId,
+    p_provider_payment_id: input.paymentIntentId,
     p_amount: input.amount,
     p_method: input.method ?? "online",
   });
@@ -137,58 +153,45 @@ export async function settleCapture(input: {
   return { result: outcome.result, orderId };
 }
 
-/** Checkout success callback: verify the signature, then confirm with Razorpay itself. */
-export async function completePayment(input: {
-  razorpayOrderId: string;
-  paymentId: string;
-  signature: string;
-}) {
+/** What a session's payment was made with ("card", "upi", …). */
+function methodOf(session: StripeCheckoutSession) {
+  const pi = session.payment_intent as StripePaymentIntent | string | null;
+  const charge = typeof pi === "object" && pi ? pi.latest_charge : null;
+  return (typeof charge === "object" && charge?.payment_method_details?.type) || null;
+}
+
+/**
+ * Settle a Checkout Session from Stripe's own record of it (never the
+ * browser's word). Unpaid sessions are reported, not recorded.
+ */
+export async function settleSession(secretKey: string, sessionId: string) {
+  const session = await stripe.retrieveCheckoutSession(secretKey, sessionId, [
+    "payment_intent.latest_charge",
+  ]);
+  const paymentIntentId = idOf(session.payment_intent);
+  if (session.payment_status !== "paid" || !paymentIntentId) return { result: "unpaid" as const };
+  return settleCapture({
+    sessionId: session.id,
+    paymentIntentId,
+    amount: fromPaise(session.amount_total ?? 0),
+    method: methodOf(session),
+  });
+}
+
+/** The shopper is back from Stripe Checkout: confirm the order if it was paid. */
+export async function completePayment(input: { orderToken: string; sessionId: string }) {
   const admin = createAdminClient();
   const { data: attempt, error } = await admin
     .from("payments")
-    .select("organization_id, amount, currency")
-    .eq("provider_order_id", input.razorpayOrderId)
+    .select("organization_id, order:orders!inner (public_token)")
+    .eq("provider_order_id", input.sessionId)
     .maybeSingle();
   if (error) throw fromPostgrestError(error);
-  if (!attempt) throw Errors.notFound("Payment");
-
+  // The session must belong to this order's link.
+  if (!attempt || attempt.order.public_token !== input.orderToken) throw Errors.notFound("Payment");
   const credentials = await getCredentials(attempt.organization_id);
   if (!credentials) throw new AppError("UNAVAILABLE", "Online payment isn't available right now.");
-  if (
-    !verifyPaymentSignature(credentials.keySecret, {
-      orderId: input.razorpayOrderId,
-      paymentId: input.paymentId,
-      signature: input.signature,
-    })
-  )
-    throw Errors.validation(
-      {},
-      "We couldn't verify this payment. If money was taken, it will be refunded.",
-    );
-
-  // Trust the server's view of the payment, not the browser's.
-  let payment = await razorpay.fetchPayment(credentials, input.paymentId);
-  if (payment.order_id !== input.razorpayOrderId)
-    throw Errors.validation({}, "This payment belongs to a different order.");
-  if (payment.status === "authorized")
-    payment = await razorpay.capturePayment(
-      credentials,
-      payment.id,
-      fromPaise(payment.amount),
-      payment.currency,
-    );
-  if (payment.status !== "captured")
-    throw Errors.validation(
-      {},
-      "The payment hasn't gone through yet. If money was taken, we'll update your order shortly.",
-    );
-
-  return settleCapture({
-    razorpayOrderId: input.razorpayOrderId,
-    paymentId: payment.id,
-    amount: fromPaise(payment.amount),
-    method: payment.method,
-  });
+  return settleSession(credentials.secretKey, input.sessionId);
 }
 
 /** Refund every captured amount an order no longer keeps. Returns what happened. */
@@ -209,13 +212,15 @@ export async function refundDuePayments(orderId: string) {
     try {
       const credentials = await getCredentials(item.organization_id);
       if (!credentials) throw new Error("Payment account not connected");
-      const refund = await razorpay.refund(
-        credentials,
-        item.provider_payment_id,
-        Number(item.amount),
+      const refund = await stripe.createRefund(
+        credentials.secretKey,
         {
-          shopverse_order_id: orderId,
+          paymentIntent: item.provider_payment_id,
+          amount: Number(item.amount),
+          metadata: { shopverse_order_id: orderId },
         },
+        // A retry of the same refund can't pay twice.
+        `refund-${item.payment_id}-${toPaise(Number(item.amount))}`,
       );
       const { error: recordError } = await admin.rpc("record_refund", {
         p_payment_id: item.payment_id,

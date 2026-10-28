@@ -90,13 +90,23 @@ select public.save_provider_plan('starter', 'monthly', 999, 1178.82, 'plan_start
 select public.save_provider_plan('scale', 'monthly', 7999, 9438.82, 'plan_scale_m');
 select pg_temp.assert(public.platform_provider_plan('growth', 'monthly', 2999) = 'plan_growth_m', 'plans cached');
 select public.begin_subscription((select org from o), '00000000-0000-0000-0000-0000000000a1', 'growth', 'monthly', 2999, 3538.82,
-  'sub_1', 'https://rzp.io/i/x');
+  'cs_1', '');
 -- An abandoned checkout doesn't block another.
 select public.begin_subscription((select org from o), '00000000-0000-0000-0000-0000000000a1', 'growth', 'monthly', 2999, 3538.82,
-  'sub_2', 'https://rzp.io/i/y');
-select pg_temp.assert((select status = 'expired' from public.subscriptions where provider_subscription_id = 'sub_1'),
+  'cs_2', '');
+select pg_temp.assert((select status = 'expired' from public.subscriptions where provider_subscription_id = 'cs_1'),
   'the abandoned one expires');
+-- Stripe creates the subscription when the checkout completes.
+select pg_temp.assert(public.link_checkout_subscription('cs_2', 'sub_2') = (select org from o), 'checkout linked');
+select pg_temp.assert(public.link_checkout_subscription('cs_2', 'sub_2') = (select org from o), 'linking is idempotent');
+select pg_temp.assert(public.link_checkout_subscription('cs_unknown', 'sub_9') is null, 'unknown checkouts are ignored');
+select pg_temp.assert((select status = 'created' from public.subscriptions where provider_subscription_id = 'sub_2'),
+  'linked, waiting for its first sync');
 select public.sync_subscription('sub_2', 'active', 'plan_growth_m', now(), now() + interval '30 days');
+-- The abandoned checkout paid late, after another plan started: it stays ended.
+select public.link_checkout_subscription('cs_1', 'sub_1');
+select pg_temp.assert((select status = 'expired' from public.subscriptions where provider_subscription_id = 'sub_1'),
+  'a late checkout does not revive while another plan runs');
 select pg_temp.assert(
   (select plan = 'growth' and plan_interval = 'monthly' and plan_renews_at > now() + interval '29 days' and past_due_since is null
    from public.organizations where id = (select org from o)),

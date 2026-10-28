@@ -24,7 +24,7 @@ import {
   defaultPaymentMethod,
   PaymentMethodChoice,
 } from "@/features/payments/components/payment-method-choice";
-import { useRazorpayCheckout } from "@/features/payments/components/use-razorpay-checkout";
+import { useOnlineCheckout } from "@/features/payments/components/use-online-checkout";
 import { addressSchema, formatAddressLine, type SavedAddress } from "@/features/shopper/schemas";
 import {
   CHECKOUT_PAYMENT_METHODS,
@@ -108,7 +108,7 @@ export function SignedInCheckout({
     },
   });
   const paymentMethod = useWatch({ control: form.control, name: "paymentMethod" });
-  const { pay } = useRazorpayCheckout();
+  const { pay } = useOnlineCheckout();
   const addressId = useWatch({ control: form.control, name: "addressId" });
 
   const onSubmit = form.handleSubmit((values) =>
@@ -130,10 +130,9 @@ export function SignedInCheckout({
       }
       if (result.data.awaitingPayment) {
         const outcome = await pay(result.data.token);
-        if (outcome.status === "paid")
-          toast.success(`Order ${result.data.number} paid and confirmed`);
-        else if (outcome.status === "failed") toast.error(outcome.message);
-        else toast.info("Your order is saved. Complete the payment to confirm it.");
+        // On success the browser is on its way to Stripe's payment page.
+        if (outcome.status === "redirecting") return;
+        toast.error(`${outcome.message} Your order is saved; you can pay from its page.`);
       } else {
         toast.success(`Order ${result.data.number} placed`);
       }

@@ -88,10 +88,10 @@ export const routes = {
   adminBusinesses: "/admin/businesses",
   adminBusiness: (organizationId: string) => `/admin/businesses/${organizationId}`,
   adminInvoice: (invoiceId: string) => `/admin/invoices/${invoiceId}`,
-  /** Shopverse's own Razorpay account. */
-  platformWebhook: "/api/webhooks/razorpay/platform",
-  /** Where Razorpay sends this business's webhooks. */
-  razorpayWebhook: (organizationId: string) => `/api/webhooks/razorpay/${organizationId}`,
+  /** Shopverse's own Stripe account. */
+  platformWebhook: "/api/webhooks/stripe/platform",
+  /** Where Stripe sends this business's webhooks. */
+  stripeWebhook: (organizationId: string) => `/api/webhooks/stripe/${organizationId}`,
   /** Accept a team invitation (public; asks the visitor to sign in). */
   invitation: (token: string) => `/invite/${token}`,
   orgCustomer: (orgSlug: string, customerId: string) => `/app/${orgSlug}/customers/${customerId}`,

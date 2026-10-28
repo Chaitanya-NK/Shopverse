@@ -28,7 +28,7 @@ export function PaymentMethodChoice({
     online: {
       icon: SmartphoneIcon,
       title: "Pay online",
-      hint: "UPI, cards, net banking or wallets, secured by Razorpay.",
+      hint: "Cards and other methods on Stripe’s secure payment page.",
       disabled: false,
     },
     cod: {

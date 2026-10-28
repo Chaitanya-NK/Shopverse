@@ -357,7 +357,7 @@ export function shippingFor(
 
 export const shopSlugSchema = z.string().regex(/^[a-z0-9-]{3,48}$/);
 
-/** How a shopper can pay: online (Razorpay) or cash on delivery. */
+/** How a shopper can pay: online (Stripe) or cash on delivery. */
 export const CHECKOUT_PAYMENT_METHODS = ["online", "cod"] as const;
 export type CheckoutPaymentMethod = (typeof CHECKOUT_PAYMENT_METHODS)[number];
 

@@ -5,7 +5,7 @@ import { z } from "zod";
 import { getCredentials } from "@/features/payments/server";
 import { AppError, Errors, fromPostgrestError, isAppError } from "@/lib/errors";
 import { logger } from "@/lib/logger";
-import { fromPaise, razorpay } from "@/lib/payments/razorpay";
+import { fromPaise, stripe, toPaise } from "@/lib/payments/stripe";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { type ServerSupabaseClient } from "@/lib/supabase/server";
 
@@ -26,11 +26,6 @@ const planSchema = z.object({
 
 const RETURN_NOTE = "shopverse_return_id";
 
-const noteOf = (notes: unknown) =>
-  notes && typeof notes === "object" && !Array.isArray(notes)
-    ? (notes as Record<string, unknown>)[RETURN_NOTE]
-    : undefined;
-
 /**
  * Refund a received return to the original online payment(s).
  *
@@ -50,14 +45,14 @@ export async function refundReturnToOriginal(supabase: ServerSupabaseClient, ret
   try {
     const credentials = await getCredentials(plan.organization_id);
     if (!credentials)
-      throw Errors.validation({}, "Connect your Razorpay account in Payments to refund online.");
+      throw Errors.validation({}, "Connect your Stripe account in Payments to refund online.");
 
     let refunded = 0;
     for (const item of plan.payments) {
       // Refunds for this return the provider already has (made, maybe not recorded).
       const existing = (
-        await razorpay.listRefunds(credentials, item.provider_payment_id)
-      ).items.filter((r) => noteOf(r.notes) === returnId);
+        await stripe.listRefunds(credentials.secretKey, item.provider_payment_id)
+      ).data.filter((r) => r.metadata?.[RETURN_NOTE] === returnId && r.status !== "failed");
       for (const r of existing) {
         await record(admin, returnId, item.payment_id, r.id, fromPaise(r.amount));
       }
@@ -65,11 +60,19 @@ export async function refundReturnToOriginal(supabase: ServerSupabaseClient, ret
       const toPay = Math.round((item.amount - Math.max(done - item.already, 0)) * 100) / 100;
       if (toPay <= 0) continue;
 
-      const refund = await razorpay.refund(credentials, item.provider_payment_id, toPay, {
-        [RETURN_NOTE]: returnId,
-        shopverse_order_id: plan.order_id,
-        return_number: plan.number,
-      });
+      const refund = await stripe.createRefund(
+        credentials.secretKey,
+        {
+          paymentIntent: item.provider_payment_id,
+          amount: toPay,
+          metadata: {
+            [RETURN_NOTE]: returnId,
+            shopverse_order_id: plan.order_id,
+            return_number: plan.number,
+          },
+        },
+        `return-${returnId}-${item.payment_id}-${toPaise(toPay)}`,
+      );
       await record(admin, returnId, item.payment_id, refund.id, fromPaise(refund.amount));
       refunded += fromPaise(refund.amount);
     }

@@ -3343,6 +3343,10 @@ export type Database = {
         Returns: Json;
       };
       is_platform_admin: { Args: Record<PropertyKey, never>; Returns: boolean };
+      link_checkout_subscription: {
+        Args: { p_checkout_id: string; p_provider_subscription_id: string };
+        Returns: string;
+      };
       mark_order_paid: { Args: { p_order_id: string }; Returns: undefined };
       mark_return_picked_up: { Args: { p_return_id: string }; Returns: undefined };
       mark_subscription_cancelling: {
@@ -3507,6 +3511,7 @@ export type Database = {
           p_enabled?: boolean;
           p_key_id: string;
           p_key_secret_enc?: string;
+          p_mode: string;
           p_organization_id: string;
           p_webhook_secret_enc?: string;
         };

@@ -38,9 +38,8 @@ export type ChoosePlanInput = z.input<typeof choosePlanSchema>;
 
 export const confirmSubscriptionSchema = z.object({
   organizationSlug: slugSchema,
-  subscriptionId: z.string().regex(/^sub_[A-Za-z0-9]+$/),
-  paymentId: z.string().regex(/^pay_[A-Za-z0-9]+$/),
-  signature: z.string().regex(/^[0-9a-f]{64}$/),
+  /** The Checkout Session Stripe sent the owner back from. */
+  checkoutId: z.string().regex(/^cs_[A-Za-z0-9_]{8,200}$/),
 });
 
 export const orgOnlySchema = z.object({ organizationSlug: slugSchema });

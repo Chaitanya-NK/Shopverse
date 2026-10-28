@@ -147,7 +147,7 @@ export function PlatformInvoiceDocument({ invoice }: { invoice: PlatformInvoice 
         </dl>
       </section>
       <footer className="mt-10 border-t border-neutral-200 pt-4 text-xs text-neutral-500">
-        Paid by subscription through Razorpay. This is a computer-generated invoice and needs no
+        Paid by subscription through Stripe. This is a computer-generated invoice and needs no
         signature.
       </footer>
     </article>

@@ -20,11 +20,11 @@ describe("billing emails", () => {
     const mail = billingEmail("a@b.co", "Mega", {
       type: "payment_failed",
       planName: "Growth",
-      updateUrl: "https://rzp.io/x",
+      updateUrl: "https://invoice.stripe.com/i/test_x",
       graceEndsAt: "2026-11-04T06:00:00Z",
     });
     expect(mail.text).toContain("Your shops keep selling");
     expect(mail.text).toContain("4 November");
-    expect(mail.html).toContain("https://rzp.io/x");
+    expect(mail.html).toContain("https://invoice.stripe.com/i/test_x");
   });
 });

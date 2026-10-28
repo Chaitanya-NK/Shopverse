@@ -28,10 +28,9 @@ import {
   PLANS,
   YEARLY_MONTHS,
 } from "@/config/plans";
-import { changePlan, confirmPlanCheckout, startPlanCheckout } from "@/features/billing/actions";
+import { changePlan, startPlanCheckout } from "@/features/billing/actions";
 import { UpgradeButton } from "@/features/billing/components/upgrade-button";
 import { type PlanLimits } from "@/features/billing/queries";
-import { loadCheckout } from "@/features/payments/components/use-razorpay-checkout";
 import { formatMoney, formatNumber } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
@@ -129,41 +128,9 @@ function PlanCard({
         toast.error(started.error.message);
         return;
       }
-      try {
-        await loadCheckout();
-      } catch (cause) {
-        toast.error(cause instanceof Error ? cause.message : "Couldn't open the payment window.");
-        return;
-      }
-      await new Promise<void>((resolve) => {
-        const checkout = new window.Razorpay!({
-          key: started.data.keyId,
-          subscription_id: started.data.subscriptionId,
-          name: "Shopverse",
-          description: started.data.description,
-          prefill: { email: started.data.email },
-          theme: { color: "#1d6b5c" },
-          handler: async (r: {
-            razorpay_payment_id: string;
-            razorpay_subscription_id: string;
-            razorpay_signature: string;
-          }) => {
-            const confirmed = await confirmPlanCheckout({
-              organizationSlug,
-              subscriptionId: r.razorpay_subscription_id,
-              paymentId: r.razorpay_payment_id,
-              signature: r.razorpay_signature,
-            });
-            if (confirmed.ok) {
-              toast.success(`You're on ${plan.name}. Thank you!`);
-              router.refresh();
-            } else toast.error(confirmed.error.message);
-            resolve();
-          },
-          modal: { ondismiss: () => resolve() },
-        });
-        checkout.open();
-      });
+      // Stripe's payment page; it sends the owner back to Billing.
+      window.location.assign(started.data.url);
+      await new Promise(() => {});
     });
 
   const change = async () => {
@@ -218,7 +185,7 @@ function PlanCard({
         title={upgrade ? `Switch to ${plan.name} now?` : `Switch to ${plan.name} at renewal?`}
         description={
           upgrade
-            ? `Your new limits apply straight away and Razorpay charges for ${plan.name} (${formatMoney(planCharge(price, gstRate), "INR")} ${interval === "yearly" ? "a year" : "a month"}${gstRate ? " incl. GST" : ""}) on your saved payment method.`
+            ? `Your new limits apply straight away. Stripe charges your saved card the difference for the rest of this period now, then ${formatMoney(planCharge(price, gstRate), "INR")} ${interval === "yearly" ? "a year" : "a month"}${gstRate ? " incl. GST" : ""}.`
             : `You keep your current plan until the end of the period you've paid for, then move to ${plan.name}.`
         }
         confirmLabel={upgrade ? "Upgrade now" : "Schedule the change"}

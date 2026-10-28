@@ -21,18 +21,20 @@ export const env = createEnv({
     MAIL_FROM: z.string().min(3).optional(),
     // Encrypts each business's payment secrets before they are stored:
     // 32 random bytes, base64 (openssl rand -base64 32). Keep it secret; if it
-    // changes, businesses must re-enter their Razorpay keys.
+    // changes, businesses must re-enter their Stripe keys.
     PAYMENTS_ENCRYPTION_KEY: z
       .string()
       .refine((v) => Buffer.from(v, "base64").length === 32, "Must be 32 bytes, base64-encoded")
       .optional(),
     // Override only for local testing against a stand-in.
-    RAZORPAY_API_URL: z.url().default("https://api.razorpay.com"),
-    // Shopverse's own Razorpay account, for plan subscriptions (not the
-    // businesses' accounts). Without these, plans are changed by request.
-    PLATFORM_RAZORPAY_KEY_ID: z.string().min(1).optional(),
-    PLATFORM_RAZORPAY_KEY_SECRET: z.string().min(1).optional(),
-    PLATFORM_RAZORPAY_WEBHOOK_SECRET: z.string().min(1).optional(),
+    STRIPE_API_URL: z.url().default("https://api.stripe.com"),
+    // Shopverse's own Stripe account, for plan subscriptions (not the
+    // businesses' accounts). Without the key, plans are changed by request.
+    PLATFORM_STRIPE_SECRET_KEY: z
+      .string()
+      .regex(/^(sk|rk)_(test|live)_[A-Za-z0-9]{10,247}$/, "Must be a Stripe secret key")
+      .optional(),
+    PLATFORM_STRIPE_WEBHOOK_SECRET: z.string().startsWith("whsec_").optional(),
     // Printed on Shopverse's invoices to businesses. With a GSTIN, plan prices
     // get GST added and invoices are tax invoices.
     PLATFORM_LEGAL_NAME: z.string().min(2).default("Shopverse"),
@@ -52,15 +54,11 @@ export const env = createEnv({
     NEXT_PUBLIC_SUPABASE_URL: z.url(),
     NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: z.string().min(1),
     NEXT_PUBLIC_APP_URL: z.url().default("http://localhost:3000"),
-    NEXT_PUBLIC_RAZORPAY_CHECKOUT_URL: z
-      .url()
-      .default("https://checkout.razorpay.com/v1/checkout.js"),
   },
   experimental__runtimeEnv: {
     NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
     NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
     NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
-    NEXT_PUBLIC_RAZORPAY_CHECKOUT_URL: process.env.NEXT_PUBLIC_RAZORPAY_CHECKOUT_URL,
   },
   skipValidation: Boolean(process.env.SKIP_ENV_VALIDATION),
   emptyStringAsUndefined: true,

@@ -30,17 +30,14 @@ import { PLAN_NAMES } from "@/config/plans";
 import { routes } from "@/config/routes";
 import { BillingProfileForm } from "@/features/billing/components/billing-profile-form";
 import { CancelPlanButton } from "@/features/billing/components/cancel-plan-button";
+import { CheckoutReturn } from "@/features/billing/components/checkout-return";
 import { PlanPicker } from "@/features/billing/components/plan-picker";
 import {
   getBillingOverview,
   listPlatformInvoices,
   type PlanLimits,
 } from "@/features/billing/queries";
-import {
-  platformCredentials,
-  platformGstRate,
-  refreshSubscription,
-} from "@/features/billing/server";
+import { platformKey, platformGstRate, refreshSubscription } from "@/features/billing/server";
 import { can } from "@/features/organizations/permissions";
 import { requireMembership } from "@/features/organizations/queries";
 import { daysUntil, formatMoney, formatNumber } from "@/lib/format";
@@ -70,7 +67,7 @@ const shortDate = new Intl.DateTimeFormat("en-IN", {
   timeZone: "Asia/Kolkata",
 });
 
-export default function BillingPage({ params }: Props) {
+export default function BillingPage({ params, searchParams }: Props) {
   return (
     <Suspense
       fallback={
@@ -80,18 +77,19 @@ export default function BillingPage({ params }: Props) {
         </>
       }
     >
-      <Billing params={params} />
+      <Billing params={params} searchParams={searchParams} />
     </Suspense>
   );
 }
 
 const limitText = (n: number | null) => (n === null ? "Unlimited" : formatNumber(n));
 
-async function Billing({ params }: Pick<Props, "params">) {
+async function Billing({ params, searchParams }: Props) {
   const { orgSlug } = await params;
+  const { checkout } = await searchParams;
   const { organization, role } = await requireMembership(orgSlug);
   let billing = await getBillingOverview(organization.id);
-  // A checkout that was paid but not yet heard about: ask Razorpay.
+  // A checkout that was paid but not yet heard about: ask Stripe.
   if (billing.subscription && billing.subscription.status !== "active") {
     await refreshSubscription(billing.subscription.providerSubscriptionId);
     billing = await getBillingOverview(organization.id);
@@ -99,7 +97,7 @@ async function Billing({ params }: Pick<Props, "params">) {
   const canChange = can(role, "organization.billing");
   const canSeeInvoices = can(role, "organization.update");
   const invoices = canSeeInvoices ? await listPlatformInvoices(organization.id) : [];
-  const online = platformCredentials() !== null;
+  const online = platformKey() !== null;
   const sub = billing.subscription;
 
   await connection();
@@ -108,6 +106,13 @@ async function Billing({ params }: Pick<Props, "params">) {
 
   return (
     <>
+      {typeof checkout === "string" && /^(cancelled|cs_[A-Za-z0-9_]{8,200})$/.test(checkout) && (
+        <CheckoutReturn
+          organizationSlug={orgSlug}
+          checkout={checkout}
+          path={routes.orgBilling(orgSlug)}
+        />
+      )}
       <PageHeader
         title="Billing"
         description="Your Shopverse plan, what you're using, and your invoices."
@@ -121,13 +126,14 @@ async function Billing({ params }: Pick<Props, "params">) {
             <p>
               Your shops keep selling. Update your payment by{" "}
               {dateFormat.format(new Date(billing.graceEndsAt!))}; after that, adding products,
-              shops and teammates pauses until it&apos;s settled. Razorpay retries automatically.
+              shops and teammates pauses until it&apos;s settled. Stripe retries the card
+              automatically.
             </p>
             {sub?.shortUrl && canChange && (
               <Button asChild size="sm" variant="outline" className="mt-2">
                 <a href={sub.shortUrl} target="_blank" rel="noreferrer">
                   <CreditCardIcon />
-                  Update payment
+                  Pay the invoice
                 </a>
               </Button>
             )}

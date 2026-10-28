@@ -18,24 +18,25 @@ import { logger } from "@/lib/logger";
 import { sendMail } from "@/lib/mail";
 import {
   fromPaise,
-  razorpay,
-  type RazorpayCredentials,
-  type RazorpaySubscription,
-  verifySubscriptionSignature,
-} from "@/lib/payments/razorpay";
+  idOf,
+  invoiceSubscriptionId,
+  stripe,
+  type StripeInvoice,
+  type StripeSubscription,
+  subscriptionPeriod,
+} from "@/lib/payments/stripe";
 import { createAdminClient } from "@/lib/supabase/admin";
 
-/** Shopverse's own Razorpay keys (null: plans are changed by request). */
-export function platformCredentials(): RazorpayCredentials | null {
-  if (!env.PLATFORM_RAZORPAY_KEY_ID || !env.PLATFORM_RAZORPAY_KEY_SECRET) return null;
-  return { keyId: env.PLATFORM_RAZORPAY_KEY_ID, keySecret: env.PLATFORM_RAZORPAY_KEY_SECRET };
+/** Shopverse's own Stripe key (null: plans are changed by request). */
+export function platformKey(): string | null {
+  return env.PLATFORM_STRIPE_SECRET_KEY ?? null;
 }
 
-export function requirePlatformCredentials(): RazorpayCredentials {
-  const c = platformCredentials();
-  if (!c)
+function requirePlatformKey(): string {
+  const key = platformKey();
+  if (!key)
     throw new AppError("UNAVAILABLE", "Online billing isn't set up yet. Email us to change plans.");
-  return c;
+  return key;
 }
 
 /** GST added to plan prices (only when Shopverse is GST-registered). */
@@ -55,7 +56,7 @@ function seller() {
 const iso = (seconds: number | null) => (seconds ? new Date(seconds * 1000).toISOString() : null);
 const appUrl = (path: string) => new URL(path, env.NEXT_PUBLIC_APP_URL).toString();
 
-/** The Razorpay plan for a Shopverse plan and interval, created on first use. */
+/** The Stripe price for a Shopverse plan and interval, created on first use. */
 async function providerPlan(plan: PaidPlanId, interval: BillingInterval) {
   const admin = createAdminClient();
   const price = planPrice(plan, interval);
@@ -67,11 +68,11 @@ async function providerPlan(plan: PaidPlanId, interval: BillingInterval) {
   });
   if (error) throw fromPostgrestError(error);
   if (data) return { id: data, price, charge };
-  const created = await razorpay.createPlan(requirePlatformCredentials(), {
-    period: interval,
+  const created = await stripe.createPrice(requirePlatformKey(), {
+    interval: interval === "yearly" ? "year" : "month",
     name: `Shopverse ${PLAN_NAMES[plan]} (${interval})`,
     amount: charge,
-    notes: { shopverse_plan: plan, interval },
+    metadata: { shopverse_plan: plan, interval },
   });
   const { data: saved, error: saveError } = await admin.rpc("save_provider_plan", {
     p_plan: plan,
@@ -84,46 +85,94 @@ async function providerPlan(plan: PaidPlanId, interval: BillingInterval) {
   return { id: saved ?? created.id, price, charge };
 }
 
-/** Create a Razorpay subscription for Checkout to authorise. */
+/**
+ * Start Stripe Checkout for a first plan. The subscription is recorded under
+ * the Checkout Session until Stripe creates it (see linkCheckout).
+ */
 export async function startSubscription(
-  organizationId: string,
+  organization: { id: string; slug: string },
   userId: string,
   plan: PaidPlanId,
   interval: BillingInterval,
+  email: string | null,
 ) {
-  const credentials = requirePlatformCredentials();
+  const key = requirePlatformKey();
   const pp = await providerPlan(plan, interval);
-  const sub = await razorpay.createSubscription(credentials, {
-    planId: pp.id,
-    // Ten years of renewals; cancelling ends it sooner.
-    totalCount: interval === "yearly" ? 10 : 120,
-    notes: { organization_id: organizationId, plan, interval },
+  const billingPage = appUrl(routes.orgBilling(organization.slug));
+  const metadata = { organization_id: organization.id, plan, interval };
+  const session = await stripe.createCheckoutSession(key, {
+    mode: "subscription",
+    line_items: [{ price: pp.id, quantity: 1 }],
+    customer_email: email ?? undefined,
+    client_reference_id: organization.id,
+    metadata,
+    subscription_data: { metadata },
+    success_url: `${billingPage}?checkout={CHECKOUT_SESSION_ID}`,
+    cancel_url: `${billingPage}?checkout=cancelled`,
   });
+  if (!session.url) throw new AppError("UNAVAILABLE", "Stripe didn't return a payment page.");
   const { error } = await createAdminClient().rpc("begin_subscription", {
-    p_organization_id: organizationId,
+    p_organization_id: organization.id,
     p_user_id: userId,
     p_plan: plan,
     p_interval: interval,
     p_base_amount: pp.price,
     p_amount: pp.charge,
-    p_provider_subscription_id: sub.id,
-    p_short_url: sub.short_url ?? "",
+    p_provider_subscription_id: session.id,
+    p_short_url: session.url,
   });
   if (error) throw fromPostgrestError(error);
-  return { keyId: credentials.keyId, subscriptionId: sub.id, amount: pp.charge };
+  return { url: session.url };
 }
 
-async function sync(sub: RazorpaySubscription) {
+/** Stripe's statuses -> the ones Shopverse keeps (shared with the plan logic in SQL). */
+const STATUS: Record<StripeSubscription["status"], string> = {
+  incomplete: "created",
+  incomplete_expired: "expired",
+  trialing: "active",
+  active: "active",
+  past_due: "pending",
+  unpaid: "halted",
+  paused: "halted",
+  canceled: "cancelled",
+};
+
+async function latestInvoice(key: string, sub: StripeSubscription): Promise<StripeInvoice | null> {
+  if (!sub.latest_invoice) return null;
+  if (typeof sub.latest_invoice === "object") return sub.latest_invoice;
+  return stripe.retrieveInvoice(key, sub.latest_invoice);
+}
+
+async function sync(sub: StripeSubscription) {
+  const status = STATUS[sub.status] ?? "pending";
+  const period = subscriptionPeriod(sub);
+  // While a payment is owed, link to Stripe's page for paying that invoice.
+  let payUrl: string | undefined;
+  if (status === "pending" || status === "halted") {
+    const key = platformKey();
+    const invoice = key ? await latestInvoice(key, sub).catch(() => null) : null;
+    if (invoice?.status === "open") payUrl = invoice.hosted_invoice_url ?? undefined;
+  }
   const { data, error } = await createAdminClient().rpc("sync_subscription", {
     p_provider_subscription_id: sub.id,
-    p_status: sub.status,
-    p_provider_plan_id: sub.plan_id,
-    p_current_start: iso(sub.current_start) ?? undefined,
-    p_current_end: iso(sub.current_end) ?? undefined,
-    p_short_url: sub.short_url ?? undefined,
+    p_status: status,
+    p_provider_plan_id: sub.items.data[0]?.price.id ?? "",
+    p_current_start: iso(period.start) ?? undefined,
+    p_current_end: iso(period.end) ?? undefined,
+    p_short_url: payUrl,
   });
   if (error) throw fromPostgrestError(error);
   return data as { status: string } | null;
+}
+
+/** Swap the Checkout Session id for the subscription Stripe created. */
+async function linkCheckout(checkoutId: string, subscriptionId: string) {
+  const { data, error } = await createAdminClient().rpc("link_checkout_subscription", {
+    p_checkout_id: checkoutId,
+    p_provider_subscription_id: subscriptionId,
+  });
+  if (error) throw fromPostgrestError(error);
+  return data;
 }
 
 async function subscriptionOrg(subscriptionId: string) {
@@ -169,41 +218,96 @@ async function recordCharge(subscriptionId: string, paymentId: string, amount: n
     });
 }
 
-/** After Checkout: check Razorpay's signature, then bring the plan up to date. */
-export async function confirmSubscription(
-  organizationId: string,
-  input: { subscriptionId: string; paymentId: string; signature: string },
-) {
-  const credentials = requirePlatformCredentials();
-  if (!verifySubscriptionSignature(credentials.keySecret, input))
-    throw Errors.validation({}, "We couldn't verify this payment. If money was taken, contact us.");
-  const owner = await subscriptionOrg(input.subscriptionId);
-  if (!owner || owner.organization_id !== organizationId) throw Errors.notFound("Subscription");
-  const sub = await razorpay.fetchSubscription(credentials, input.subscriptionId);
+/**
+ * Bring a finished Checkout Session up to date: link its subscription, sync
+ * it and record the first charge. Returns whether the checkout is complete.
+ */
+async function settleCheckout(key: string, checkoutId: string, organizationId?: string) {
+  const session = await stripe.retrieveCheckoutSession(key, checkoutId, [
+    "subscription",
+    "subscription.latest_invoice",
+  ]);
+  if (session.mode !== "subscription") return false;
+  if (organizationId && session.client_reference_id !== organizationId)
+    throw Errors.notFound("Subscription");
+  const subscriptionId = idOf(session.subscription);
+  if (session.status !== "complete" || !subscriptionId) return false;
+  if (!(await linkCheckout(session.id, subscriptionId))) return false;
+  const sub =
+    typeof session.subscription === "object" && session.subscription
+      ? session.subscription
+      : await stripe.retrieveSubscription(key, subscriptionId);
   await sync(sub);
-  const payment = await razorpay.fetchPayment(credentials, input.paymentId);
-  if (payment.status === "captured")
-    await recordCharge(sub.id, payment.id, fromPaise(payment.amount));
+  const invoice = await latestInvoice(key, sub);
+  if (invoice?.status === "paid" && invoice.amount_paid > 0)
+    await recordCharge(sub.id, invoice.id, fromPaise(invoice.amount_paid));
+  return true;
+}
+
+/** Back from Checkout: confirm with Stripe (never the browser's word). */
+export async function confirmSubscription(organizationId: string, checkoutId: string) {
+  const owner = await subscriptionOrg(checkoutId);
+  const key = requirePlatformKey();
+  // Already linked (e.g. the webhook was first): just look it up.
+  if (!owner) {
+    const session = await stripe.retrieveCheckoutSession(key, checkoutId);
+    if (session.client_reference_id !== organizationId) throw Errors.notFound("Subscription");
+    const subId = idOf(session.subscription);
+    if (subId) await refreshSubscription(subId);
+    return session.status === "complete";
+  }
+  if (owner.organization_id !== organizationId) throw Errors.notFound("Subscription");
+  return settleCheckout(key, checkoutId, organizationId);
+}
+
+/** A pending downgrade lives in a subscription schedule; let go of it before other changes. */
+async function releaseSchedule(key: string, sub: StripeSubscription) {
+  const scheduleId = idOf(sub.schedule);
+  if (scheduleId) await stripe.releaseSchedule(key, scheduleId);
 }
 
 /**
- * Change plan. Upgrades (and monthly -> yearly) apply now; downgrades and
- * yearly -> monthly at the renewal.
+ * Change plan. Upgrades (and monthly -> yearly) apply now and charge the
+ * difference straight away; downgrades and yearly -> monthly start at the
+ * renewal, through a subscription schedule.
  */
 export async function changeSubscriptionPlan(
   organizationId: string,
   current: { providerSubscriptionId: string; plan: PaidPlanId; interval: BillingInterval },
   target: { plan: PaidPlanId; interval: BillingInterval },
 ) {
-  const credentials = requirePlatformCredentials();
+  const key = requirePlatformKey();
   const now = isUpgrade(current, target);
   const pp = await providerPlan(target.plan, target.interval);
-  await razorpay.updateSubscription(
-    credentials,
-    current.providerSubscriptionId,
-    pp.id,
-    now ? "now" : "cycle_end",
-  );
+  const sub = await stripe.retrieveSubscription(key, current.providerSubscriptionId);
+  const item = sub.items.data[0];
+  if (!item) throw new AppError("UNAVAILABLE", "This subscription has no plan in Stripe.");
+  await releaseSchedule(key, sub);
+
+  if (now) {
+    await stripe.updateSubscription(key, sub.id, {
+      items: [{ id: item.id, price: pp.id }],
+      proration_behavior: "always_invoice",
+      // Refuse the change if the card can't pay for it.
+      payment_behavior: "error_if_incomplete",
+      metadata: { plan: target.plan, interval: target.interval },
+    });
+  } else {
+    const schedule = await stripe.createScheduleFromSubscription(key, sub.id);
+    const phase = schedule.phases[0];
+    if (!phase) throw new AppError("UNAVAILABLE", "Stripe couldn't schedule the change.");
+    await stripe.updateSchedule(key, schedule.id, {
+      end_behavior: "release",
+      phases: [
+        {
+          items: [{ price: item.price.id, quantity: 1 }],
+          start_date: phase.start_date,
+          end_date: phase.end_date,
+        },
+        { items: [{ price: pp.id, quantity: 1 }], iterations: 1 },
+      ],
+    });
+  }
   const { error } = await createAdminClient().rpc("change_subscription_plan", {
     p_provider_subscription_id: current.providerSubscriptionId,
     p_plan: target.plan,
@@ -218,7 +322,10 @@ export async function changeSubscriptionPlan(
 }
 
 export async function cancelSubscriptionAtPeriodEnd(providerSubscriptionId: string) {
-  await razorpay.cancelSubscription(requirePlatformCredentials(), providerSubscriptionId, true);
+  const key = requirePlatformKey();
+  const sub = await stripe.retrieveSubscription(key, providerSubscriptionId);
+  await releaseSchedule(key, sub);
+  await stripe.updateSubscription(key, sub.id, { cancel_at_period_end: true });
   const { error } = await createAdminClient().rpc("mark_subscription_cancelling", {
     p_provider_subscription_id: providerSubscriptionId,
   });
@@ -238,24 +345,37 @@ async function emailBusiness(organizationId: string, email: BillingEmail) {
   }
 }
 
-type PlatformEvent = {
-  event: string;
-  payload: {
-    subscription?: { entity: RazorpaySubscription };
-    payment?: { entity: { id: string; amount: number; status: string } };
-  };
+export type PlatformEvent = {
+  id: string;
+  type: string;
+  data: { object: { id: string; object: string } & Record<string, unknown> };
 };
 
-/** Webhooks from Shopverse's Razorpay account. */
+/** Webhooks from Shopverse's Stripe account. */
 export async function handlePlatformEvent(event: PlatformEvent) {
-  const sub = event.payload.subscription?.entity;
-  if (!sub || !event.event.startsWith("subscription.")) return "ignored";
-  const before = await subscriptionOrg(sub.id);
+  const key = requirePlatformKey();
+  const object = event.data.object;
+
+  if (event.type === "checkout.session.completed" && object.object === "checkout.session") {
+    return (await settleCheckout(key, object.id)) ? "processed" : "ignored";
+  }
+
+  let subscriptionId: string | null = null;
+  if (object.object === "subscription") subscriptionId = object.id;
+  else if (object.object === "invoice") subscriptionId = invoiceSubscriptionId(object as never);
+  if (!subscriptionId) return "ignored";
+
+  const before = await subscriptionOrg(subscriptionId);
   if (!before) return "unknown";
+  // Always sync from Stripe's current view: events can arrive out of order.
+  const sub = await stripe.retrieveSubscription(key, subscriptionId);
   await sync(sub);
-  const payment = event.payload.payment?.entity;
-  if (event.event === "subscription.charged" && payment?.status === "captured")
-    await recordCharge(sub.id, payment.id, fromPaise(payment.amount));
+
+  if (event.type === "invoice.paid" && object.object === "invoice") {
+    const invoice = object as unknown as StripeInvoice;
+    if (invoice.amount_paid > 0)
+      await recordCharge(sub.id, invoice.id, fromPaise(invoice.amount_paid));
+  }
 
   const { data: org } = await createAdminClient()
     .from("organizations")
@@ -263,19 +383,22 @@ export async function handlePlatformEvent(event: PlatformEvent) {
     .eq("id", before.organization_id)
     .single();
   const planName = PLAN_NAMES[before.plan];
-  if ((sub.status === "pending" || sub.status === "halted") && before.status === "active" && org)
+  const status = STATUS[sub.status];
+  if ((status === "pending" || status === "halted") && before.status === "active" && org) {
+    const invoice = await latestInvoice(key, sub).catch(() => null);
     after(() =>
       emailBusiness(before.organization_id, {
         type: "payment_failed",
         planName,
-        updateUrl: sub.short_url ?? null,
+        updateUrl: invoice?.hosted_invoice_url ?? null,
         graceEndsAt: new Date(
           new Date(org.past_due_since ?? Date.now()).getTime() + 7 * 86_400_000,
         ).toISOString(),
       }),
     );
+  }
   if (
-    ["cancelled", "completed", "expired"].includes(sub.status) &&
+    ["cancelled", "completed", "expired"].includes(status ?? "") &&
     ["active", "authenticated", "pending", "halted"].includes(before.status) &&
     org
   )
@@ -289,12 +412,16 @@ export async function handlePlatformEvent(event: PlatformEvent) {
   return "processed";
 }
 
-/** Bring a subscription up to date from Razorpay (e.g. when the billing page opens). */
+/**
+ * Bring a subscription up to date from Stripe (e.g. when the billing page
+ * opens). A checkout not linked yet is looked up by its session.
+ */
 export async function refreshSubscription(providerSubscriptionId: string) {
-  const credentials = platformCredentials();
-  if (!credentials) return;
+  const key = platformKey();
+  if (!key) return;
   try {
-    await sync(await razorpay.fetchSubscription(credentials, providerSubscriptionId));
+    if (providerSubscriptionId.startsWith("cs_")) await settleCheckout(key, providerSubscriptionId);
+    else await sync(await stripe.retrieveSubscription(key, providerSubscriptionId));
   } catch (cause) {
     logger.warn({ err: cause, providerSubscriptionId }, "Subscription refresh failed");
   }

@@ -14,7 +14,7 @@ import {
 } from "@/features/payments/server";
 import { createAction } from "@/lib/actions/create-action";
 import { Errors, fromPostgrestError } from "@/lib/errors";
-import { razorpay } from "@/lib/payments/razorpay";
+import { keyMode, stripe } from "@/lib/payments/stripe";
 import { encryptSecret } from "@/lib/payments/secrets";
 
 const orderToken = z.string().regex(/^[0-9a-f]{32}$/);
@@ -30,20 +30,13 @@ export const startOnlinePayment = createAction({
   handler: async (input) => startPayment(input.orderToken),
 });
 
-export const verifyOnlinePayment = createAction({
-  name: "payments.verify",
-  schema: z.object({
-    razorpayOrderId: z.string().min(5).max(64),
-    razorpayPaymentId: z.string().min(5).max(64),
-    razorpaySignature: z.string().regex(/^[0-9a-f]{64}$/),
-  }),
+/** Back from Stripe Checkout: confirm the order from Stripe's record of the payment. */
+export const confirmOnlinePayment = createAction({
+  name: "payments.confirm",
+  schema: z.object({ orderToken, sessionId: z.string().regex(/^cs_[A-Za-z0-9_]{8,200}$/) }),
   requireAuth: false,
   handler: async (input) => {
-    const { result } = await completePayment({
-      razorpayOrderId: input.razorpayOrderId,
-      paymentId: input.razorpayPaymentId,
-      signature: input.razorpaySignature,
-    });
+    const { result } = await completePayment(input);
     refresh();
     return { result };
   },
@@ -65,22 +58,24 @@ export const savePaymentSettings = createAction({
       "Only owners and admins can connect payments.",
     );
 
-    // Check the keys with Razorpay before storing them.
-    const existing = input.keySecret ? null : await getCredentials(org.id);
-    const keySecret = input.keySecret || existing?.keySecret;
-    if (!keySecret) throw Errors.validation({ keySecret: ["Enter the key secret"] });
-    await razorpay.checkCredentials({ keyId: input.keyId, keySecret });
+    // Check the key with Stripe before storing it, and learn its account.
+    const existing = input.secretKey ? null : await getCredentials(org.id);
+    const secretKey = input.secretKey || existing?.secretKey;
+    if (!secretKey) throw Errors.validation({ secretKey: ["Enter the secret key"] });
+    const account = await stripe.retrieveAccount(secretKey);
+    const mode = keyMode(secretKey);
 
     const { error } = await supabase.rpc("save_payment_account", {
       p_organization_id: org.id,
-      p_key_id: input.keyId,
-      p_key_secret_enc: input.keySecret ? encryptSecret(input.keySecret) : undefined,
+      p_key_id: account.id,
+      p_mode: mode,
+      p_key_secret_enc: input.secretKey ? encryptSecret(input.secretKey) : undefined,
       p_webhook_secret_enc: input.webhookSecret ? encryptSecret(input.webhookSecret) : undefined,
       p_enabled: input.enabled,
     });
     if (error) throw fromPostgrestError(error);
     refresh();
-    return { mode: input.keyId.startsWith("rzp_live_") ? "live" : "test" };
+    return { mode, accountId: account.id };
   },
 });
 
@@ -104,7 +99,7 @@ export const disconnectPayments = createAction({
   },
 });
 
-/** Staff: try again to refund what an order owes (e.g. after a Razorpay outage). */
+/** Staff: try again to refund what an order owes (e.g. after a Stripe outage). */
 export const retryRefunds = createAction({
   name: "payments.retryRefunds",
   schema: z.object({ organizationSlug: slugSchema, orderId: z.uuid() }),

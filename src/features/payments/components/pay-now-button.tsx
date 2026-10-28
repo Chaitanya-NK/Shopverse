@@ -6,7 +6,7 @@ import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
-import { useRazorpayCheckout } from "@/features/payments/components/use-razorpay-checkout";
+import { useOnlineCheckout } from "@/features/payments/components/use-online-checkout";
 import { formatMoney } from "@/lib/format";
 
 /** "Pay ₹X now" for an order that is waiting for its online payment. */
@@ -22,7 +22,7 @@ export function PayNowButton({
   className?: string;
 }) {
   const router = useRouter();
-  const { pay, busy } = useRazorpayCheckout();
+  const { pay, busy } = useOnlineCheckout();
   return (
     <Button
       size="lg"
@@ -30,9 +30,10 @@ export function PayNowButton({
       disabled={busy}
       onClick={async () => {
         const outcome = await pay(orderToken);
-        if (outcome.status === "paid") toast.success("Payment received. Your order is confirmed.");
-        else if (outcome.status === "failed") toast.error(outcome.message);
-        router.refresh();
+        if (outcome.status === "failed") {
+          toast.error(outcome.message);
+          router.refresh();
+        }
       }}
     >
       {busy ? <Spinner /> : <CreditCardIcon />}

@@ -102,20 +102,24 @@ select pg_temp.assert(
   (public.storefront_shop('mega-store') -> 'payment_methods') = '["cod"]'::jsonb, 'COD only until a payment account is connected');
 
 select pg_temp.act_as('00000000-0000-0000-0000-0000000000c1');
-select pg_temp.expect_error(format($q$select public.save_payment_account(%L, 'rzp_test_abcdef123', 'enc', null, true)$q$,
+select pg_temp.expect_error(format($q$select public.save_payment_account(%L, 'acct_1TestAbcdef', 'test', 'enc', null, true)$q$,
   (select org from ids)), '42501', 'staff cannot connect payments');
 select pg_temp.expect_error(format($q$select public.get_payment_settings(%L)$q$, (select org from ids)), '42501',
   'staff cannot see payment settings');
 
 select pg_temp.act_as('00000000-0000-0000-0000-0000000000a1');
-select pg_temp.expect_error(format($q$select public.save_payment_account(%L, 'sk_live_nope', 'enc', null, true)$q$,
-  (select org from ids)), '23514', 'key ids are checked');
-select public.save_payment_account((select org from ids), 'rzp_test_abcdef123', 'v1:secret', 'v1:hook', true);
+select pg_temp.expect_error(format($q$select public.save_payment_account(%L, 'sk_live_nope', 'test', 'enc', null, true)$q$,
+  (select org from ids)), '23514', 'account ids are checked');
+select pg_temp.expect_error(format($q$select public.save_payment_account(%L, 'acct_1TestAbcdef', 'sandbox', 'enc', null, true)$q$,
+  (select org from ids)), '23514', 'modes are checked');
+select public.save_payment_account((select org from ids), 'acct_1TestAbcdef', 'test', 'v1:secret', 'v1:hook', true);
 select pg_temp.assert(
   (select j ->> 'mode' = 'test' and (j ->> 'webhook_configured')::boolean and not j ? 'key_secret_enc'
    from (select public.get_payment_settings((select org from ids)) j) x),
   'owners see the account but never the secrets');
-select public.save_payment_account((select org from ids), 'rzp_test_abcdef123', null, null, true);
+select public.save_payment_account((select org from ids), 'acct_1TestAbcdef', 'live', null, null, true);
+select pg_temp.assert(
+  (select public.get_payment_settings((select org from ids)) ->> 'mode') = 'live', 'mode follows the key');
 select pg_temp.expect_error(format($q$select public.payment_account_credentials(%L)$q$, (select org from ids)), '42501',
   'only the server reads credentials');
 select pg_temp.assert(exists (select 1 from public.audit_logs where action = 'payments.updated'), 'audited');

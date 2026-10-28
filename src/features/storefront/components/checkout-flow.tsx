@@ -32,7 +32,7 @@ import {
   defaultPaymentMethod,
   PaymentMethodChoice,
 } from "@/features/payments/components/payment-method-choice";
-import { useRazorpayCheckout } from "@/features/payments/components/use-razorpay-checkout";
+import { useOnlineCheckout } from "@/features/payments/components/use-online-checkout";
 import { CodeInput } from "@/features/storefront/components/code-input";
 import { type CheckoutPaymentMethod, checkoutDetailsSchema } from "@/features/storefront/schemas";
 import { applyActionError } from "@/lib/forms/apply-action-error";
@@ -259,7 +259,7 @@ function CodeStep({
   onChangeDetails: () => void;
 }) {
   const router = useRouter();
-  const { pay } = useRazorpayCheckout();
+  const { pay } = useOnlineCheckout();
   const [code, setCode] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [cooldown, setCooldown] = useState(RESEND_SECONDS);
@@ -295,10 +295,9 @@ function CodeStep({
       if (result.data.awaitingPayment) {
         // The order is placed and stock held; now take the payment.
         const outcome = await pay(result.data.token);
-        if (outcome.status === "paid")
-          toast.success(`Order ${result.data.number} paid and confirmed`);
-        else if (outcome.status === "failed") toast.error(outcome.message);
-        else toast.info("Your order is saved. Complete the payment to confirm it.");
+        // On success the browser is on its way to Stripe's payment page.
+        if (outcome.status === "redirecting") return;
+        toast.error(`${outcome.message} Your order is saved; you can pay from its page.`);
       } else {
         toast.success(`Order ${result.data.number} placed`);
       }

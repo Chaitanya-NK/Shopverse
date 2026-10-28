@@ -2,20 +2,32 @@ import { z } from "zod";
 
 import { slugSchema } from "@/features/organizations/schemas";
 
-export const RAZORPAY_KEY_ID = /^rzp_(test|live)_[A-Za-z0-9]{6,40}$/;
+/** Secret or restricted key: sk_test_…, sk_live_…, rk_test_…, rk_live_… */
+const SECRET_KEY = /^(sk|rk)_(test|live)_[A-Za-z0-9]{10,247}$/;
+const WEBHOOK_SECRET = /^whsec_[A-Za-z0-9+/=]{10,200}$/;
 
 export const paymentSettingsSchema = z.object({
   organizationSlug: slugSchema,
-  keyId: z
+  /** Blank keeps the saved key (when already connected). */
+  secretKey: z
     .string()
     .trim()
-    .regex(
-      RAZORPAY_KEY_ID,
-      "Paste the key id from Razorpay (it starts with rzp_test_ or rzp_live_)",
-    ),
-  /** Blank keeps the saved secret. */
-  keySecret: z.string().trim().max(200).optional().default(""),
-  webhookSecret: z.string().trim().max(200).optional().default(""),
+    .refine(
+      (v) => v === "" || SECRET_KEY.test(v),
+      "Paste the secret key from Stripe (it starts with sk_test_ or sk_live_)",
+    )
+    .optional()
+    .default(""),
+  /** Blank keeps the saved signing secret. */
+  webhookSecret: z
+    .string()
+    .trim()
+    .refine(
+      (v) => v === "" || WEBHOOK_SECRET.test(v),
+      "Paste the signing secret from Stripe (it starts with whsec_)",
+    )
+    .optional()
+    .default(""),
   enabled: z.boolean().optional().default(true),
 });
 export type PaymentSettingsInput = z.input<typeof paymentSettingsSchema>;

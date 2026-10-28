@@ -71,12 +71,13 @@ export const startPlanCheckout = createAction({
         {},
         `${PLAN_NAMES[input.plan]} allows ${over.map((o) => `${o.limit} ${RESOURCE_NAMES[o.resource] ?? o.resource}`).join(" and ")}. Archive some first, or choose a bigger plan.`,
       );
-    const session = await startSubscription(org.id, user.id, input.plan, input.interval);
-    return {
-      ...session,
-      description: `${PLAN_NAMES[input.plan]} plan, billed ${input.interval}`,
-      email: billing.profile.email,
-    };
+    return startSubscription(
+      { id: org.id, slug: input.organizationSlug },
+      user.id,
+      input.plan,
+      input.interval,
+      billing.profile.email,
+    );
   },
 });
 
@@ -85,9 +86,9 @@ export const confirmPlanCheckout = createAction({
   schema: confirmSubscriptionSchema,
   handler: async (input, { supabase, user }) => {
     const org = await owner(supabase, user.id, input.organizationSlug);
-    await confirmSubscription(org.id, input);
+    const complete = await confirmSubscription(org.id, input.checkoutId);
     refresh();
-    return null;
+    return { complete };
   },
 });
 
