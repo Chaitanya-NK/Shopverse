@@ -178,6 +178,14 @@ See **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)** for the design decisions an
 - **Phase 2 (done):** products and variants, category editor, inventory with serial/IMEI and batch/expiry tracking, transfers, reorder alerts, warehouses
 - **Phase 3 (done):** orders, fulfilment routing, shipments and tracking, delivery OTP
 - **Phase 4 (done):** storefront and checkout (COD OTP), customers
-- **Phase 5 (done):** team invitations and roles UI, audit log viewer, billing (plans and limits; online payments next)
+- **Phase 5 (done):** team invitations and roles UI, audit log viewer, billing (plans and limits)
 - **Phase 5.5 (done):** shopper accounts, wishlist and address book, self-service cancel and reorder, product photos, GST invoices, order emails, policy pages, filters, SEO
-- **Phase 6:** marketing (banners, discounts, loyalty), analytics, channel sync, super-admin
+- **Phase 6 (done):** online payments with each business's own Razorpay account, webhooks, automatic refunds
+- **Phase 7 — Discounts & promotions:** coupon codes (percentage or flat, minimum order, cap, validity, usage limits overall and per customer, first order only, per shop), automatic offers, discounts applied server-side and spread across lines so GST invoices stay correct, an announcement bar and homepage banners
+- **Phase 8 — Analytics & reports:** sales dashboard (revenue, orders, average order value, by day and by shop, top products, COD vs online, return-to-origin rate), GST reports (B2C by state and rate, HSN summary for GSTR-1), CSV exports of orders, invoices, stock and customers
+- **Phase 9 — Returns & credit notes:** return and exchange requests within a window set by the shop, approval, reverse pickup, restocking on receipt, refunds (online automatically, COD by UPI), numbered GST credit notes
+- **Phase 10 — Shopverse billing & platform admin:** plan subscriptions through Razorpay Subscriptions, upgrades and downgrades, GST invoices to businesses, failed-payment handling, a platform admin console (businesses, usage, plans)
+- **Phase 11 — Catalogue power tools:** CSV bulk import and export, photos per variant, collections, verified-buyer reviews and ratings, related products, typo-tolerant search
+- **Phase 12 — Operations:** suppliers and purchase orders, low-stock email alerts and a daily digest, courier integration (rates, AWB, labels, tracking updates), packing slips and shipping labels, barcode labels
+- **Phase 13 — Brand & reach:** per-shop logo, colours and banners, custom domains, WhatsApp and SMS order updates, abandoned-cart reminders, installable app (PWA)
+- **Phase 14 — Hardening:** background job queue for emails and webhooks, edge rate limiting, error tracking and tracing, backup and recovery runbook, accessibility audit, Hindi interface
