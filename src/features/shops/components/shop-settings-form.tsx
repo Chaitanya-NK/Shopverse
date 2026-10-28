@@ -1,6 +1,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useTransition } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
@@ -10,7 +11,15 @@ import { type z } from "zod";
 import { FormRootError } from "@/components/shared/form-root-error";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
+import {
+  Field,
+  FieldDescription,
+  FieldError,
+  FieldGroup,
+  FieldLabel,
+  FieldLegend,
+  FieldSet,
+} from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -61,9 +70,12 @@ const amount = (n: number | null) => (n === null ? "" : String(n));
 export function ShopSettingsForm({
   organizationSlug,
   shop,
+  paymentsConnected,
 }: {
   organizationSlug: string;
   shop: ShopSummary;
+  /** Whether the business has an enabled Razorpay account. */
+  paymentsConnected: boolean;
 }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -207,6 +219,63 @@ export function ShopSettingsForm({
             {money("settings.freeShippingOver", "Free delivery over", "Leave blank for never.")}
             {money("settings.codLimit", "Cash on delivery limit", "Largest cash order.")}
           </div>
+          <FieldSet className="mt-6">
+            <FieldLegend variant="label">Ways to pay</FieldLegend>
+            <FieldGroup className="gap-4">
+              <Controller
+                name="settings.acceptOnline"
+                control={form.control}
+                render={({ field }) => (
+                  <Field orientation="horizontal">
+                    <Switch
+                      id="shop-accept-online"
+                      checked={field.value ?? true}
+                      onCheckedChange={field.onChange}
+                    />
+                    <span>
+                      <FieldLabel htmlFor="shop-accept-online">
+                        Online (UPI, cards, net banking)
+                      </FieldLabel>
+                      <FieldDescription>
+                        {paymentsConnected ? (
+                          "Through your connected Razorpay account."
+                        ) : (
+                          <>
+                            Offered once you connect Razorpay in{" "}
+                            <Link
+                              href={routes.orgPayments(organizationSlug)}
+                              className="underline underline-offset-4"
+                            >
+                              Payments
+                            </Link>
+                            .
+                          </>
+                        )}
+                      </FieldDescription>
+                    </span>
+                  </Field>
+                )}
+              />
+              <Controller
+                name="settings.acceptCod"
+                control={form.control}
+                render={({ field, fieldState }) => (
+                  <Field orientation="horizontal" data-invalid={fieldState.invalid}>
+                    <Switch
+                      id="shop-accept-cod"
+                      checked={field.value ?? true}
+                      onCheckedChange={field.onChange}
+                    />
+                    <span>
+                      <FieldLabel htmlFor="shop-accept-cod">Cash on delivery</FieldLabel>
+                      <FieldDescription>Up to the limit above.</FieldDescription>
+                      {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                    </span>
+                  </Field>
+                )}
+              />
+            </FieldGroup>
+          </FieldSet>
         </CardContent>
       </Card>
 

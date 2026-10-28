@@ -1,7 +1,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { PackageCheckIcon, PlusIcon } from "lucide-react";
+import { PlusIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
@@ -20,7 +20,16 @@ import { Spinner } from "@/components/ui/spinner";
 import { routes } from "@/config/routes";
 import { placeSignedInOrder } from "@/features/shopper/actions";
 import { AddressFields } from "@/features/shopper/components/address-fields";
+import {
+  defaultPaymentMethod,
+  PaymentMethodChoice,
+} from "@/features/payments/components/payment-method-choice";
+import { useRazorpayCheckout } from "@/features/payments/components/use-razorpay-checkout";
 import { addressSchema, formatAddressLine, type SavedAddress } from "@/features/shopper/schemas";
+import {
+  CHECKOUT_PAYMENT_METHODS,
+  type CheckoutPaymentMethod,
+} from "@/features/storefront/schemas";
 import { applyActionError } from "@/lib/forms/apply-action-error";
 import { formatMoney } from "@/lib/format";
 
@@ -42,6 +51,7 @@ const formSchema = z
     }),
     saveAddress: z.boolean(),
     note: z.string().trim().max(300, "Keep it under 300 characters"),
+    paymentMethod: z.enum(CHECKOUT_PAYMENT_METHODS),
   })
   .superRefine((value, ctx) => {
     if (value.addressId !== NEW) return;
@@ -60,10 +70,14 @@ export function SignedInCheckout({
   name,
   phone,
   addresses,
+  paymentMethods,
+  codLimit,
 }: {
   shopSlug: string;
   currency: string;
   total: number;
+  paymentMethods: CheckoutPaymentMethod[];
+  codLimit: number | null;
   email: string;
   name: string | null;
   phone: string | null;
@@ -90,8 +104,11 @@ export function SignedInCheckout({
       },
       saveAddress: true,
       note: "",
+      paymentMethod: defaultPaymentMethod(paymentMethods),
     },
   });
+  const paymentMethod = useWatch({ control: form.control, name: "paymentMethod" });
+  const { pay } = useRazorpayCheckout();
   const addressId = useWatch({ control: form.control, name: "addressId" });
 
   const onSubmit = form.handleSubmit((values) =>
@@ -104,13 +121,22 @@ export function SignedInCheckout({
         address: isNew ? values.address : undefined,
         saveAddress: isNew && values.saveAddress,
         note: values.note,
+        paymentMethod: values.paymentMethod,
       });
       if (!result.ok) {
         applyActionError(form, result.error);
         if (result.error.code === "UNAUTHENTICATED") router.refresh();
         return;
       }
-      toast.success(`Order ${result.data.number} placed`);
+      if (result.data.awaitingPayment) {
+        const outcome = await pay(result.data.token);
+        if (outcome.status === "paid")
+          toast.success(`Order ${result.data.number} paid and confirmed`);
+        else if (outcome.status === "failed") toast.error(outcome.message);
+        else toast.info("Your order is saved. Complete the payment to confirm it.");
+      } else {
+        toast.success(`Order ${result.data.number} placed`);
+      }
       router.replace(routes.storefrontOrder(shopSlug, result.data.token));
     }),
   );
@@ -210,24 +236,28 @@ export function SignedInCheckout({
         <CardHeader>
           <CardTitle>Payment</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-3 text-sm">
-          <div className="flex items-start gap-3 rounded-xl border border-primary bg-primary/5 p-4">
-            <PackageCheckIcon className="mt-0.5 size-4 text-primary" aria-hidden />
-            <span>
-              <span className="block font-medium">Cash on delivery</span>
-              <span className="text-muted-foreground">
-                Pay {formatMoney(total, currency)} in cash or UPI to the courier.
-              </span>
-            </span>
-          </div>
-          <p className="text-muted-foreground">Online payment is coming soon.</p>
+        <CardContent>
+          <Controller
+            name="paymentMethod"
+            control={form.control}
+            render={({ field }) => (
+              <PaymentMethodChoice
+                methods={paymentMethods}
+                value={field.value}
+                onChange={field.onChange}
+                total={total}
+                codLimit={codLimit}
+                currency={currency}
+              />
+            )}
+          />
         </CardContent>
       </Card>
 
       <FormRootError form={form} />
       <Button type="submit" size="lg" className="w-full" disabled={isPending}>
         {isPending && <Spinner />}
-        Place order · {formatMoney(total, currency)}
+        {paymentMethod === "online" ? "Pay" : "Place order"} · {formatMoney(total, currency)}
       </Button>
     </form>
   );

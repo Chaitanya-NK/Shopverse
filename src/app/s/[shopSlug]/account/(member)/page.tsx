@@ -34,6 +34,7 @@ const dateFormat = new Intl.DateTimeFormat("en-IN", {
 });
 
 const STAGE_VARIANT: Record<OrderStage, "default" | "secondary" | "outline" | "destructive"> = {
+  awaiting_payment: "outline",
   placed: "outline",
   confirmed: "secondary",
   packed: "secondary",

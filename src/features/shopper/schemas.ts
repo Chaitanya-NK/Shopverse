@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 import {
+  CHECKOUT_PAYMENT_METHODS,
   indianMobileSchema,
   shopSlugSchema,
   streetAddressSchema,
@@ -81,6 +82,7 @@ export const signedInCheckoutSchema = z
     address: addressSchema.omit({ label: true, isDefault: true }).optional(),
     saveAddress: z.boolean().optional().default(true),
     note: z.string().trim().max(300, "Keep it under 300 characters").optional().default(""),
+    paymentMethod: z.enum(CHECKOUT_PAYMENT_METHODS).optional().default("cod"),
   })
   .superRefine((value, ctx) => {
     if (!value.addressId && !value.address)

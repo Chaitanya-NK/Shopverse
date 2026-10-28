@@ -23,6 +23,8 @@ import {
   CreateShipmentDialog,
   type ShippableLine,
 } from "@/features/orders/components/create-shipment-dialog";
+import { OrderPaymentsCard } from "@/features/payments/components/order-payments-card";
+import { listOrderPayments } from "@/features/payments/queries";
 import { OrderActions } from "@/features/orders/components/order-actions";
 import { OrderNotes } from "@/features/orders/components/order-notes";
 import { ShipmentCard } from "@/features/orders/components/shipment-card";
@@ -101,8 +103,12 @@ async function OrderContent({ params }: Pick<Props, "params">) {
   if (!z.uuid().safeParse(orderId).success) notFound();
 
   const { organization, role } = await requireMembership(orgSlug);
-  const order = await getOrder(organization.id, orderId);
+  const [order, payments] = await Promise.all([
+    getOrder(organization.id, orderId),
+    listOrderPayments(orderId),
+  ]);
   if (!order) notFound();
+  const awaitingPayment = order.status === "pending" && order.paymentDueAt !== null;
 
   const canManage = can(role, "orders.manage");
   const toShip = order.status === "confirmed" ? shippableByWarehouse(order) : [];
@@ -127,6 +133,7 @@ async function OrderContent({ params }: Pick<Props, "params">) {
               <OrderStatusBadge status={order.status} />
               <PaymentBadge status={order.paymentStatus} />
               <FulfillmentBadge status={order.fulfillmentStatus} />
+              {awaitingPayment && <Badge variant="outline">Awaiting online payment</Badge>}
             </div>
             <p className="text-sm text-muted-foreground">
               {timeFormat.format(new Date(order.placedAt))} · {order.shopName}
@@ -152,6 +159,7 @@ async function OrderContent({ params }: Pick<Props, "params">) {
                   status: order.status,
                   paymentStatus: order.paymentStatus,
                   paymentMethod: order.paymentMethod,
+                  awaitingPayment,
                   hasLiveShipments: order.shipments.some((s) =>
                     [...ACTIVE_SHIPMENT_STATUSES, "delivered"].includes(s.status),
                   ),
@@ -285,6 +293,15 @@ async function OrderContent({ params }: Pick<Props, "params">) {
         </div>
 
         <div className="flex min-w-0 flex-col gap-6">
+          {(payments.length > 0 || awaitingPayment) && (
+            <OrderPaymentsCard
+              organizationSlug={orgSlug}
+              orderId={order.id}
+              orderCancelled={order.status === "cancelled"}
+              paymentDueAt={awaitingPayment ? order.paymentDueAt : null}
+              payments={payments}
+            />
+          )}
           <Card className="gap-3">
             <CardHeader>
               <CardTitle>Customer</CardTitle>

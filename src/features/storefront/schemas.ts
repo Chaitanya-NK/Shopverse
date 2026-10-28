@@ -39,6 +39,10 @@ export const storefrontShopSchema = z
       .array(z.enum(["shipping", "returns", "privacy", "terms"]))
       .optional()
       .default([]),
+    payment_methods: z
+      .array(z.enum(["online", "cod"]))
+      .optional()
+      .default(["cod"]),
   })
   .transform((s) => ({
     id: s.id,
@@ -64,6 +68,7 @@ export const storefrontShopSchema = z
           .join(", ")
       : null,
     policies: s.policies,
+    paymentMethods: s.payment_methods,
   }));
 export type StorefrontShop = z.output<typeof storefrontShopSchema>;
 
@@ -208,6 +213,7 @@ export const customerOrderSchema = z.object({
   status: z.enum(Constants.public.Enums.order_status),
   payment_method: z.enum(Constants.public.Enums.payment_method).nullable(),
   payment_status: z.enum(Constants.public.Enums.payment_status),
+  payment_due_at: z.string().nullable().optional().default(null),
   fulfillment_status: z.enum(Constants.public.Enums.fulfillment_status),
   currency: z.string(),
   subtotal: money,
@@ -324,6 +330,10 @@ export function shippingFor(
 
 export const shopSlugSchema = z.string().regex(/^[a-z0-9-]{3,48}$/);
 
+/** How a shopper can pay: online (Razorpay) or cash on delivery. */
+export const CHECKOUT_PAYMENT_METHODS = ["online", "cod"] as const;
+export type CheckoutPaymentMethod = (typeof CHECKOUT_PAYMENT_METHODS)[number];
+
 /** An Indian mobile number as people type it ("98765 43210", "+91 98765-43210"). */
 export const indianMobileSchema = z
   .string()
@@ -358,6 +368,7 @@ export const checkoutDetailsSchema = z.object({
   }),
   address: streetAddressSchema,
   note: z.string().trim().max(300, "Keep it under 300 characters").optional().default(""),
+  paymentMethod: z.enum(CHECKOUT_PAYMENT_METHODS).optional().default("cod"),
 });
 export type CheckoutDetailsInput = z.input<typeof checkoutDetailsSchema>;
 

@@ -83,7 +83,7 @@ export const startCheckout = createAction({
         postal_code: input.address.postalCode,
         country: "IN",
       },
-      p_payment_method: "cod",
+      p_payment_method: input.paymentMethod,
     });
     if (error) throw fromPostgrestError(error);
 
@@ -162,6 +162,7 @@ export const confirmCheckout = createAction({
       order_number?: string;
       public_token?: string;
       grand_total?: number;
+      awaiting_payment?: boolean;
     };
     if (!result.ok) {
       const left = result.attempts_left;
@@ -178,8 +179,13 @@ export const confirmCheckout = createAction({
 
     await cookie.clear();
 
-    notifyOrder(result.order_id!, { type: "confirmed" });
+    // Online orders are confirmed (and emailed) once the payment arrives.
+    if (!result.awaiting_payment) notifyOrder(result.order_id!, { type: "confirmed" });
 
-    return { token: result.public_token!, number: result.order_number! };
+    return {
+      token: result.public_token!,
+      number: result.order_number!,
+      awaitingPayment: Boolean(result.awaiting_payment),
+    };
   },
 });

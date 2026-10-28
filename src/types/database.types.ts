@@ -773,6 +773,7 @@ export type Database = {
           number: string;
           organization_id: string;
           paid_at: string | null;
+          payment_due_at: string | null;
           payment_method: Database["public"]["Enums"]["payment_method"] | null;
           payment_status: Database["public"]["Enums"]["payment_status"];
           placed_at: string;
@@ -806,6 +807,7 @@ export type Database = {
           number: string;
           organization_id: string;
           paid_at?: string | null;
+          payment_due_at?: string | null;
           payment_method?: Database["public"]["Enums"]["payment_method"] | null;
           payment_status?: Database["public"]["Enums"]["payment_status"];
           placed_at?: string;
@@ -838,6 +840,7 @@ export type Database = {
           number?: string;
           organization_id?: string;
           paid_at?: string | null;
+          payment_due_at?: string | null;
           payment_method?: Database["public"]["Enums"]["payment_method"] | null;
           payment_status?: Database["public"]["Enums"]["payment_status"];
           placed_at?: string;
@@ -1007,6 +1010,79 @@ export type Database = {
           updated_at?: string;
         };
         Relationships: [];
+      };
+      payments: {
+        Row: {
+          amount: number;
+          captured_at: string | null;
+          created_at: string;
+          currency: string;
+          error: string | null;
+          id: string;
+          method: string | null;
+          order_id: string;
+          organization_id: string;
+          provider: string;
+          provider_order_id: string;
+          provider_payment_id: string | null;
+          refund_due: boolean;
+          refunded_amount: number;
+          status: string;
+          updated_at: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          amount: number;
+          captured_at?: string | null;
+          created_at?: string;
+          currency: string;
+          error?: string | null;
+          id?: string;
+          method?: string | null;
+          order_id: string;
+          organization_id: string;
+          provider?: string;
+          provider_order_id: string;
+          provider_payment_id?: string | null;
+          refund_due?: boolean;
+          refunded_amount?: number;
+          status?: string;
+          updated_at?: string;
+        };
+        Update: {
+          amount?: number;
+          captured_at?: string | null;
+          created_at?: string;
+          currency?: string;
+          error?: string | null;
+          id?: string;
+          method?: string | null;
+          order_id?: string;
+          organization_id?: string;
+          provider?: string;
+          provider_order_id?: string;
+          provider_payment_id?: string | null;
+          refund_due?: boolean;
+          refunded_amount?: number;
+          status?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "payments_organization_id_order_id_fkey";
+            columns: ["organization_id", "order_id"];
+            isOneToOne: false;
+            referencedRelation: "order_overview";
+            referencedColumns: ["organization_id", "id"];
+          },
+          {
+            foreignKeyName: "payments_organization_id_order_id_fkey";
+            columns: ["organization_id", "order_id"];
+            isOneToOne: false;
+            referencedRelation: "orders";
+            referencedColumns: ["organization_id", "id"];
+          },
+        ];
       };
       product_images: {
         Row: {
@@ -2152,6 +2228,7 @@ export type Database = {
           isSetofReturn: false;
         };
       };
+      begin_online_payment: { Args: { p_order_token: string }; Returns: Json };
       cancel_order: { Args: { p_order_id: string; p_reason?: string }; Returns: undefined };
       confirm_delivery: { Args: { p_otp: string; p_shipment_id: string }; Returns: Json };
       confirm_order: { Args: { p_order_id: string }; Returns: undefined };
@@ -2204,12 +2281,16 @@ export type Database = {
         };
         Returns: string;
       };
+      disconnect_payment_account: { Args: { p_organization_id: string }; Returns: undefined };
+      expire_unpaid_orders: { Args: { p_organization_id?: string }; Returns: number };
+      forget_webhook_event: { Args: { p_event_id: string }; Returns: undefined };
       get_billing_overview: { Args: { p_organization_id: string }; Returns: Json };
       get_invitation: { Args: { p_token: string }; Returns: Json };
       get_overview_stats: {
         Args: { p_organization_id: string; p_shop_id?: string };
         Returns: Json;
       };
+      get_payment_settings: { Args: { p_organization_id: string }; Returns: Json };
       get_tracking: { Args: { p_token: string }; Returns: Json };
       invite_member: {
         Args: {
@@ -2223,6 +2304,8 @@ export type Database = {
       };
       mark_order_paid: { Args: { p_order_id: string }; Returns: undefined };
       order_invoice: { Args: { p_order_id: string }; Returns: Json };
+      payment_account_credentials: { Args: { p_organization_id: string }; Returns: Json };
+      payments_to_refund: { Args: { p_order_id: string }; Returns: Json };
       receive_stock: {
         Args: {
           p_batch_code?: string;
@@ -2250,6 +2333,36 @@ export type Database = {
           isOneToOne: true;
           isSetofReturn: false;
         };
+      };
+      record_payment_attempt: {
+        Args: {
+          p_amount: number;
+          p_currency: string;
+          p_order_id: string;
+          p_provider_order_id: string;
+        };
+        Returns: string;
+      };
+      record_payment_captured: {
+        Args: {
+          p_amount: number;
+          p_method: string;
+          p_provider_order_id: string;
+          p_provider_payment_id: string;
+        };
+        Returns: Json;
+      };
+      record_payment_failed: {
+        Args: { p_provider_order_id: string; p_provider_payment_id: string; p_reason: string };
+        Returns: undefined;
+      };
+      record_refund: {
+        Args: { p_amount: number; p_payment_id: string; p_refund_id: string };
+        Returns: undefined;
+      };
+      register_webhook_event: {
+        Args: { p_event: string; p_event_id: string; p_organization_id: string };
+        Returns: boolean;
       };
       remove_member: { Args: { p_member_id: string }; Returns: undefined };
       remove_stock: {
@@ -2284,6 +2397,16 @@ export type Database = {
         Returns: undefined;
       };
       revoke_invitation: { Args: { p_invitation_id: string }; Returns: undefined };
+      save_payment_account: {
+        Args: {
+          p_enabled?: boolean;
+          p_key_id: string;
+          p_key_secret_enc?: string;
+          p_organization_id: string;
+          p_webhook_secret_enc?: string;
+        };
+        Returns: undefined;
+      };
       set_warehouse_shops: {
         Args: { p_shop_ids: string[]; p_warehouse_id: string };
         Returns: undefined;
@@ -2420,7 +2543,7 @@ export type Database = {
       inventory_tracking: "quantity" | "serial" | "batch";
       order_status: "pending" | "confirmed" | "cancelled" | "completed";
       org_role: "owner" | "admin" | "manager" | "staff" | "support";
-      payment_method: "upi" | "card" | "netbanking" | "wallet" | "cod" | "store_credit";
+      payment_method: "upi" | "card" | "netbanking" | "wallet" | "cod" | "store_credit" | "online";
       payment_status:
         "pending" | "authorized" | "paid" | "partially_refunded" | "refunded" | "failed";
       plan_tier: "trial" | "starter" | "growth" | "scale";
@@ -2555,7 +2678,7 @@ export const Constants = {
       inventory_tracking: ["quantity", "serial", "batch"],
       order_status: ["pending", "confirmed", "cancelled", "completed"],
       org_role: ["owner", "admin", "manager", "staff", "support"],
-      payment_method: ["upi", "card", "netbanking", "wallet", "cod", "store_credit"],
+      payment_method: ["upi", "card", "netbanking", "wallet", "cod", "store_credit", "online"],
       payment_status: ["pending", "authorized", "paid", "partially_refunded", "refunded", "failed"],
       plan_tier: ["trial", "starter", "growth", "scale"],
       product_status: ["draft", "active", "archived"],

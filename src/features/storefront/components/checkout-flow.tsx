@@ -4,7 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { MailCheckIcon, ShieldCheckIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useTransition } from "react";
-import { Controller, useForm } from "react-hook-form";
+import { Controller, useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 import { type z } from "zod";
 
@@ -28,30 +28,48 @@ import {
   resendCheckoutCode,
   startCheckout,
 } from "@/features/storefront/checkout-actions";
+import {
+  defaultPaymentMethod,
+  PaymentMethodChoice,
+} from "@/features/payments/components/payment-method-choice";
+import { useRazorpayCheckout } from "@/features/payments/components/use-razorpay-checkout";
 import { CodeInput } from "@/features/storefront/components/code-input";
-import { checkoutDetailsSchema } from "@/features/storefront/schemas";
+import { type CheckoutPaymentMethod, checkoutDetailsSchema } from "@/features/storefront/schemas";
 import { applyActionError } from "@/lib/forms/apply-action-error";
-import { formatMoney } from "@/lib/format";
 
 type FormInput = z.input<typeof checkoutDetailsSchema>;
 type FormOutput = z.output<typeof checkoutDetailsSchema>;
 
 const RESEND_SECONDS = 30;
 
+type PaymentProps = {
+  paymentMethods: CheckoutPaymentMethod[];
+  codLimit: number | null;
+};
+
 export function CheckoutFlow({
   shopSlug,
   currency,
   total,
+  paymentMethods,
+  codLimit,
 }: {
   shopSlug: string;
   currency: string;
   total: number;
-}) {
+} & PaymentProps) {
   const [sentTo, setSentTo] = useState<string | null>(null);
   return sentTo ? (
     <CodeStep shopSlug={shopSlug} email={sentTo} onChangeDetails={() => setSentTo(null)} />
   ) : (
-    <DetailsStep shopSlug={shopSlug} currency={currency} total={total} onSent={setSentTo} />
+    <DetailsStep
+      shopSlug={shopSlug}
+      currency={currency}
+      total={total}
+      paymentMethods={paymentMethods}
+      codLimit={codLimit}
+      onSent={setSentTo}
+    />
   );
 }
 
@@ -59,13 +77,15 @@ function DetailsStep({
   shopSlug,
   currency,
   total,
+  paymentMethods,
+  codLimit,
   onSent,
 }: {
   shopSlug: string;
   currency: string;
   total: number;
   onSent: (email: string) => void;
-}) {
+} & PaymentProps) {
   const [isPending, startTransition] = useTransition();
   const form = useForm<FormInput, unknown, FormOutput>({
     resolver: zodResolver(checkoutDetailsSchema),
@@ -74,8 +94,10 @@ function DetailsStep({
       contact: { name: "", email: "", phone: "" },
       address: { line1: "", line2: "", city: "", state: "", postalCode: "" },
       note: "",
+      paymentMethod: defaultPaymentMethod(paymentMethods),
     },
   });
+  const paymentMethod = useWatch({ control: form.control, name: "paymentMethod" }) ?? "cod";
 
   const onSubmit = form.handleSubmit((values) =>
     startTransition(async () => {
@@ -198,30 +220,30 @@ function DetailsStep({
         <CardHeader>
           <CardTitle>Payment</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-3 text-sm">
-          <label className="flex items-start gap-3 rounded-xl border border-primary bg-primary/5 p-4">
-            <input
-              type="radio"
-              checked
-              readOnly
-              className="mt-1 accent-[var(--primary)]"
-              name="payment"
-            />
-            <span>
-              <span className="block font-medium">Cash on delivery</span>
-              <span className="text-muted-foreground">
-                Pay {formatMoney(total, currency)} in cash or UPI to the courier.
-              </span>
-            </span>
-          </label>
-          <p className="text-muted-foreground">Online payment is coming soon.</p>
+        <CardContent>
+          <Controller
+            name="paymentMethod"
+            control={form.control}
+            render={({ field }) => (
+              <PaymentMethodChoice
+                methods={paymentMethods}
+                value={field.value ?? "cod"}
+                onChange={field.onChange}
+                total={total}
+                codLimit={codLimit}
+                currency={currency}
+              />
+            )}
+          />
         </CardContent>
       </Card>
 
       <FormRootError form={form} />
       <Button type="submit" size="lg" className="w-full" disabled={isPending}>
         {isPending ? <Spinner /> : <MailCheckIcon />}
-        Email me a code to place the order
+        {paymentMethod === "online"
+          ? "Email me a code, then pay"
+          : "Email me a code to place the order"}
       </Button>
     </form>
   );
@@ -237,6 +259,7 @@ function CodeStep({
   onChangeDetails: () => void;
 }) {
   const router = useRouter();
+  const { pay } = useRazorpayCheckout();
   const [code, setCode] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [cooldown, setCooldown] = useState(RESEND_SECONDS);
@@ -268,8 +291,18 @@ function CodeStep({
         setCode("");
         return;
       }
-      toast.success(`Order ${result.data.number} placed`);
-      router.replace(routes.storefrontOrder(shopSlug, result.data.token));
+      const orderPage = routes.storefrontOrder(shopSlug, result.data.token);
+      if (result.data.awaitingPayment) {
+        // The order is placed and stock held; now take the payment.
+        const outcome = await pay(result.data.token);
+        if (outcome.status === "paid")
+          toast.success(`Order ${result.data.number} paid and confirmed`);
+        else if (outcome.status === "failed") toast.error(outcome.message);
+        else toast.info("Your order is saved. Complete the payment to confirm it.");
+      } else {
+        toast.success(`Order ${result.data.number} placed`);
+      }
+      router.replace(orderPage);
     });
 
   const resend = () =>

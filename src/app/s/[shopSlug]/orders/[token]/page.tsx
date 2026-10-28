@@ -17,6 +17,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Skeleton } from "@/components/ui/skeleton";
 import { routes } from "@/config/routes";
 import { SHIPMENT_STATUS_LABELS } from "@/features/orders/schemas";
+import { PayNowButton } from "@/features/payments/components/pay-now-button";
 import { OrderProgress } from "@/features/shopper/components/order-progress";
 import { type OrderStage } from "@/features/shopper/stages";
 import { ProductVisual } from "@/features/storefront/components/product-visual";
@@ -41,7 +42,14 @@ const dateFormat = new Intl.DateTimeFormat("en-IN", {
   timeZone: "Asia/Kolkata",
 });
 
+const timeFormat = new Intl.DateTimeFormat("en-IN", {
+  hour: "numeric",
+  minute: "2-digit",
+  timeZone: "Asia/Kolkata",
+});
+
 const HEADLINE: Record<OrderStage, string> = {
+  awaiting_payment: "Complete your payment",
   placed: "Order received",
   confirmed: "Order confirmed",
   packed: "Packed and ready to ship",
@@ -118,13 +126,30 @@ async function CustomerOrder({ params }: Pick<Props, "params">) {
         )}
       </div>
 
-      {order.stage !== "cancelled" && order.stage !== "returned" && (
-        <Card>
-          <CardContent>
-            <OrderProgress stage={order.stage} />
+      {order.stage === "awaiting_payment" && order.payment_due_at && (
+        <Card className="border-primary">
+          <CardContent className="flex flex-col items-center gap-3 text-center">
+            <p className="text-sm text-muted-foreground">
+              We&apos;re holding your items until{" "}
+              <span className="font-medium text-foreground">
+                {timeFormat.format(new Date(order.payment_due_at))}
+              </span>
+              . Pay now to confirm the order; otherwise it&apos;s cancelled automatically.
+            </p>
+            <PayNowButton orderToken={token} amount={order.grand_total} currency={order.currency} />
           </CardContent>
         </Card>
       )}
+
+      {order.stage !== "cancelled" &&
+        order.stage !== "returned" &&
+        order.stage !== "awaiting_payment" && (
+          <Card>
+            <CardContent>
+              <OrderProgress stage={order.stage} />
+            </CardContent>
+          </Card>
+        )}
 
       {order.shipments.length > 0 && (
         <Card>

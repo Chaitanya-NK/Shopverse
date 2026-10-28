@@ -34,6 +34,8 @@ type OrderActionsProps = {
     paymentStatus: PaymentStatus;
     paymentMethod: PaymentMethod | null;
     hasLiveShipments: boolean;
+    /** Online order still waiting for the customer's payment. */
+    awaitingPayment?: boolean;
   };
   canCancel: boolean;
 };
@@ -60,18 +62,21 @@ export function OrderActions({ organizationSlug, order, canCancel }: OrderAction
 
   return (
     <div className="flex flex-wrap gap-2">
-      {order.status === "pending" && (
+      {order.status === "pending" && !order.awaitingPayment && (
         <Button onClick={() => run("confirm")} disabled={isPending}>
           {busy === "confirm" ? <Spinner /> : <BadgeCheckIcon />}
           Confirm & reserve stock
         </Button>
       )}
-      {open && order.paymentStatus !== "paid" && order.paymentMethod !== "cod" && (
-        <Button variant="outline" onClick={() => run("paid")} disabled={isPending}>
-          {busy === "paid" ? <Spinner /> : <BanknoteIcon />}
-          Mark as paid
-        </Button>
-      )}
+      {open &&
+        order.paymentStatus !== "paid" &&
+        order.paymentMethod !== "cod" &&
+        order.paymentMethod !== "online" && (
+          <Button variant="outline" onClick={() => run("paid")} disabled={isPending}>
+            {busy === "paid" ? <Spinner /> : <BanknoteIcon />}
+            Mark as paid
+          </Button>
+        )}
       {open && canCancel && (
         <CancelOrderDialog
           organizationSlug={organizationSlug}
@@ -104,7 +109,13 @@ function CancelOrderDialog({
         setError(result.error.message);
         return;
       }
-      toast.success(`${order.number} cancelled`);
+      const { refunded, failed } = result.data.refunds;
+      toast.success(
+        `${order.number} cancelled` +
+          (refunded > 0 ? ". The online payment is being refunded." : ""),
+      );
+      if (failed > 0)
+        toast.error("The refund couldn't be started. Retry it from the Payments card.");
       setOpen(false);
     });
 

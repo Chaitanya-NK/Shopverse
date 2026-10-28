@@ -47,7 +47,7 @@ import { INDIAN_STATES } from "@/features/orders/india";
 import {
   createOrderSchema,
   PAYMENT_METHOD_LABELS,
-  PAYMENT_METHODS,
+  STAFF_PAYMENT_METHODS,
 } from "@/features/orders/schemas";
 import { orderTotals } from "@/features/orders/totals";
 import { applyActionError } from "@/lib/forms/apply-action-error";
@@ -498,7 +498,7 @@ export function OrderForm({ organizationSlug, shops, defaultShopId }: OrderFormP
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        {PAYMENT_METHODS.map((m) => (
+                        {STAFF_PAYMENT_METHODS.map((m) => (
                           <SelectItem key={m} value={m}>
                             {PAYMENT_METHOD_LABELS[m]}
                           </SelectItem>

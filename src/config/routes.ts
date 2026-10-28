@@ -50,6 +50,9 @@ export const routes = {
   orgTeam: (orgSlug: string) => `/app/${orgSlug}/team`,
   orgAudit: (orgSlug: string) => `/app/${orgSlug}/team/audit`,
   orgBilling: (orgSlug: string) => `/app/${orgSlug}/billing`,
+  orgPayments: (orgSlug: string) => `/app/${orgSlug}/payments`,
+  /** Where Razorpay sends this business's webhooks. */
+  razorpayWebhook: (organizationId: string) => `/api/webhooks/razorpay/${organizationId}`,
   /** Accept a team invitation (public; asks the visitor to sign in). */
   invitation: (token: string) => `/invite/${token}`,
   orgCustomer: (orgSlug: string, customerId: string) => `/app/${orgSlug}/customers/${customerId}`,

@@ -96,8 +96,17 @@ export const storefrontSettingsSchema = z
       .optional()
       .default({ shipping: "", returns: "", privacy: "", terms: "" }),
     notifyCustomers: z.boolean().optional().default(true),
+    // Payment methods offered at checkout (online also needs a connected account).
+    acceptCod: z.boolean().optional().default(true),
+    acceptOnline: z.boolean().optional().default(true),
   })
   .superRefine((s, ctx) => {
+    if (!s.acceptCod && !s.acceptOnline)
+      ctx.addIssue({
+        code: "custom",
+        path: ["acceptCod"],
+        message: "Keep at least one way to pay",
+      });
     if (!s.gstin) return;
     // A GST invoice needs the registered name and address.
     if (!s.legalName)
@@ -173,6 +182,8 @@ export function readStorefrontSettings(value: unknown): StorefrontSettings {
       terms: str(POLICY_PAGES.terms.key),
     },
     notifyCustomers: s.notify_customers !== false,
+    acceptCod: s.accept_cod !== false,
+    acceptOnline: s.accept_online !== false,
   };
 }
 
@@ -200,5 +211,7 @@ export function toSettingsJson(settings: StorefrontSettings): Record<string, Set
     [POLICY_PAGES.terms.key]: settings.policies.terms || null,
     // Stored only when switched off; absent means on.
     notify_customers: settings.notifyCustomers ? null : false,
+    accept_cod: settings.acceptCod ? null : false,
+    accept_online: settings.acceptOnline ? null : false,
   };
 }

@@ -19,16 +19,29 @@ export const env = createEnv({
     SMTP_USER: z.string().min(1).optional(),
     SMTP_PASSWORD: z.string().min(1).optional(),
     MAIL_FROM: z.string().min(3).optional(),
+    // Encrypts each business's payment secrets before they are stored:
+    // 32 random bytes, base64 (openssl rand -base64 32). Keep it secret; if it
+    // changes, businesses must re-enter their Razorpay keys.
+    PAYMENTS_ENCRYPTION_KEY: z
+      .string()
+      .refine((v) => Buffer.from(v, "base64").length === 32, "Must be 32 bytes, base64-encoded")
+      .optional(),
+    // Override only for local testing against a stand-in.
+    RAZORPAY_API_URL: z.url().default("https://api.razorpay.com"),
   },
   client: {
     NEXT_PUBLIC_SUPABASE_URL: z.url(),
     NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: z.string().min(1),
     NEXT_PUBLIC_APP_URL: z.url().default("http://localhost:3000"),
+    NEXT_PUBLIC_RAZORPAY_CHECKOUT_URL: z
+      .url()
+      .default("https://checkout.razorpay.com/v1/checkout.js"),
   },
   experimental__runtimeEnv: {
     NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
     NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
     NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
+    NEXT_PUBLIC_RAZORPAY_CHECKOUT_URL: process.env.NEXT_PUBLIC_RAZORPAY_CHECKOUT_URL,
   },
   skipValidation: Boolean(process.env.SKIP_ENV_VALIDATION),
   emptyStringAsUndefined: true,

@@ -12,6 +12,10 @@ export type ShipmentStatus = Enums<"shipment_status">;
 export const ORDER_STATUSES = Constants.public.Enums.order_status;
 export const PAYMENT_STATUSES = Constants.public.Enums.payment_status;
 export const PAYMENT_METHODS = Constants.public.Enums.payment_method;
+/** Methods staff record on orders they enter ("online" is only for storefront checkout). */
+export const STAFF_PAYMENT_METHODS = PAYMENT_METHODS.filter(
+  (m): m is Exclude<PaymentMethod, "online"> => m !== "online",
+);
 export const FULFILLMENT_STATUSES = Constants.public.Enums.fulfillment_status;
 export const SHIPMENT_STATUSES = Constants.public.Enums.shipment_status;
 
@@ -38,6 +42,7 @@ export const PAYMENT_METHOD_LABELS: Record<PaymentMethod, string> = {
   wallet: "Wallet",
   cod: "Cash on delivery",
   store_credit: "Store credit",
+  online: "Online payment",
 };
 
 export const FULFILLMENT_LABELS: Record<FulfillmentStatus, string> = {
@@ -174,7 +179,7 @@ export const createOrderSchema = z
       .refine((lines) => new Set(lines.map((l) => l.variantId)).size === lines.length, {
         message: "Each product can be added once; change its quantity instead",
       }),
-    paymentMethod: z.enum(PAYMENT_METHODS),
+    paymentMethod: z.enum(STAFF_PAYMENT_METHODS),
     paid: z.boolean(),
     shippingTotal: moneySchema,
     discountTotal: moneySchema,

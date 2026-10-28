@@ -4,6 +4,7 @@ import {
   BoxesIcon,
   CreditCardIcon,
   FolderTreeIcon,
+  LandmarkIcon,
   LayoutDashboardIcon,
   type LucideIcon,
   MegaphoneIcon,
@@ -55,6 +56,7 @@ export function getOrgNavigation(orgSlug: string): NavGroup[] {
       label: "Organisation",
       items: [
         { title: "Team & security", icon: ShieldCheckIcon, href: routes.orgTeam(orgSlug) },
+        { title: "Payments", icon: LandmarkIcon, href: routes.orgPayments(orgSlug) },
         { title: "Billing", icon: CreditCardIcon, href: routes.orgBilling(orgSlug) },
       ],
     },

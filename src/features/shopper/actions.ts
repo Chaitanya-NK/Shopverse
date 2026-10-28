@@ -36,6 +36,7 @@ import {
   toIndianE164,
 } from "@/features/storefront/schemas";
 import { notifyOrder } from "@/features/notifications/order-notifier";
+import { refundDuePayments } from "@/features/payments/server";
 import { createAction } from "@/lib/actions/create-action";
 import { type AppError, Errors, fromPostgrestError } from "@/lib/errors";
 import { sendMail } from "@/lib/mail";
@@ -291,7 +292,10 @@ export const cancelMyOrder = createAction({
       .select("id")
       .eq("public_token", input.orderToken)
       .maybeSingle();
-    if (order) notifyOrder(order.id, { type: "cancelled", byCustomer: true });
+    if (order) {
+      notifyOrder(order.id, { type: "cancelled", byCustomer: true });
+      await refundDuePayments(order.id);
+    }
     refresh();
     return null;
   },
@@ -392,7 +396,7 @@ export const placeSignedInOrder = createAction({
         postal_code: address.postalCode,
         country: "IN",
       },
-      p_payment_method: "cod",
+      p_payment_method: input.paymentMethod,
       p_save_address: !saved && input.saveAddress,
     });
     if (error) throw await shopperError(shop.slug, error);
@@ -402,9 +406,15 @@ export const placeSignedInOrder = createAction({
       order_number: string;
       public_token: string;
       grand_total: number;
+      awaiting_payment: boolean;
     };
     await clearCart(shop.slug);
-    notifyOrder(order.order_id, { type: "confirmed" });
-    return { token: order.public_token, number: order.order_number };
+    // Online orders are confirmed (and emailed) once the payment arrives.
+    if (!order.awaiting_payment) notifyOrder(order.order_id, { type: "confirmed" });
+    return {
+      token: order.public_token,
+      number: order.order_number,
+      awaitingPayment: order.awaiting_payment,
+    };
   },
 });
