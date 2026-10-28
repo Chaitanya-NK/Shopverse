@@ -35,7 +35,13 @@ import { routes } from "@/config/routes";
 import { INDIAN_STATES } from "@/features/orders/india";
 import { updateShop } from "@/features/shops/actions";
 import { type ShopSummary } from "@/features/shops/queries";
-import { POLICY_PAGES, type PolicyPage, updateShopSchema } from "@/features/shops/schemas";
+import {
+  DEFAULT_RETURN_WINDOW,
+  POLICY_PAGES,
+  type PolicyPage,
+  RETURN_WINDOW_CHOICES,
+  updateShopSchema,
+} from "@/features/shops/schemas";
 import { applyActionError } from "@/lib/forms/apply-action-error";
 
 type FormInput = z.input<typeof updateShopSchema>;
@@ -289,6 +295,65 @@ export function ShopSettingsForm({
               />
             </FieldGroup>
           </FieldSet>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Returns</CardTitle>
+          <CardDescription>
+            Shoppers ask for returns from their order page. Categories can be marked non-returnable.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <FieldGroup>
+            <Controller
+              name="settings.returnWindowDays"
+              control={form.control}
+              render={({ field }) => (
+                <Field>
+                  <FieldLabel htmlFor="shop-return-window">Return window</FieldLabel>
+                  <Select
+                    value={String(field.value ?? DEFAULT_RETURN_WINDOW)}
+                    onValueChange={(v) => field.onChange(Number(v))}
+                  >
+                    <SelectTrigger id="shop-return-window" className="w-full sm:w-64">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {RETURN_WINDOW_CHOICES.map((d) => (
+                        <SelectItem key={d} value={String(d)}>
+                          {d === 0 ? "No online returns" : `${d} days after delivery`}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FieldDescription>
+                    Staff can still accept a return at any time from the order.
+                  </FieldDescription>
+                </Field>
+              )}
+            />
+            <Controller
+              name="settings.allowExchanges"
+              control={form.control}
+              render={({ field }) => (
+                <Field orientation="horizontal">
+                  <Switch
+                    id="shop-exchanges"
+                    checked={field.value ?? true}
+                    onCheckedChange={field.onChange}
+                  />
+                  <span>
+                    <FieldLabel htmlFor="shop-exchanges">Offer exchanges</FieldLabel>
+                    <FieldDescription>
+                      Another size or colour of the same product, at the price paid.
+                    </FieldDescription>
+                  </span>
+                </Field>
+              )}
+            />
+          </FieldGroup>
         </CardContent>
       </Card>
 

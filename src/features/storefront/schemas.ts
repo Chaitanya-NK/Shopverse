@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 import { productImageObjectSchema, productImageSchema } from "@/features/products/images";
+import { orderReturnSchema } from "@/features/returns/schemas";
 import { ORDER_STAGES } from "@/features/shopper/stages";
 import { Constants } from "@/types/database.types";
 
@@ -259,6 +260,8 @@ export const customerOrderSchema = z.object({
       tracking_token: z.string(),
     }),
   ),
+  source: z.string().optional().default("storefront"),
+  returns: z.array(orderReturnSchema).optional().default([]),
 });
 export type CustomerOrder = z.output<typeof customerOrderSchema>;
 

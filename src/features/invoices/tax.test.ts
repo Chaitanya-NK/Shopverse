@@ -35,6 +35,7 @@ const base: Invoice = {
   discountTotal: 0,
   discountCode: null,
   shippingTotal: 49,
+  shippingRate: null,
   grandTotal: 1099,
   items: [
     {
@@ -125,5 +126,18 @@ describe("amountInWords", () => {
     [19_999.01, "Rupees Nineteen Thousand Nine Hundred Ninety-Nine and One Paise Only"],
   ])("%d", (amount, words) => {
     expect(amountInWords(amount)).toBe(words);
+  });
+});
+
+describe("credit note delivery", () => {
+  it("uses the rate delivery was invoiced at, not the returned items' rate", () => {
+    const t = computeInvoiceTotals({
+      ...base,
+      shippingRate: 18,
+      items: [{ ...base.items[0]!, gstRate: 0, taxAmount: 0 }],
+    });
+    const delivery = t.lines.at(-1)!;
+    expect(delivery.rate).toBe(18);
+    expect(delivery.igst).toBe(7.47);
   });
 });

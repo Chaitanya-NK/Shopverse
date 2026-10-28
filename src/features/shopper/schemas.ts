@@ -177,10 +177,12 @@ export type ShopperOrder = z.output<typeof shopperOrdersSchema>["items"][number]
 export const orderAccessSchema = z
   .object({
     can_cancel: z.boolean(),
+    can_return: z.boolean().optional().default(false),
     lines: z.array(z.object({ variant_id: z.uuid(), quantity: z.number().int() })),
   })
   .transform((a) => ({
     canCancel: a.can_cancel,
+    canReturn: a.can_return,
     lines: a.lines.map((l) => ({ variantId: l.variant_id, quantity: l.quantity })),
   }));
 

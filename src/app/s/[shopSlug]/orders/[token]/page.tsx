@@ -21,6 +21,7 @@ import { PayNowButton } from "@/features/payments/components/pay-now-button";
 import { OrderProgress } from "@/features/shopper/components/order-progress";
 import { type OrderStage } from "@/features/shopper/stages";
 import { ProductVisual } from "@/features/storefront/components/product-visual";
+import { OrderReturns } from "@/features/returns/components/order-returns";
 import { OrderActions } from "@/features/shopper/components/order-actions";
 import { getOrderAccess } from "@/features/shopper/queries";
 import { getShopper } from "@/features/shopper/session";
@@ -108,6 +109,7 @@ async function CustomerOrder({ params }: Pick<Props, "params">) {
               orderToken={token}
               orderNumber={order.number}
               canCancel={access.canCancel}
+              canReturn={access.canReturn}
             />
           </div>
         ) : (
@@ -120,7 +122,7 @@ async function CustomerOrder({ params }: Pick<Props, "params">) {
               >
                 Sign in
               </Link>{" "}
-              with the email you ordered with to cancel, reorder or see all your orders.
+              with the email you ordered with to cancel, return, reorder or see all your orders.
             </p>
           )
         )}
@@ -150,6 +152,14 @@ async function CustomerOrder({ params }: Pick<Props, "params">) {
             </CardContent>
           </Card>
         )}
+
+      <OrderReturns
+        returns={order.returns}
+        currency={order.currency}
+        shopSlug={shop.slug}
+        orderToken={token}
+        owner={Boolean(access)}
+      />
 
       {order.shipments.length > 0 && (
         <Card>
@@ -234,7 +244,7 @@ async function CustomerOrder({ params }: Pick<Props, "params">) {
               <dt>
                 {order.status !== "cancelled" &&
                 order.payment_method === "cod" &&
-                order.payment_status !== "paid"
+                (order.payment_status === "pending" || order.payment_status === "authorized")
                   ? "To pay on delivery"
                   : "Total"}
               </dt>

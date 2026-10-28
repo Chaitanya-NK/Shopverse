@@ -1,6 +1,7 @@
 "use client";
 
-import { RotateCcwIcon, XCircleIcon } from "lucide-react";
+import { RotateCcwIcon, Undo2Icon, XCircleIcon } from "lucide-react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
@@ -28,12 +29,14 @@ export function OrderActions({
   orderToken,
   orderNumber,
   canCancel,
+  canReturn = false,
   size = "default",
 }: {
   shopSlug: string;
   orderToken: string;
   orderNumber: string;
   canCancel: boolean;
+  canReturn?: boolean;
   size?: "default" | "sm";
 }) {
   const router = useRouter();
@@ -60,6 +63,14 @@ export function OrderActions({
         {isReordering ? <Spinner /> : <RotateCcwIcon />}
         Buy again
       </Button>
+      {canReturn && (
+        <Button asChild variant="outline" size={size}>
+          <Link href={routes.storefrontReturn(shopSlug, orderToken)}>
+            <Undo2Icon />
+            Return or exchange
+          </Link>
+        </Button>
+      )}
       {canCancel && (
         <CancelOrderDialog
           shopSlug={shopSlug}

@@ -19,6 +19,7 @@ import { KpiTiles, KpiTilesSkeleton } from "@/features/analytics/components/kpi-
 import { RevenueChart } from "@/features/analytics/components/revenue-chart";
 import { SalesFilters } from "@/features/analytics/components/sales-filters";
 import { getSalesReport } from "@/features/analytics/queries";
+import { getReturnsReport } from "@/features/returns/queries";
 import { formatRange, resolveRange, todayInIndia } from "@/features/analytics/ranges";
 import { averageOrderValue, change } from "@/features/analytics/schemas";
 import { loadSalesParams } from "@/features/analytics/search-params";
@@ -59,7 +60,10 @@ async function Sales({ params, searchParams }: Props) {
   const shops = await listShops(organization.id);
   const shop = shops.find((s) => s.id === filters.shop) ?? null;
   const range = resolveRange(filters.range, { from: filters.from, to: filters.to });
-  const report = await getSalesReport(organization.id, range.from, range.to, shop?.id ?? null);
+  const [report, returns] = await Promise.all([
+    getSalesReport(organization.id, range.from, range.to, shop?.id ?? null),
+    getReturnsReport(organization.id, range.from, range.to, shop?.id ?? null),
+  ]);
   const currency = shop?.currency ?? shops[0]?.currency ?? "INR";
   const money = (n: number) => formatMoney(n, currency);
   const { totals, previous } = report;
@@ -204,11 +208,25 @@ async function Sales({ params, searchParams }: Props) {
                 <dt className="text-muted-foreground">GST included in sales</dt>
                 <dd className="font-mono tabular-nums">{money(totals.tax)}</dd>
               </div>
+              {returns.credited > 0 && (
+                <>
+                  <div className="flex justify-between gap-4">
+                    <dt className="text-muted-foreground">Returns credited</dt>
+                    <dd className="font-mono tabular-nums">−{money(returns.credited)}</dd>
+                  </div>
+                  <div className="flex justify-between gap-4 font-medium">
+                    <dt>Net of returns</dt>
+                    <dd className="font-mono tabular-nums">
+                      {money(totals.revenue - returns.credited)}
+                    </dd>
+                  </div>
+                </>
+              )}
             </dl>
             <dl className="mt-5 grid grid-cols-3 gap-3 border-t pt-4 text-center">
               {[
                 ["Delivered", totals.delivered],
-                ["Returned", totals.returned],
+                ["Returns received", returns.received],
                 ["Cancelled", totals.cancelled],
               ].map(([label, value]) => (
                 <div key={label as string} className="space-y-0.5">

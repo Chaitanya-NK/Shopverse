@@ -27,8 +27,25 @@ function Address({ lines }: { lines: (string | null | undefined)[] }) {
   );
 }
 
-/** A GST tax invoice (or a plain invoice for unregistered sellers), print-ready. */
-export function InvoiceDocument({ invoice }: { invoice: Invoice }) {
+/** Extra details printed on a credit note (issued against an invoice for a return). */
+export type CreditNoteDetails = {
+  againstNumber: string | null;
+  againstDate: string | null;
+  returnNumber: string;
+  reasonLabel: string;
+};
+
+/**
+ * A GST tax invoice (or a plain invoice for unregistered sellers), print-ready.
+ * With `creditNote`, the same layout prints a credit note for returned goods.
+ */
+export function InvoiceDocument({
+  invoice,
+  creditNote,
+}: {
+  invoice: Invoice;
+  creditNote?: CreditNoteDetails;
+}) {
   const t = computeInvoiceTotals(invoice);
   const { seller, buyer } = invoice;
   const sellerState = seller.state
@@ -43,7 +60,7 @@ export function InvoiceDocument({ invoice }: { invoice: Invoice }) {
       <header className="flex flex-wrap items-start justify-between gap-6 border-b border-neutral-200 pb-6">
         <div className="space-y-1">
           <p className="text-xs font-semibold tracking-widest text-neutral-500 uppercase">
-            {t.registered ? "Tax invoice" : "Invoice"}
+            {creditNote ? "Credit note" : t.registered ? "Tax invoice" : "Invoice"}
           </p>
           <h1 className="text-xl font-semibold">{seller.legalName}</h1>
           {seller.legalName !== seller.shopName && (
@@ -64,19 +81,38 @@ export function InvoiceDocument({ invoice }: { invoice: Invoice }) {
           </p>
         </div>
         <dl className="grid grid-cols-[auto_auto] gap-x-4 gap-y-1 text-right">
-          <dt className="text-neutral-500">Invoice no.</dt>
+          <dt className="text-neutral-500">{creditNote ? "Credit note no." : "Invoice no."}</dt>
           <dd className="font-mono font-medium">{invoice.number}</dd>
-          <dt className="text-neutral-500">Invoice date</dt>
+          <dt className="text-neutral-500">{creditNote ? "Date" : "Invoice date"}</dt>
           <dd>{date.format(new Date(invoice.issuedAt))}</dd>
-          <dt className="text-neutral-500">Order no.</dt>
-          <dd className="font-mono">{invoice.orderNumber}</dd>
-          <dt className="text-neutral-500">Order date</dt>
-          <dd>{date.format(new Date(invoice.placedAt))}</dd>
-          <dt className="text-neutral-500">Payment</dt>
-          <dd>
-            {invoice.paymentMethod ? PAYMENT_METHOD_LABELS[invoice.paymentMethod] : "—"}
-            {invoice.paymentStatus === "paid" ? " · paid" : ""}
-          </dd>
+          {creditNote ? (
+            <>
+              <dt className="text-neutral-500">Against invoice</dt>
+              <dd className="font-mono">{creditNote.againstNumber ?? "—"}</dd>
+              {creditNote.againstDate && (
+                <>
+                  <dt className="text-neutral-500">Invoice date</dt>
+                  <dd>{date.format(new Date(creditNote.againstDate))}</dd>
+                </>
+              )}
+              <dt className="text-neutral-500">Order no.</dt>
+              <dd className="font-mono">{invoice.orderNumber}</dd>
+              <dt className="text-neutral-500">Return no.</dt>
+              <dd className="font-mono">{creditNote.returnNumber}</dd>
+            </>
+          ) : (
+            <>
+              <dt className="text-neutral-500">Order no.</dt>
+              <dd className="font-mono">{invoice.orderNumber}</dd>
+              <dt className="text-neutral-500">Order date</dt>
+              <dd>{date.format(new Date(invoice.placedAt))}</dd>
+              <dt className="text-neutral-500">Payment</dt>
+              <dd>
+                {invoice.paymentMethod ? PAYMENT_METHOD_LABELS[invoice.paymentMethod] : "—"}
+                {invoice.paymentStatus === "paid" ? " · paid" : ""}
+              </dd>
+            </>
+          )}
         </dl>
       </header>
 
@@ -212,9 +248,11 @@ export function InvoiceDocument({ invoice }: { invoice: Invoice }) {
       </section>
 
       <footer className="mt-10 border-t border-neutral-200 pt-4 text-xs text-neutral-500">
-        {t.registered
-          ? "Prices include GST. This is a computer-generated invoice and needs no signature."
-          : "The seller is not registered under GST. This is a computer-generated invoice and needs no signature."}
+        {creditNote
+          ? `Issued for goods returned (${creditNote.reasonLabel.toLowerCase()}). ${t.registered ? "The GST shown reduces the tax on the original invoice. " : ""}This is a computer-generated credit note and needs no signature.`
+          : t.registered
+            ? "Prices include GST. This is a computer-generated invoice and needs no signature."
+            : "The seller is not registered under GST. This is a computer-generated invoice and needs no signature."}
       </footer>
     </article>
   );

@@ -21,6 +21,7 @@ export type CategoryNode = {
   tracking: Enums<"inventory_tracking">;
   hsnCode: string | null;
   gstRate: number | null;
+  returnable: boolean;
   sortOrder: number;
   /** Products directly in this category. */
   productCount: number;

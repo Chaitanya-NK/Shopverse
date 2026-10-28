@@ -57,6 +57,7 @@ function invoice(
     discountTotal: discount,
     discountCode: null,
     shippingTotal: shipping,
+    shippingRate: null,
     grandTotal: subtotal - discount + shipping,
     items: lines,
   };
@@ -145,5 +146,31 @@ describe("summariseGst without HSN codes", () => {
     ]);
     expect(s.hsn.map((h) => h.description).sort()).toEqual(["Cap", "Tee"]);
     expect(s.missingHsn).toBe(2);
+  });
+});
+
+describe("summariseGst with credit notes", () => {
+  it("takes returns off the month's figures", () => {
+    const sale = invoice("A-1", "Maharashtra", [{ quantity: 2, total: 1050, taxAmount: 50 }]);
+    const credit = {
+      ...invoice("CN-1", "Maharashtra", [{ quantity: 1, total: 525, taxAmount: 25 }]),
+    };
+    const s = summariseGst([sale], [credit]);
+    expect(s.creditNotes).toMatchObject({
+      count: 1,
+      firstNumber: "CN-1",
+      totals: { value: 525, taxable: 500, igst: 25 },
+    });
+    expect(s.totals).toMatchObject({ value: 525, taxable: 500, igst: 25 });
+    expect(s.b2c).toEqual([
+      expect.objectContaining({
+        placeOfSupply: "Maharashtra",
+        rate: 5,
+        invoices: 1,
+        taxable: 500,
+        igst: 25,
+      }),
+    ]);
+    expect(s.hsn[0]).toMatchObject({ hsnCode: "6109", quantity: 1, value: 525 });
   });
 });

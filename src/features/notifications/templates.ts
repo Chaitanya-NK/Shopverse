@@ -33,7 +33,22 @@ export type OrderEmailEvent =
   | { type: "out_for_delivery"; shipmentNumber: string; trackingUrl: string; otp: string }
   | { type: "delivery_failed"; shipmentNumber: string; trackingUrl: string }
   | { type: "delivered"; shipmentNumber: string }
-  | { type: "cancelled"; byCustomer: boolean };
+  | { type: "cancelled"; byCustomer: boolean }
+  | ReturnEmailEvent;
+
+/** Return updates; amounts are in the order's currency. */
+export type ReturnEmailEvent =
+  | { type: "return_requested"; returnNumber: string; exchange: boolean; items: string[] }
+  | { type: "return_approved"; returnNumber: string; note: string | null }
+  | { type: "return_rejected"; returnNumber: string; note: string | null }
+  | {
+      type: "return_received";
+      returnNumber: string;
+      exchange: boolean;
+      refundAmount: number;
+      creditNoteUrl: string | null;
+    }
+  | { type: "return_refunded"; returnNumber: string; amount: number; method: string };
 
 const BRAND = "#1d6b5c";
 
@@ -210,5 +225,94 @@ export function orderEventEmail(ctx: OrderEmailContext, event: OrderEmailEvent):
             button(ctx.orderUrl, "View order"),
         ),
       };
+    case "return_requested":
+      return {
+        ...base,
+        subject: `Return ${event.returnNumber} requested · ${shop}`,
+        text: `We've got your ${event.exchange ? "exchange" : "return"} request ${event.returnNumber} for order ${ctx.orderNumber}. We'll let you know once it's reviewed.\nView it: ${ctx.orderUrl}`,
+        html: layout(
+          ctx,
+          event.exchange ? "We've got your exchange request" : "We've got your return request",
+          paragraph(
+            `${hello(ctx)} we've received request <b>${escapeHtml(event.returnNumber)}</b> for:`,
+          ) +
+            `<ul style="margin:0 0 12px;padding-left:20px;color:#444">${event.items.map((i) => `<li>${escapeHtml(i)}</li>`).join("")}</ul>` +
+            paragraph("We'll review it shortly and tell you how the pickup works.") +
+            button(ctx.orderUrl, "View your order"),
+        ),
+      };
+    case "return_approved":
+      return {
+        ...base,
+        subject: `Return ${event.returnNumber} approved · ${shop}`,
+        text: `Your return ${event.returnNumber} is approved.${event.note ? ` ${event.note}` : ""} Keep the items packed with their tags.\nView it: ${ctx.orderUrl}`,
+        html: layout(
+          ctx,
+          "Your return is approved",
+          paragraph(
+            `${hello(ctx)} return <b>${escapeHtml(event.returnNumber)}</b> is approved. Keep the items packed, with their tags and accessories, ready for pickup.`,
+          ) +
+            (event.note
+              ? paragraph(`<b>From ${escapeHtml(shop)}:</b> ${escapeHtml(event.note)}`)
+              : "") +
+            button(ctx.orderUrl, "View your order"),
+        ),
+      };
+    case "return_rejected":
+      return {
+        ...base,
+        subject: `About your return ${event.returnNumber} · ${shop}`,
+        text: `We couldn't accept return ${event.returnNumber}.${event.note ? ` ${event.note}` : ""} Reply to this email if you have questions.`,
+        html: layout(
+          ctx,
+          "We couldn't accept this return",
+          paragraph(
+            `${hello(ctx)} we're sorry, but we couldn't accept return <b>${escapeHtml(event.returnNumber)}</b>.`,
+          ) +
+            (event.note ? paragraph(`<b>Why:</b> ${escapeHtml(event.note)}`) : "") +
+            paragraph("Reply to this email if you'd like to talk it through.") +
+            button(ctx.orderUrl, "View your order"),
+        ),
+      };
+    case "return_received": {
+      const amount = formatMoney(event.refundAmount, ctx.currency);
+      const next = event.exchange
+        ? "Your replacement will be on its way shortly."
+        : event.refundAmount > 0
+          ? `Your refund of <b>${escapeHtml(amount)}</b> is being processed.`
+          : "There's nothing to pay or refund.";
+      return {
+        ...base,
+        subject: `We've received your return ${event.returnNumber} · ${shop}`,
+        text: `We've received return ${event.returnNumber}. ${next.replace(/<[^>]+>/g, "")}${event.creditNoteUrl ? `\nCredit note: ${event.creditNoteUrl}` : ""}`,
+        html: layout(
+          ctx,
+          "We've received your return",
+          paragraph(
+            `${hello(ctx)} return <b>${escapeHtml(event.returnNumber)}</b> is back with us. ${next}`,
+          ) +
+            (event.creditNoteUrl
+              ? button(event.creditNoteUrl, "View your credit note")
+              : button(ctx.orderUrl, "View your order")),
+        ),
+      };
+    }
+    case "return_refunded": {
+      const amount = formatMoney(event.amount, ctx.currency);
+      return {
+        ...base,
+        subject: `Refund of ${amount} sent · ${shop}`,
+        text: `We've refunded ${amount} for return ${event.returnNumber} (${event.method}). Banks can take 5–7 working days to show it.`,
+        html: layout(
+          ctx,
+          `Refund of ${amount} sent`,
+          paragraph(
+            `${hello(ctx)} we've refunded <b>${escapeHtml(amount)}</b> for return <b>${escapeHtml(event.returnNumber)}</b> by ${escapeHtml(event.method)}.`,
+          ) +
+            paragraph("Banks can take 5–7 working days to show refunds to cards and accounts.") +
+            button(ctx.orderUrl, "View your order"),
+        ),
+      };
+    }
   }
 }

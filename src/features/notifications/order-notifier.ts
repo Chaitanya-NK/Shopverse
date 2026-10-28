@@ -9,6 +9,7 @@ import {
   type OrderEmailEvent,
   orderEventEmail,
 } from "@/features/notifications/templates";
+import { REFUND_METHOD_LABELS, type RefundMethod } from "@/features/returns/schemas";
 import { logger } from "@/lib/logger";
 import { sendMail } from "@/lib/mail";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -115,6 +116,66 @@ export function notifyShipment(shipmentId: string, type: ShipmentEvent, otp?: st
       if (event) await deliver(data.order_id, event);
     } catch (cause) {
       logger.warn({ err: cause, shipmentId, event: type }, "Shipment email failed");
+    }
+  });
+}
+
+type ReturnNotice = "requested" | "approved" | "rejected" | "received" | "refunded";
+
+/** Email the customer about a return, after the response is sent. */
+export function notifyReturn(returnId: string, notice: ReturnNotice) {
+  after(async () => {
+    try {
+      const { data, error } = await createAdminClient()
+        .from("returns")
+        .select(
+          `order_id, number, resolution, staff_note, refund_amount, refunded_amount, refund_method, credit_note_number,
+           order:orders!returns_organization_id_order_id_fkey (public_token, shop:shops!orders_organization_id_shop_id_fkey (slug)),
+           return_items (quantity, order_item:order_items (title))`,
+        )
+        .eq("id", returnId)
+        .maybeSingle();
+      if (error) throw error;
+      if (!data) return;
+      const creditNoteUrl =
+        data.credit_note_number && data.order?.shop
+          ? url(
+              routes.storefrontCreditNote(data.order.shop.slug, data.order.public_token, returnId),
+            )
+          : null;
+      const exchange = data.resolution === "exchange";
+      const event: OrderEmailEvent =
+        notice === "requested"
+          ? {
+              type: "return_requested",
+              returnNumber: data.number,
+              exchange,
+              items: data.return_items.map(
+                (i) => `${i.quantity} × ${i.order_item?.title ?? "item"}`,
+              ),
+            }
+          : notice === "approved"
+            ? { type: "return_approved", returnNumber: data.number, note: data.staff_note }
+            : notice === "rejected"
+              ? { type: "return_rejected", returnNumber: data.number, note: data.staff_note }
+              : notice === "received"
+                ? {
+                    type: "return_received",
+                    returnNumber: data.number,
+                    exchange,
+                    refundAmount: Number(data.refund_amount),
+                    creditNoteUrl,
+                  }
+                : {
+                    type: "return_refunded",
+                    returnNumber: data.number,
+                    amount: Number(data.refunded_amount),
+                    method:
+                      REFUND_METHOD_LABELS[(data.refund_method ?? "original") as RefundMethod],
+                  };
+      await deliver(data.order_id, event);
+    } catch (cause) {
+      logger.warn({ err: cause, returnId, notice }, "Return email failed");
     }
   });
 }

@@ -18,7 +18,12 @@ export type RazorpayPayment = {
   method: string | null;
   error_description: string | null;
 };
-export type RazorpayRefund = { id: string; amount: number; status: string };
+export type RazorpayRefund = {
+  id: string;
+  amount: number;
+  status: string;
+  notes?: Record<string, string> | unknown[];
+};
 
 /** Rupees (2 decimals) -> paise, the unit Razorpay uses. */
 export const toPaise = (amount: number) => Math.round(amount * 100);
@@ -111,6 +116,13 @@ export const razorpay = {
       amount: toPaise(amount),
       notes,
     }),
+  /** Refunds already made on a payment (to reconcile before refunding again). */
+  listRefunds: (c: RazorpayCredentials, paymentId: string) =>
+    call<{ items: RazorpayRefund[] }>(
+      c,
+      "GET",
+      `/payments/${encodeURIComponent(paymentId)}/refunds?count=100`,
+    ),
   /** A cheap authenticated call, to check keys when they're saved. */
   checkCredentials: (c: RazorpayCredentials) => call<unknown>(c, "GET", "/orders?count=1"),
 };

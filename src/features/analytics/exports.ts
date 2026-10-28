@@ -5,6 +5,7 @@ import { summariseGst } from "@/features/analytics/gst";
 import { getMonthInvoices } from "@/features/analytics/queries";
 import { addDays } from "@/features/analytics/ranges";
 import { computeInvoiceTotals } from "@/features/invoices/tax";
+import { getMonthCreditNotes } from "@/features/returns/queries";
 import { fromPostgrestError } from "@/lib/errors";
 import { createClient } from "@/lib/supabase/server";
 
@@ -15,6 +16,7 @@ export const EXPORTS = [
   "gst-b2c",
   "gst-hsn",
   "gst-invoices",
+  "gst-credit-notes",
 ] as const;
 export type ExportKind = (typeof EXPORTS)[number];
 
@@ -220,12 +222,57 @@ export async function stockCsv(organizationId: string): Promise<CsvFile> {
 }
 
 export async function gstCsv(
-  kind: "gst-b2c" | "gst-hsn" | "gst-invoices",
+  kind: "gst-b2c" | "gst-hsn" | "gst-invoices" | "gst-credit-notes",
   organizationId: string,
   month: string,
   shopId: string | null,
 ): Promise<CsvFile> {
-  const invoices = await getMonthInvoices(organizationId, month, shopId);
+  const [invoices, credits] = await Promise.all([
+    getMonthInvoices(organizationId, month, shopId),
+    getMonthCreditNotes(organizationId, month, shopId),
+  ]);
+  const creditNotes = credits.map((c) => c.document);
+
+  if (kind === "gst-credit-notes") {
+    const body = toCsv(
+      [
+        "Credit note",
+        "Date (IST)",
+        "Against invoice",
+        "Invoice date",
+        "Return",
+        "Order",
+        "Seller GSTIN",
+        "Place of supply",
+        "State code",
+        "Taxable value",
+        "CGST",
+        "SGST",
+        "IGST",
+        "Note value",
+      ],
+      credits.map(({ document: doc, creditNote }): CsvValue[] => {
+        const t = computeInvoiceTotals(doc);
+        return [
+          doc.number,
+          ist(doc.issuedAt),
+          creditNote.againstNumber,
+          ist(creditNote.againstDate),
+          creditNote.returnNumber,
+          doc.orderNumber,
+          doc.seller.gstin,
+          t.placeOfSupply,
+          t.placeOfSupplyCode,
+          t.taxable,
+          t.cgst,
+          t.sgst,
+          t.igst,
+          t.total,
+        ];
+      }),
+    );
+    return { filename: csvFilename("credit-notes", month), body };
+  }
 
   if (kind === "gst-invoices") {
     const body = toCsv(
@@ -266,7 +313,7 @@ export async function gstCsv(
     return { filename: csvFilename("invoices", month), body };
   }
 
-  const summary = summariseGst(invoices);
+  const summary = summariseGst(invoices, creditNotes);
   if (kind === "gst-b2c") {
     const body = toCsv(
       [

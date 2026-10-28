@@ -19,6 +19,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
+import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -55,6 +56,7 @@ function toDefaults(category?: CategoryNode): FormInput {
     tracking: category?.tracking ?? "quantity",
     hsnCode: category?.hsnCode ?? "",
     gstRate: category?.gstRate ?? "",
+    returnable: category?.returnable ?? true,
   };
 }
 
@@ -237,6 +239,26 @@ function CategoryForm(props: CategoryFormProps) {
             )}
           />
         </div>
+        <Controller
+          name="returnable"
+          control={form.control}
+          render={({ field }) => (
+            <Field orientation="horizontal">
+              <Switch
+                id={`${idPrefix}-returnable`}
+                checked={field.value ?? true}
+                onCheckedChange={field.onChange}
+              />
+              <span>
+                <FieldLabel htmlFor={`${idPrefix}-returnable`}>Returnable</FieldLabel>
+                <FieldDescription>
+                  Shoppers can return these within your return window. Turn off for food, innerwear
+                  or other items you can&apos;t take back.
+                </FieldDescription>
+              </span>
+            </Field>
+          )}
+        />
       </FieldGroup>
 
       <FormRootError form={form} />

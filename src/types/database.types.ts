@@ -121,6 +121,7 @@ export type Database = {
           name: string;
           organization_id: string;
           parent_id: string | null;
+          returnable: boolean;
           slug: string;
           sort_order: number;
           tracking: Database["public"]["Enums"]["inventory_tracking"];
@@ -138,6 +139,7 @@ export type Database = {
           name: string;
           organization_id: string;
           parent_id?: string | null;
+          returnable?: boolean;
           slug: string;
           sort_order?: number;
           tracking?: Database["public"]["Enums"]["inventory_tracking"];
@@ -154,6 +156,7 @@ export type Database = {
           name?: string;
           organization_id?: string;
           parent_id?: string | null;
+          returnable?: boolean;
           slug?: string;
           sort_order?: number;
           tracking?: Database["public"]["Enums"]["inventory_tracking"];
@@ -1456,6 +1459,293 @@ export type Database = {
         };
         Relationships: [];
       };
+      return_items: {
+        Row: {
+          discount_amount: number | null;
+          exchange_variant_id: string | null;
+          id: string;
+          order_item_id: string;
+          organization_id: string;
+          quantity: number;
+          restock: boolean | null;
+          return_id: string;
+          serial_numbers: string[];
+          tax_amount: number | null;
+          total: number | null;
+        };
+        ComputedFields: never;
+        Insert: {
+          discount_amount?: number | null;
+          exchange_variant_id?: string | null;
+          id?: string;
+          order_item_id: string;
+          organization_id: string;
+          quantity: number;
+          restock?: boolean | null;
+          return_id: string;
+          serial_numbers?: string[];
+          tax_amount?: number | null;
+          total?: number | null;
+        };
+        Update: {
+          discount_amount?: number | null;
+          exchange_variant_id?: string | null;
+          id?: string;
+          order_item_id?: string;
+          organization_id?: string;
+          quantity?: number;
+          restock?: boolean | null;
+          return_id?: string;
+          serial_numbers?: string[];
+          tax_amount?: number | null;
+          total?: number | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "return_items_organization_id_exchange_variant_id_fkey";
+            columns: ["organization_id", "exchange_variant_id"];
+            isOneToOne: false;
+            referencedRelation: "product_variants";
+            referencedColumns: ["organization_id", "id"];
+          },
+          {
+            foreignKeyName: "return_items_organization_id_exchange_variant_id_fkey";
+            columns: ["organization_id", "exchange_variant_id"];
+            isOneToOne: false;
+            referencedRelation: "variant_search";
+            referencedColumns: ["organization_id", "id"];
+          },
+          {
+            foreignKeyName: "return_items_organization_id_order_item_id_fkey";
+            columns: ["organization_id", "order_item_id"];
+            isOneToOne: false;
+            referencedRelation: "order_items";
+            referencedColumns: ["organization_id", "id"];
+          },
+          {
+            foreignKeyName: "return_items_organization_id_return_id_fkey";
+            columns: ["organization_id", "return_id"];
+            isOneToOne: false;
+            referencedRelation: "return_overview";
+            referencedColumns: ["organization_id", "id"];
+          },
+          {
+            foreignKeyName: "return_items_organization_id_return_id_fkey";
+            columns: ["organization_id", "return_id"];
+            isOneToOne: false;
+            referencedRelation: "returns";
+            referencedColumns: ["organization_id", "id"];
+          },
+        ];
+      };
+      return_refunds: {
+        Row: {
+          amount: number;
+          created_at: string;
+          id: string;
+          organization_id: string;
+          payment_id: string;
+          provider_refund_id: string;
+          return_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          amount: number;
+          created_at?: string;
+          id?: string;
+          organization_id: string;
+          payment_id: string;
+          provider_refund_id: string;
+          return_id: string;
+        };
+        Update: {
+          amount?: number;
+          created_at?: string;
+          id?: string;
+          organization_id?: string;
+          payment_id?: string;
+          provider_refund_id?: string;
+          return_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "return_refunds_organization_id_return_id_fkey";
+            columns: ["organization_id", "return_id"];
+            isOneToOne: false;
+            referencedRelation: "return_overview";
+            referencedColumns: ["organization_id", "id"];
+          },
+          {
+            foreignKeyName: "return_refunds_organization_id_return_id_fkey";
+            columns: ["organization_id", "return_id"];
+            isOneToOne: false;
+            referencedRelation: "returns";
+            referencedColumns: ["organization_id", "id"];
+          },
+          {
+            foreignKeyName: "return_refunds_payment_id_fkey";
+            columns: ["payment_id"];
+            isOneToOne: false;
+            referencedRelation: "payments";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      returns: {
+        Row: {
+          approved_at: string | null;
+          cancelled_at: string | null;
+          completed_at: string | null;
+          created_at: string;
+          created_by: string | null;
+          credit_note_at: string | null;
+          credit_note_details: Json | null;
+          credit_note_number: string | null;
+          credit_total: number;
+          exchange_order_id: string | null;
+          id: string;
+          note: string | null;
+          number: string;
+          order_id: string;
+          organization_id: string;
+          picked_up_at: string | null;
+          reason: string;
+          received_at: string | null;
+          refund_amount: number;
+          refund_error: string | null;
+          refund_method: string | null;
+          refund_reference: string | null;
+          refund_started_at: string | null;
+          refund_status: string | null;
+          refund_upi: string | null;
+          refunded_amount: number;
+          rejected_at: string | null;
+          resolution: string;
+          shipping_credit: number;
+          shop_id: string;
+          source: string;
+          staff_note: string | null;
+          status: Database["public"]["Enums"]["return_status"];
+          updated_at: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          approved_at?: string | null;
+          cancelled_at?: string | null;
+          completed_at?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          credit_note_at?: string | null;
+          credit_note_details?: Json | null;
+          credit_note_number?: string | null;
+          credit_total?: number;
+          exchange_order_id?: string | null;
+          id?: string;
+          note?: string | null;
+          number: string;
+          order_id: string;
+          organization_id: string;
+          picked_up_at?: string | null;
+          reason: string;
+          received_at?: string | null;
+          refund_amount?: number;
+          refund_error?: string | null;
+          refund_method?: string | null;
+          refund_reference?: string | null;
+          refund_started_at?: string | null;
+          refund_status?: string | null;
+          refund_upi?: string | null;
+          refunded_amount?: number;
+          rejected_at?: string | null;
+          resolution: string;
+          shipping_credit?: number;
+          shop_id: string;
+          source?: string;
+          staff_note?: string | null;
+          status?: Database["public"]["Enums"]["return_status"];
+          updated_at?: string;
+        };
+        Update: {
+          approved_at?: string | null;
+          cancelled_at?: string | null;
+          completed_at?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          credit_note_at?: string | null;
+          credit_note_details?: Json | null;
+          credit_note_number?: string | null;
+          credit_total?: number;
+          exchange_order_id?: string | null;
+          id?: string;
+          note?: string | null;
+          number?: string;
+          order_id?: string;
+          organization_id?: string;
+          picked_up_at?: string | null;
+          reason?: string;
+          received_at?: string | null;
+          refund_amount?: number;
+          refund_error?: string | null;
+          refund_method?: string | null;
+          refund_reference?: string | null;
+          refund_started_at?: string | null;
+          refund_status?: string | null;
+          refund_upi?: string | null;
+          refunded_amount?: number;
+          rejected_at?: string | null;
+          resolution?: string;
+          shipping_credit?: number;
+          shop_id?: string;
+          source?: string;
+          staff_note?: string | null;
+          status?: Database["public"]["Enums"]["return_status"];
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "returns_organization_id_exchange_order_id_fkey";
+            columns: ["organization_id", "exchange_order_id"];
+            isOneToOne: false;
+            referencedRelation: "order_overview";
+            referencedColumns: ["organization_id", "id"];
+          },
+          {
+            foreignKeyName: "returns_organization_id_exchange_order_id_fkey";
+            columns: ["organization_id", "exchange_order_id"];
+            isOneToOne: false;
+            referencedRelation: "orders";
+            referencedColumns: ["organization_id", "id"];
+          },
+          {
+            foreignKeyName: "returns_organization_id_fkey";
+            columns: ["organization_id"];
+            isOneToOne: false;
+            referencedRelation: "organizations";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "returns_organization_id_order_id_fkey";
+            columns: ["organization_id", "order_id"];
+            isOneToOne: false;
+            referencedRelation: "order_overview";
+            referencedColumns: ["organization_id", "id"];
+          },
+          {
+            foreignKeyName: "returns_organization_id_order_id_fkey";
+            columns: ["organization_id", "order_id"];
+            isOneToOne: false;
+            referencedRelation: "orders";
+            referencedColumns: ["organization_id", "id"];
+          },
+          {
+            foreignKeyName: "returns_organization_id_shop_id_fkey";
+            columns: ["organization_id", "shop_id"];
+            isOneToOne: false;
+            referencedRelation: "shops";
+            referencedColumns: ["organization_id", "id"];
+          },
+        ];
+      };
       shipment_events: {
         Row: {
           created_at: string;
@@ -2258,6 +2548,79 @@ export type Database = {
           },
         ];
       };
+      return_overview: {
+        Row: {
+          created_at: string;
+          credit_note_number: string | null;
+          credit_total: number;
+          currency: string;
+          customer_email: string | null;
+          customer_name: string | null;
+          exchange_order_id: string | null;
+          id: string;
+          item_count: number | null;
+          item_titles: string | null;
+          number: string;
+          order_id: string;
+          order_number: string;
+          organization_id: string;
+          reason: string;
+          refund_amount: number;
+          refund_status: string | null;
+          refunded_amount: number;
+          resolution: string;
+          shop_id: string;
+          shop_name: string;
+          source: string;
+          status: Database["public"]["Enums"]["return_status"];
+          updated_at: string;
+        };
+        ComputedFields: never;
+        Relationships: [
+          {
+            foreignKeyName: "returns_organization_id_exchange_order_id_fkey";
+            columns: ["organization_id", "exchange_order_id"];
+            isOneToOne: false;
+            referencedRelation: "order_overview";
+            referencedColumns: ["organization_id", "id"];
+          },
+          {
+            foreignKeyName: "returns_organization_id_exchange_order_id_fkey";
+            columns: ["organization_id", "exchange_order_id"];
+            isOneToOne: false;
+            referencedRelation: "orders";
+            referencedColumns: ["organization_id", "id"];
+          },
+          {
+            foreignKeyName: "returns_organization_id_fkey";
+            columns: ["organization_id"];
+            isOneToOne: false;
+            referencedRelation: "organizations";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "returns_organization_id_order_id_fkey";
+            columns: ["organization_id", "order_id"];
+            isOneToOne: false;
+            referencedRelation: "order_overview";
+            referencedColumns: ["organization_id", "id"];
+          },
+          {
+            foreignKeyName: "returns_organization_id_order_id_fkey";
+            columns: ["organization_id", "order_id"];
+            isOneToOne: false;
+            referencedRelation: "orders";
+            referencedColumns: ["organization_id", "id"];
+          },
+          {
+            foreignKeyName: "returns_organization_id_shop_id_fkey";
+            columns: ["organization_id", "shop_id"];
+            isOneToOne: false;
+            referencedRelation: "shops";
+            referencedColumns: ["organization_id", "id"];
+          },
+        ];
+      };
       shipment_overview: {
         Row: {
           carrier: string | null;
@@ -2422,6 +2785,7 @@ export type Database = {
       cancel_order: { Args: { p_order_id: string; p_reason?: string }; Returns: undefined };
       confirm_delivery: { Args: { p_otp: string; p_shipment_id: string }; Returns: Json };
       confirm_order: { Args: { p_order_id: string }; Returns: undefined };
+      create_exchange_order: { Args: { p_return_id: string }; Returns: string };
       create_order: {
         Args: {
           p_address: Json;
@@ -2460,6 +2824,17 @@ export type Database = {
         };
         Returns: string;
       };
+      create_return: {
+        Args: {
+          p_items: Json;
+          p_note?: string;
+          p_order_id: string;
+          p_reason: string;
+          p_refund_upi?: string;
+          p_resolution?: string;
+        };
+        Returns: string;
+      };
       create_shipment: {
         Args: {
           p_carrier?: string;
@@ -2473,6 +2848,7 @@ export type Database = {
       };
       disconnect_payment_account: { Args: { p_organization_id: string }; Returns: undefined };
       expire_unpaid_orders: { Args: { p_organization_id?: string }; Returns: number };
+      fail_return_refund: { Args: { p_error: string; p_return_id: string }; Returns: undefined };
       forget_webhook_event: { Args: { p_event_id: string }; Returns: undefined };
       get_billing_overview: { Args: { p_organization_id: string }; Returns: Json };
       get_invitation: { Args: { p_token: string }; Returns: Json };
@@ -2482,6 +2858,10 @@ export type Database = {
       };
       get_payment_settings: { Args: { p_organization_id: string }; Returns: Json };
       get_tracking: { Args: { p_token: string }; Returns: Json };
+      gst_credit_notes: {
+        Args: { p_month: string; p_organization_id: string; p_shop_id?: string };
+        Returns: Json;
+      };
       gst_invoices: {
         Args: { p_month: string; p_organization_id: string; p_shop_id?: string };
         Returns: Json;
@@ -2497,9 +2877,12 @@ export type Database = {
         Returns: Json;
       };
       mark_order_paid: { Args: { p_order_id: string }; Returns: undefined };
+      mark_return_picked_up: { Args: { p_return_id: string }; Returns: undefined };
       order_invoice: { Args: { p_order_id: string }; Returns: Json };
+      order_return_options: { Args: { p_order_id: string }; Returns: Json };
       payment_account_credentials: { Args: { p_organization_id: string }; Returns: Json };
       payments_to_refund: { Args: { p_order_id: string }; Returns: Json };
+      receive_return: { Args: { p_items?: Json; p_return_id: string }; Returns: undefined };
       receive_stock: {
         Args: {
           p_batch_code?: string;
@@ -2528,6 +2911,10 @@ export type Database = {
           isSetofReturn: false;
         };
       };
+      record_manual_refund: {
+        Args: { p_method: string; p_reference: string; p_return_id: string };
+        Returns: undefined;
+      };
       record_payment_attempt: {
         Args: {
           p_amount: number;
@@ -2552,6 +2939,10 @@ export type Database = {
       };
       record_refund: {
         Args: { p_amount: number; p_payment_id: string; p_refund_id: string };
+        Returns: undefined;
+      };
+      record_return_refund: {
+        Args: { p_amount: number; p_payment_id: string; p_refund_id: string; p_return_id: string };
         Returns: undefined;
       };
       register_webhook_event: {
@@ -2590,6 +2981,15 @@ export type Database = {
         Args: { p_image_ids: string[]; p_product_id: string };
         Returns: undefined;
       };
+      return_credit_note: { Args: { p_return_id: string }; Returns: Json };
+      returns_report: {
+        Args: { p_from: string; p_organization_id: string; p_shop_id?: string; p_to: string };
+        Returns: Json;
+      };
+      review_return: {
+        Args: { p_approve: boolean; p_note?: string; p_return_id: string };
+        Returns: undefined;
+      };
       revoke_invitation: { Args: { p_invitation_id: string }; Returns: undefined };
       sales_report: {
         Args: { p_from: string; p_organization_id: string; p_shop_id?: string; p_to: string };
@@ -2611,6 +3011,10 @@ export type Database = {
       };
       shopper_cancel_order: {
         Args: { p_order_token: string; p_reason?: string; p_shop_id: string; p_token: string };
+        Returns: undefined;
+      };
+      shopper_cancel_return: {
+        Args: { p_return_id: string; p_shop_id: string; p_token: string };
         Returns: undefined;
       };
       shopper_checkout: {
@@ -2640,6 +3044,23 @@ export type Database = {
         Args: { p_limit?: number; p_offset?: number; p_shop_id: string; p_token: string };
         Returns: Json;
       };
+      shopper_request_return: {
+        Args: {
+          p_items: Json;
+          p_note: string;
+          p_order_token: string;
+          p_reason: string;
+          p_refund_upi: string;
+          p_resolution: string;
+          p_shop_id: string;
+          p_token: string;
+        };
+        Returns: Json;
+      };
+      shopper_return_options: {
+        Args: { p_order_token: string; p_shop_id: string; p_token: string };
+        Returns: Json;
+      };
       shopper_save_address: {
         Args: { p_address: Json; p_address_id?: string; p_shop_id: string; p_token: string };
         Returns: string;
@@ -2664,6 +3085,7 @@ export type Database = {
         Returns: undefined;
       };
       shopper_wishlist: { Args: { p_shop_id: string; p_token: string }; Returns: Json };
+      start_return_refund: { Args: { p_return_id: string }; Returns: Json };
       storefront_catalog: {
         Args: {
           p_category_id?: string;
@@ -2693,6 +3115,10 @@ export type Database = {
           p_payment_method?: Database["public"]["Enums"]["payment_method"];
           p_shop_id: string;
         };
+        Returns: Json;
+      };
+      storefront_credit_note: {
+        Args: { p_full_buyer: boolean; p_order_token: string; p_return_id: string };
         Returns: Json;
       };
       storefront_invoice: { Args: { p_full_buyer?: boolean; p_token: string }; Returns: Json };
@@ -2752,6 +3178,14 @@ export type Database = {
         "pending" | "authorized" | "paid" | "partially_refunded" | "refunded" | "failed";
       plan_tier: "trial" | "starter" | "growth" | "scale";
       product_status: "draft" | "active" | "archived";
+      return_status:
+        | "requested"
+        | "approved"
+        | "picked_up"
+        | "received"
+        | "completed"
+        | "rejected"
+        | "cancelled";
       serial_status: "in_stock" | "sold" | "damaged" | "written_off";
       shipment_status:
         | "pending"
@@ -2886,6 +3320,15 @@ export const Constants = {
       payment_status: ["pending", "authorized", "paid", "partially_refunded", "refunded", "failed"],
       plan_tier: ["trial", "starter", "growth", "scale"],
       product_status: ["draft", "active", "archived"],
+      return_status: [
+        "requested",
+        "approved",
+        "picked_up",
+        "received",
+        "completed",
+        "rejected",
+        "cancelled",
+      ],
       serial_status: ["in_stock", "sold", "damaged", "written_off"],
       shipment_status: [
         "pending",

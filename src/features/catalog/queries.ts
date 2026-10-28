@@ -12,7 +12,7 @@ export const listCategoryTree = cache(async (organizationId: string): Promise<Ca
   const { data, error } = await supabase
     .from("categories")
     .select(
-      `id, parent_id, name, slug, industry, tracking, hsn_code, gst_rate, sort_order,
+      `id, parent_id, name, slug, industry, tracking, hsn_code, gst_rate, returnable, sort_order,
        attribute_definitions (id, key, label, type, options, unit, is_required, is_variant_option, sort_order),
        products (count)`,
     )
@@ -31,6 +31,7 @@ export const listCategoryTree = cache(async (organizationId: string): Promise<Ca
       tracking: c.tracking,
       hsnCode: c.hsn_code,
       gstRate: c.gst_rate,
+      returnable: c.returnable,
       sortOrder: c.sort_order,
       productCount: c.products[0]?.count ?? 0,
       attributes: c.attribute_definitions.map((a) => ({

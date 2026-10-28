@@ -42,35 +42,64 @@ export type GstSummary = {
   invoices: number;
   firstNumber: string | null;
   lastNumber: string | null;
+  /** Net of credit notes. */
   totals: Tax & { value: number };
+  /** Net of credit notes issued in the same month. */
   b2c: B2cRow[];
   hsn: HsnRow[];
+  creditNotes: {
+    count: number;
+    firstNumber: string | null;
+    lastNumber: string | null;
+    totals: Tax & { value: number };
+  };
   /** Invoices from shops without a GSTIN: no tax is shown on these. */
   unregistered: number;
   /** Item lines without an HSN code (the HSN summary in GST returns needs one). */
   missingHsn: number;
 };
 
+function scaled(line: Tax, sign: 1 | -1): Tax {
+  return {
+    taxable: line.taxable * sign,
+    cgst: line.cgst * sign,
+    sgst: line.sgst * sign,
+    igst: line.igst * sign,
+  };
+}
+
 /**
  * Summaries for a month's invoices, built from the same tax split as the
  * invoices themselves so the report always matches what customers received.
+ * Credit notes for returns (same shape as invoices) are taken off, as B2C
+ * supplies are reported net.
  */
-export function summariseGst(invoices: Invoice[]): GstSummary {
+export function summariseGst(invoices: Invoice[], creditNotes: Invoice[] = []): GstSummary {
   const b2c = new Map<string, B2cRow>();
   const hsn = new Map<string, HsnRow>();
   const hsnNames = new Map<string, Set<string>>();
   const totals = { ...zero(), value: 0 };
+  const credited = { ...zero(), value: 0 };
   let unregistered = 0;
   let missingHsn = 0;
 
-  for (const invoice of invoices) {
-    const t = computeInvoiceTotals(invoice);
-    if (!t.registered) unregistered += 1;
-    totals.value += t.total;
+  const documents = [
+    ...invoices.map((d) => ({ d, sign: 1 as const })),
+    ...creditNotes.map((d) => ({ d, sign: -1 as const })),
+  ];
+  for (const { d, sign } of documents) {
+    const t = computeInvoiceTotals(d);
+    if (sign === 1 && !t.registered) unregistered += 1;
+    totals.value += t.total * sign;
+    if (sign === -1) {
+      credited.value += t.total;
+      for (const line of t.lines) add(credited, line);
+    }
     const seenRates = new Set<number>();
 
     for (const line of t.lines) {
-      add(totals, line);
+      const signed = scaled(line, sign);
+      add(totals, signed);
       const place = t.placeOfSupply?.trim() || "Unknown";
       const key = `${place}|${line.rate}`;
       const row = b2c.get(key) ?? {
@@ -80,15 +109,15 @@ export function summariseGst(invoices: Invoice[]): GstSummary {
         rate: line.rate,
         invoices: 0,
       };
-      add(row, line);
-      if (!seenRates.has(line.rate)) {
+      add(row, signed);
+      if (sign === 1 && !seenRates.has(line.rate)) {
         row.invoices += 1;
         seenRates.add(line.rate);
       }
       b2c.set(key, row);
 
       const isShipping = line.quantity === null;
-      if (!isShipping && !line.hsnCode) missingHsn += 1;
+      if (sign === 1 && !isShipping && !line.hsnCode) missingHsn += 1;
       const code = line.hsnCode ?? null;
       // Lines without a code are kept apart by description rather than lumped together.
       const hKey = `${isShipping ? "shipping" : (code ?? `none:${line.description}`)}|${line.rate}`;
@@ -100,13 +129,15 @@ export function summariseGst(invoices: Invoice[]): GstSummary {
         quantity: 0,
         value: 0,
       };
-      add(h, line);
-      h.quantity += line.quantity ?? 0;
-      h.value += line.total;
+      add(h, signed);
+      h.quantity += (line.quantity ?? 0) * sign;
+      h.value += line.total * sign;
       hsn.set(hKey, h);
-      const names = hsnNames.get(hKey) ?? new Set<string>();
-      names.add(line.description);
-      hsnNames.set(hKey, names);
+      if (sign === 1) {
+        const names = hsnNames.get(hKey) ?? new Set<string>();
+        names.add(line.description);
+        hsnNames.set(hKey, names);
+      }
     }
   }
 
@@ -121,9 +152,9 @@ export function summariseGst(invoices: Invoice[]): GstSummary {
     hsn: [...hsn.entries()]
       .map(([key, h]) => {
         // Several products under one code: name the first and count the rest.
-        const names = hsnNames.get(key)!;
+        const names = hsnNames.get(key);
         const description =
-          names.size > 1 ? `${h.description} + ${names.size - 1} more` : h.description;
+          names && names.size > 1 ? `${h.description} + ${names.size - 1} more` : h.description;
         return { ...rounded(h), description, value: round2(h.value) };
       })
       // By code, then rate; delivery and lines without a code go last.
@@ -132,6 +163,12 @@ export function summariseGst(invoices: Invoice[]): GstSummary {
         const kb = b.hsnCode ?? "\uffff";
         return ka < kb ? -1 : ka > kb ? 1 : a.rate - b.rate;
       }),
+    creditNotes: {
+      count: creditNotes.length,
+      firstNumber: creditNotes[0]?.number ?? null,
+      lastNumber: creditNotes.at(-1)?.number ?? null,
+      totals: { ...rounded(credited), value: round2(credited.value) },
+    },
     unregistered,
     missingHsn,
   };

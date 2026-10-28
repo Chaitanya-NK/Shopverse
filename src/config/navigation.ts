@@ -13,6 +13,7 @@ import {
   ShoppingCartIcon,
   StoreIcon,
   TruckIcon,
+  Undo2Icon,
   UsersIcon,
   WarehouseIcon,
 } from "lucide-react";
@@ -40,6 +41,7 @@ export function getOrgNavigation(orgSlug: string): NavGroup[] {
         { title: "Inventory", icon: BoxesIcon, href: routes.orgInventory(orgSlug) },
         { title: "Orders", icon: ShoppingCartIcon, href: routes.orgOrders(orgSlug) },
         { title: "Deliveries", icon: TruckIcon, href: routes.orgDeliveries(orgSlug) },
+        { title: "Returns", icon: Undo2Icon, href: routes.orgReturns(orgSlug) },
         { title: "Warehouses", icon: WarehouseIcon, href: routes.orgWarehouses(orgSlug) },
       ],
     },

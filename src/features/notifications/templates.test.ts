@@ -66,3 +66,46 @@ describe("orderEventEmail", () => {
     expect(mail.html).toContain("https://shop.example/inv");
   });
 });
+
+describe("return emails", () => {
+  it("lists the items requested, escaped", () => {
+    const mail = orderEventEmail(ctx, {
+      type: "return_requested",
+      returnNumber: "RET-000001",
+      exchange: false,
+      items: ["1 × Tee <M>"],
+    });
+    expect(mail.subject).toContain("RET-000001");
+    expect(mail.html).toContain("1 × Tee &lt;M&gt;");
+  });
+
+  it("explains a decline with the shop's reason", () => {
+    const mail = orderEventEmail(ctx, {
+      type: "return_rejected",
+      returnNumber: "RET-000002",
+      note: "Worn <item>",
+    });
+    expect(mail.text).toContain("Worn <item>");
+    expect(mail.html).toContain("Worn &lt;item&gt;");
+  });
+
+  it("states the refund on receipt and when it is sent", () => {
+    const received = orderEventEmail(ctx, {
+      type: "return_received",
+      returnNumber: "RET-000003",
+      exchange: false,
+      refundAmount: 917.97,
+      creditNoteUrl: "https://shop.example/cn",
+    });
+    expect(received.text).toContain("₹917.97");
+    expect(received.text).not.toContain("<b>");
+    expect(received.html).toContain("https://shop.example/cn");
+    const refunded = orderEventEmail(ctx, {
+      type: "return_refunded",
+      returnNumber: "RET-000003",
+      amount: 917.97,
+      method: "UPI",
+    });
+    expect(refunded.subject).toBe("Refund of ₹917.97 sent · Urban <Threads>");
+  });
+});

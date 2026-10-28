@@ -48,6 +48,9 @@ export type PolicyPage = keyof typeof POLICY_PAGES;
 const POLICY_MAX = 20_000;
 const policyText = optionalText(POLICY_MAX, "Keep it under 20,000 characters");
 
+export const DEFAULT_RETURN_WINDOW = 7;
+export const RETURN_WINDOW_CHOICES = [0, 3, 7, 10, 14, 30] as const;
+
 /** Storefront settings kept in shops.settings (read by the storefront functions). */
 export const storefrontSettingsSchema = z
   .object({
@@ -110,6 +113,15 @@ export const storefrontSettingsSchema = z
     // Payment methods offered at checkout (online also needs a connected account).
     acceptCod: z.boolean().optional().default(true),
     acceptOnline: z.boolean().optional().default(true),
+    // Returns: days after delivery (0 = no online returns) and whether exchanges are offered.
+    returnWindowDays: z.coerce
+      .number()
+      .int()
+      .min(0)
+      .max(90)
+      .optional()
+      .default(DEFAULT_RETURN_WINDOW),
+    allowExchanges: z.boolean().optional().default(true),
   })
   .superRefine((s, ctx) => {
     if (!s.acceptCod && !s.acceptOnline)
@@ -197,6 +209,8 @@ export function readStorefrontSettings(value: unknown): StorefrontSettings {
     notifyCustomers: s.notify_customers !== false,
     acceptCod: s.accept_cod !== false,
     acceptOnline: s.accept_online !== false,
+    returnWindowDays: num("return_window_days") ?? DEFAULT_RETURN_WINDOW,
+    allowExchanges: s.allow_exchanges !== false,
   };
 }
 
@@ -228,5 +242,8 @@ export function toSettingsJson(settings: StorefrontSettings): Record<string, Set
     notify_customers: settings.notifyCustomers ? null : false,
     accept_cod: settings.acceptCod ? null : false,
     accept_online: settings.acceptOnline ? null : false,
+    return_window_days:
+      settings.returnWindowDays === DEFAULT_RETURN_WINDOW ? null : settings.returnWindowDays,
+    allow_exchanges: settings.allowExchanges ? null : false,
   };
 }

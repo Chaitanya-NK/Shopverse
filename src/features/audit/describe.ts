@@ -8,6 +8,10 @@ export const AUDIT_ENTITY_LABELS: Record<string, string> = {
   invitation: "Invitation",
   product: "Product",
   category: "Category",
+  discount: "Discount",
+  product_image: "Product photo",
+  payments: "Payment settings",
+  return: "Return",
 };
 
 const VERBS: Record<string, string> = {
@@ -26,6 +30,10 @@ const FIELD_LABELS: Record<string, string> = {
   custom_domain: "domain",
   gst_rate: "GST rate",
   hsn_code: "HSN code",
+  refund_status: "refund",
+  refunded_amount: "refunded",
+  credit_note_number: "credit note",
+  returnable: "returnable",
 };
 
 function formatValue(value: unknown): string {

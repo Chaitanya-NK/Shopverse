@@ -33,9 +33,11 @@ import {
 import { routes } from "@/config/routes";
 import { GstFilters } from "@/features/analytics/components/gst-filters";
 import { summariseGst } from "@/features/analytics/gst";
+import { computeInvoiceTotals } from "@/features/invoices/tax";
 import { getMonthInvoices } from "@/features/analytics/queries";
 import { formatMonth, recentMonths, resolveMonth } from "@/features/analytics/ranges";
 import { loadGstParams } from "@/features/analytics/search-params";
+import { getMonthCreditNotes } from "@/features/returns/queries";
 import { can } from "@/features/organizations/permissions";
 import { requireMembership } from "@/features/organizations/queries";
 import { listShops } from "@/features/shops/queries";
@@ -63,8 +65,14 @@ async function Gst({ params, searchParams }: Props) {
   const shops = await listShops(organization.id);
   const shop = shops.find((s) => s.id === filters.shop) ?? null;
   const month = resolveMonth(filters.month);
-  const invoices = await getMonthInvoices(organization.id, month, shop?.id ?? null);
-  const s = summariseGst(invoices);
+  const [invoices, credits] = await Promise.all([
+    getMonthInvoices(organization.id, month, shop?.id ?? null),
+    getMonthCreditNotes(organization.id, month, shop?.id ?? null),
+  ]);
+  const s = summariseGst(
+    invoices,
+    credits.map((c) => c.document),
+  );
   const currency = shop?.currency ?? shops[0]?.currency ?? "INR";
   const money = (n: number) => formatMoney(n, currency);
   const query = { month, shop: shop?.id };
@@ -93,12 +101,12 @@ async function Gst({ params, searchParams }: Props) {
         <AlertTitle>Built from the invoices you issued in {formatMonth(month)}</AlertTitle>
         <AlertDescription>
           Every buyer is treated as unregistered (B2C), and delivery charges carry the item&apos;s
-          GST rate, exactly as on the invoices. Check the figures with your accountant before
-          filing.
+          GST rate, exactly as on the invoices. Credit notes for returns issued in the month are
+          taken off. Check the figures with your accountant before filing.
         </AlertDescription>
       </Alert>
 
-      {s.invoices === 0 ? (
+      {s.invoices === 0 && s.creditNotes.count === 0 ? (
         <Empty className="border">
           <EmptyHeader>
             <EmptyMedia variant="icon">
@@ -153,13 +161,25 @@ async function Gst({ params, searchParams }: Props) {
                   ? s.firstNumber
                   : `${s.firstNumber} to ${s.lastNumber}`,
               ],
-              ["Taxable value", money(s.totals.taxable), "Before GST, after discounts"],
+              [
+                "Taxable value",
+                money(s.totals.taxable),
+                s.creditNotes.count > 0
+                  ? `Before GST, after discounts and ${s.creditNotes.count} credit note${s.creditNotes.count === 1 ? "" : "s"}`
+                  : "Before GST, after discounts",
+              ],
               [
                 "GST",
                 money(s.totals.cgst + s.totals.sgst + s.totals.igst),
                 `CGST ${money(s.totals.cgst)} · SGST ${money(s.totals.sgst)} · IGST ${money(s.totals.igst)}`,
               ],
-              ["Invoice value", money(s.totals.value), "What customers were billed"],
+              [
+                "Net value",
+                money(s.totals.value),
+                s.creditNotes.count > 0
+                  ? `Billed, less ${money(s.creditNotes.totals.value)} credited for returns`
+                  : "What customers were billed",
+              ],
             ].map(([label, value, hint]) => (
               <Card key={label} className="gap-2">
                 <CardHeader>
@@ -228,6 +248,63 @@ async function Gst({ params, searchParams }: Props) {
               </Table>
             </CardContent>
           </Card>
+
+          {credits.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Credit notes</CardTitle>
+                <CardDescription>
+                  Issued for returns this month: {s.creditNotes.firstNumber}
+                  {s.creditNotes.count > 1 && ` to ${s.creditNotes.lastNumber}`}. Already taken off
+                  the tables above.
+                </CardDescription>
+                <CardAction>{download("gst-credit-notes", "CSV")}</CardAction>
+              </CardHeader>
+              <CardContent className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Credit note</TableHead>
+                      <TableHead>Against invoice</TableHead>
+                      <TableHead>Place of supply</TableHead>
+                      <TableHead className="text-right">Taxable value</TableHead>
+                      <TableHead className="text-right">Tax</TableHead>
+                      <TableHead className="text-right">Value</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {credits.map(({ document: doc, creditNote }) => {
+                      const t = computeInvoiceTotals(doc);
+                      return (
+                        <TableRow key={doc.number}>
+                          <TableCell className="font-mono">{doc.number}</TableCell>
+                          <TableCell className="font-mono">{creditNote.againstNumber}</TableCell>
+                          <TableCell>{t.placeOfSupply ?? "—"}</TableCell>
+                          <TableCell className={num}>{money(t.taxable)}</TableCell>
+                          <TableCell className={num}>{money(t.cgst + t.sgst + t.igst)}</TableCell>
+                          <TableCell className={num}>{money(t.total)}</TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                  <TableFooter>
+                    <TableRow>
+                      <TableCell colSpan={3}>Total</TableCell>
+                      <TableCell className={num}>{money(s.creditNotes.totals.taxable)}</TableCell>
+                      <TableCell className={num}>
+                        {money(
+                          s.creditNotes.totals.cgst +
+                            s.creditNotes.totals.sgst +
+                            s.creditNotes.totals.igst,
+                        )}
+                      </TableCell>
+                      <TableCell className={num}>{money(s.creditNotes.totals.value)}</TableCell>
+                    </TableRow>
+                  </TableFooter>
+                </Table>
+              </CardContent>
+            </Card>
+          )}
 
           <Card>
             <CardHeader>

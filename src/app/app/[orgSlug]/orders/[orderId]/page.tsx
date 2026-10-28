@@ -36,6 +36,7 @@ import {
 import { getOrder, type OrderDetail } from "@/features/orders/queries";
 import { ACTIVE_SHIPMENT_STATUSES, PAYMENT_METHOD_LABELS } from "@/features/orders/schemas";
 import { can } from "@/features/organizations/permissions";
+import { OrderReturnsCard } from "@/features/returns/components/order-returns-card";
 import { requireMembership } from "@/features/organizations/queries";
 import { formatMoney } from "@/lib/format";
 
@@ -296,6 +297,14 @@ async function OrderContent({ params }: Pick<Props, "params">) {
         </div>
 
         <div className="flex min-w-0 flex-col gap-6">
+          {order.status !== "pending" && order.status !== "cancelled" && (
+            <OrderReturnsCard
+              organizationSlug={orgSlug}
+              orderId={order.id}
+              currency={order.currency}
+              canManage={can(role, "returns.manage")}
+            />
+          )}
           {(payments.length > 0 || awaitingPayment) && (
             <OrderPaymentsCard
               organizationSlug={orgSlug}

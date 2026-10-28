@@ -16,6 +16,7 @@ const node = (
   tracking: "quantity",
   hsnCode: null,
   gstRate: null,
+  returnable: true,
   sortOrder,
   productCount: 0,
   attributes: [],

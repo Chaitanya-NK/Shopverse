@@ -36,6 +36,9 @@ export const routes = {
   storefrontCheckout: (shopSlug: string) => `/s/${shopSlug}/checkout`,
   storefrontOrder: (shopSlug: string, token: string) => `/s/${shopSlug}/orders/${token}`,
   storefrontInvoice: (shopSlug: string, token: string) => `/s/${shopSlug}/orders/${token}/invoice`,
+  storefrontReturn: (shopSlug: string, token: string) => `/s/${shopSlug}/orders/${token}/return`,
+  storefrontCreditNote: (shopSlug: string, token: string, returnId: string) =>
+    `/s/${shopSlug}/orders/${token}/returns/${returnId}/credit-note`,
   storefrontPolicy: (shopSlug: string, page: string) => `/s/${shopSlug}/pages/${page}`,
   storefrontContact: (shopSlug: string) => `/s/${shopSlug}/contact`,
   storefrontSitemap: (shopSlug: string) => `/s/${shopSlug}/sitemap.xml`,
@@ -48,6 +51,10 @@ export const routes = {
   storefrontProfile: (shopSlug: string) => `/s/${shopSlug}/account/profile`,
   orgCustomers: (orgSlug: string) => `/app/${orgSlug}/customers`,
   orgDiscounts: (orgSlug: string) => `/app/${orgSlug}/discounts`,
+  orgReturns: (orgSlug: string) => `/app/${orgSlug}/returns`,
+  orgReturn: (orgSlug: string, returnId: string) => `/app/${orgSlug}/returns/${returnId}`,
+  orgCreditNote: (orgSlug: string, returnId: string) =>
+    `/app/${orgSlug}/returns/${returnId}/credit-note`,
   orgAnalytics: (orgSlug: string) => `/app/${orgSlug}/analytics`,
   orgGstReports: (orgSlug: string) => `/app/${orgSlug}/analytics/gst`,
   /** CSV download; `query` carries the same filters as the page. */

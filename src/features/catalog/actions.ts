@@ -77,6 +77,7 @@ export const createCategory = createAction({
         tracking: input.tracking,
         hsn_code: input.hsnCode,
         gst_rate: input.gstRate,
+        returnable: input.returnable,
       })
       .select("id")
       .single();
@@ -107,6 +108,7 @@ export const updateCategory = createAction({
         tracking: input.tracking,
         hsn_code: input.hsnCode,
         gst_rate: input.gstRate,
+        returnable: input.returnable,
       })
       .eq("id", input.categoryId)
       .eq("organization_id", org.id)

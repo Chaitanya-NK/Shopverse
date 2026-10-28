@@ -75,7 +75,9 @@ export function computeInvoiceTotals(invoice: Invoice): InvoiceTotals {
   const lineDiscount = round2(invoice.items.reduce((n, i) => n + i.discountAmount, 0));
 
   if (invoice.shippingTotal > 0) {
-    const rate = registered ? Math.max(0, ...invoice.items.map((i) => i.gstRate)) : 0;
+    const rate = registered
+      ? (invoice.shippingRate ?? Math.max(0, ...invoice.items.map((i) => i.gstRate)))
+      : 0;
     const tax = round2((invoice.shippingTotal * rate) / (100 + rate));
     lines.push({
       description: "Delivery charges",

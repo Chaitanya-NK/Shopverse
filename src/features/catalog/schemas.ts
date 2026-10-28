@@ -67,6 +67,8 @@ const categoryFields = {
   gstRate: optionalNumber(
     z.number({ error: "Enter a number" }).min(0, "Can't be negative").max(100, "At most 100%"),
   ),
+  /** Shoppers can ask to return items in this category. */
+  returnable: z.boolean().optional().default(true),
 };
 
 export const categoryFormSchema = z.object(categoryFields);

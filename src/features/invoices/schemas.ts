@@ -41,6 +41,8 @@ export const invoiceSchema = z
     discount_total: money,
     discount_code: z.string().nullable().optional().default(null),
     shipping_total: money,
+    /** Credit notes: the rate delivery was invoiced at. */
+    shipping_rate: money.nullable().optional().default(null),
     grand_total: money,
     items: z.array(
       z.object({
@@ -88,6 +90,7 @@ export const invoiceSchema = z
     discountTotal: i.discount_total,
     discountCode: i.discount_code,
     shippingTotal: i.shipping_total,
+    shippingRate: i.shipping_rate,
     grandTotal: i.grand_total,
     items: i.items.map((l) => ({
       title: l.title,
