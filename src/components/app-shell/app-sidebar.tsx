@@ -25,9 +25,10 @@ type AppSidebarProps = {
   orgSlug: string;
   workspaces: WorkspaceOption[];
   user: { name: string; email: string };
+  platformAdmin?: boolean;
 };
 
-export function AppSidebar({ orgSlug, workspaces, user }: AppSidebarProps) {
+export function AppSidebar({ orgSlug, workspaces, user, platformAdmin }: AppSidebarProps) {
   const pathname = usePathname();
   const navigation = getOrgNavigation(orgSlug);
 
@@ -80,7 +81,7 @@ export function AppSidebar({ orgSlug, workspaces, user }: AppSidebarProps) {
       </SidebarContent>
 
       <SidebarFooter>
-        <NavUser user={user} />
+        <NavUser user={user} platformAdmin={platformAdmin} />
       </SidebarFooter>
       <SidebarRail />
     </Sidebar>

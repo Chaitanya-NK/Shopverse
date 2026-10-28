@@ -1,23 +1,46 @@
-import { CheckIcon } from "lucide-react";
+import { CreditCardIcon, FileTextIcon, TriangleAlertIcon } from "lucide-react";
 import type { Metadata } from "next";
+import Link from "next/link";
 import { connection } from "next/server";
 import { Suspense } from "react";
 
 import { PageHeader } from "@/components/shared/page-header";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Card,
+  CardAction,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
-import { PLAN_NAMES, PLANS } from "@/config/plans";
-import { UpgradeButton } from "@/features/billing/components/upgrade-button";
-import { getBillingOverview, type PlanLimits } from "@/features/billing/queries";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { PLAN_NAMES } from "@/config/plans";
+import { routes } from "@/config/routes";
+import { BillingProfileForm } from "@/features/billing/components/billing-profile-form";
+import { CancelPlanButton } from "@/features/billing/components/cancel-plan-button";
+import { PlanPicker } from "@/features/billing/components/plan-picker";
+import {
+  getBillingOverview,
+  listPlatformInvoices,
+  type PlanLimits,
+} from "@/features/billing/queries";
+import {
+  platformCredentials,
+  platformGstRate,
+  refreshSubscription,
+} from "@/features/billing/server";
 import { can } from "@/features/organizations/permissions";
 import { requireMembership } from "@/features/organizations/queries";
 import { daysUntil, formatMoney, formatNumber } from "@/lib/format";
@@ -37,6 +60,12 @@ const USAGE: { key: keyof PlanLimits; label: string }[] = [
 const dateFormat = new Intl.DateTimeFormat("en-IN", {
   day: "numeric",
   month: "long",
+  year: "numeric",
+  timeZone: "Asia/Kolkata",
+});
+const shortDate = new Intl.DateTimeFormat("en-IN", {
+  day: "numeric",
+  month: "short",
   year: "numeric",
   timeZone: "Asia/Kolkata",
 });
@@ -61,25 +90,57 @@ const limitText = (n: number | null) => (n === null ? "Unlimited" : formatNumber
 async function Billing({ params }: Pick<Props, "params">) {
   const { orgSlug } = await params;
   const { organization, role } = await requireMembership(orgSlug);
-  const billing = await getBillingOverview(organization.id);
+  let billing = await getBillingOverview(organization.id);
+  // A checkout that was paid but not yet heard about: ask Razorpay.
+  if (billing.subscription && billing.subscription.status !== "active") {
+    await refreshSubscription(billing.subscription.providerSubscriptionId);
+    billing = await getBillingOverview(organization.id);
+  }
   const canChange = can(role, "organization.billing");
+  const canSeeInvoices = can(role, "organization.update");
+  const invoices = canSeeInvoices ? await listPlatformInvoices(organization.id) : [];
+  const online = platformCredentials() !== null;
+  const sub = billing.subscription;
 
   await connection();
   const daysLeft = billing.trialEndsAt ? daysUntil(billing.trialEndsAt) : null;
+  const ended = billing.plan === "trial" && billing.trialExpired && billing.hadSubscription;
 
   return (
     <>
       <PageHeader
         title="Billing"
-        description="Your plan, what you're using, and what each plan includes."
+        description="Your Shopverse plan, what you're using, and your invoices."
       />
+
+      {billing.pastDueSince && (
+        <Alert variant="destructive">
+          <TriangleAlertIcon />
+          <AlertTitle>Your last payment didn&apos;t go through</AlertTitle>
+          <AlertDescription>
+            <p>
+              Your shops keep selling. Update your payment by{" "}
+              {dateFormat.format(new Date(billing.graceEndsAt!))}; after that, adding products,
+              shops and teammates pauses until it&apos;s settled. Razorpay retries automatically.
+            </p>
+            {sub?.shortUrl && canChange && (
+              <Button asChild size="sm" variant="outline" className="mt-2">
+                <a href={sub.shortUrl} target="_blank" rel="noreferrer">
+                  <CreditCardIcon />
+                  Update payment
+                </a>
+              </Button>
+            )}
+          </AlertDescription>
+        </Alert>
+      )}
 
       <Card>
         <CardHeader>
           <CardDescription>Current plan</CardDescription>
           <CardTitle className="flex flex-wrap items-center gap-3 text-2xl">
-            {PLAN_NAMES[billing.plan]}
-            {billing.plan === "trial" && (
+            {ended ? "No active plan" : PLAN_NAMES[billing.plan]}
+            {billing.plan === "trial" && !ended && (
               <Badge
                 variant="secondary"
                 className={cn(
@@ -94,12 +155,35 @@ async function Billing({ params }: Pick<Props, "params">) {
                   : `${daysLeft} day${daysLeft === 1 ? "" : "s"} left · until ${dateFormat.format(new Date(billing.trialEndsAt!))}`}
               </Badge>
             )}
+            {sub && (
+              <Badge variant="outline">
+                {formatMoney(sub.amount, "INR")} / {sub.interval === "yearly" ? "year" : "month"}
+              </Badge>
+            )}
           </CardTitle>
-          {billing.trialExpired && (
+          {sub?.periodEnd && (
+            <p className="text-sm text-muted-foreground">
+              {sub.cancelAtPeriodEnd
+                ? `Cancelled: active until ${dateFormat.format(new Date(sub.periodEnd))}, then it won't renew.`
+                : sub.scheduledPlan
+                  ? `Renews on ${dateFormat.format(new Date(sub.periodEnd))} as ${PLAN_NAMES[sub.scheduledPlan]} (${sub.scheduledInterval}).`
+                  : `Renews on ${dateFormat.format(new Date(sub.periodEnd))}.`}
+            </p>
+          )}
+          {(billing.trialExpired || ended) && (
             <p className="text-sm text-muted-foreground">
               Your shops keep selling and orders keep flowing. Adding shops, products, warehouses or
               teammates needs a plan.
             </p>
+          )}
+          {sub && canChange && sub.status === "active" && !sub.cancelAtPeriodEnd && (
+            <CardAction>
+              <CancelPlanButton
+                organizationSlug={orgSlug}
+                planName={PLAN_NAMES[sub.plan]}
+                endsOn={sub.periodEnd ? dateFormat.format(new Date(sub.periodEnd)) : null}
+              />
+            </CardAction>
           )}
         </CardHeader>
         <CardContent className="grid gap-6 sm:grid-cols-2">
@@ -134,62 +218,99 @@ async function Billing({ params }: Pick<Props, "params">) {
         </CardContent>
       </Card>
 
-      <section aria-labelledby="plans-heading" className="space-y-4">
-        <h2 id="plans-heading" className="text-lg font-semibold">
-          Plans
-        </h2>
-        <div className="grid gap-4 lg:grid-cols-3">
-          {(Object.keys(PLANS) as (keyof typeof PLANS)[]).map((id) => {
-            const plan = PLANS[id];
-            const limits = billing.plans[id];
-            const current = billing.plan === id;
-            return (
-              <Card key={id} className={cn(current && "border-primary ring-1 ring-primary")}>
-                <CardHeader>
-                  <CardTitle className="flex items-center justify-between">
-                    {plan.name}
-                    {current && <Badge>Current</Badge>}
-                  </CardTitle>
-                  <CardDescription>{plan.tagline}</CardDescription>
-                  <p className="pt-2">
-                    <span className="text-3xl font-semibold tabular-nums">
-                      {formatMoney(plan.priceMonthly, "INR")}
-                    </span>
-                    <span className="text-sm text-muted-foreground"> / month + GST</span>
-                  </p>
-                </CardHeader>
-                <CardContent>
-                  <ul className="space-y-2 text-sm">
-                    {[
-                      `${limitText(limits.shops)} shop${limits.shops === 1 ? "" : "s"}`,
-                      `${limitText(limits.seats)} team seats`,
-                      `${limitText(limits.products)} products`,
-                      `${limitText(limits.warehouses)} warehouse${limits.warehouses === 1 ? "" : "s"}`,
-                      ...plan.extras,
-                    ].map((line) => (
-                      <li key={line} className="flex gap-2">
-                        <CheckIcon className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden />
-                        {line}
-                      </li>
-                    ))}
-                  </ul>
-                </CardContent>
-                <CardFooter className="mt-auto">
-                  {current ? (
-                    <p className="text-sm text-muted-foreground">You&apos;re on this plan.</p>
-                  ) : canChange ? (
-                    <UpgradeButton planName={plan.name} organizationSlug={orgSlug} />
-                  ) : (
-                    <p className="text-sm text-muted-foreground">
-                      Ask an owner to change the plan.
-                    </p>
-                  )}
-                </CardFooter>
-              </Card>
-            );
-          })}
+      <PlanPicker
+        organizationSlug={orgSlug}
+        online={online}
+        canChange={canChange}
+        hasProfile={Boolean(billing.profile.legalName)}
+        gstRate={platformGstRate()}
+        current={
+          sub
+            ? {
+                plan: sub.plan,
+                interval: sub.interval,
+                active: sub.status === "active",
+                ending: sub.cancelAtPeriodEnd,
+                scheduled:
+                  sub.scheduledPlan && sub.scheduledInterval
+                    ? { plan: sub.scheduledPlan, interval: sub.scheduledInterval }
+                    : null,
+              }
+            : null
+        }
+        limits={billing.plans}
+        overages={billing.overages}
+      />
+
+      {canSeeInvoices && (
+        <div className="grid gap-6 xl:grid-cols-2">
+          <Card>
+            <CardHeader>
+              <CardTitle>Billing details</CardTitle>
+              <CardDescription>
+                {online && !billing.profile.legalName && canChange
+                  ? "Add these before choosing a plan. They go on your invoices."
+                  : "Printed on Shopverse's invoices to you."}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <BillingProfileForm
+                organizationSlug={orgSlug}
+                profile={billing.profile}
+                disabled={!canChange}
+              />
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle>Invoices</CardTitle>
+              <CardDescription>A GST invoice for every payment.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {invoices.length === 0 ? (
+                <p className="py-6 text-center text-sm text-muted-foreground">No invoices yet.</p>
+              ) : (
+                <div className="overflow-x-auto rounded-lg border">
+                  <Table>
+                    <TableHeader className="bg-muted/50">
+                      <TableRow>
+                        <TableHead className="pl-3">Invoice</TableHead>
+                        <TableHead>Plan</TableHead>
+                        <TableHead className="pr-3 text-right">Amount</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {invoices.map((i) => (
+                        <TableRow key={i.id}>
+                          <TableCell className="pl-3">
+                            <Link
+                              href={routes.orgPlatformInvoice(orgSlug, i.id)}
+                              className="inline-flex items-center gap-1.5 font-mono font-medium hover:underline"
+                            >
+                              <FileTextIcon className="size-3.5" aria-hidden />
+                              {i.number}
+                            </Link>
+                            <span className="block text-xs text-muted-foreground">
+                              {shortDate.format(new Date(i.issuedAt))}
+                            </span>
+                          </TableCell>
+                          <TableCell>
+                            {PLAN_NAMES[i.plan as keyof typeof PLAN_NAMES] ?? i.plan}{" "}
+                            <span className="text-muted-foreground">· {i.interval}</span>
+                          </TableCell>
+                          <TableCell className="pr-3 text-right font-mono tabular-nums">
+                            {formatMoney(i.total, "INR")}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </div>
-      </section>
+      )}
     </>
   );
 }

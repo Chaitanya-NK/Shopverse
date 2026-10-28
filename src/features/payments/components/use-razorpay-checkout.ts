@@ -28,7 +28,7 @@ declare global {
 let scriptPromise: Promise<void> | null = null;
 
 /** Load Razorpay Checkout once per page. */
-function loadCheckout(): Promise<void> {
+export function loadCheckout(): Promise<void> {
   if (typeof window !== "undefined" && window.Razorpay) return Promise.resolve();
   scriptPromise ??= new Promise<void>((resolve, reject) => {
     const script = document.createElement("script");

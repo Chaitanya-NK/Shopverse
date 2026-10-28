@@ -1134,35 +1134,47 @@ export type Database = {
       };
       organizations: {
         Row: {
+          billing_profile: NonNullable<Json>;
           created_at: string;
           created_by: string | null;
           id: string;
           industries: string[];
           name: string;
+          past_due_since: string | null;
           plan: Database["public"]["Enums"]["plan_tier"];
+          plan_interval: string | null;
+          plan_renews_at: string | null;
           slug: string;
           trial_ends_at: string | null;
           updated_at: string;
         };
         ComputedFields: never;
         Insert: {
+          billing_profile?: NonNullable<Json>;
           created_at?: string;
           created_by?: string | null;
           id?: string;
           industries?: string[];
           name: string;
+          past_due_since?: string | null;
           plan?: Database["public"]["Enums"]["plan_tier"];
+          plan_interval?: string | null;
+          plan_renews_at?: string | null;
           slug: string;
           trial_ends_at?: string | null;
           updated_at?: string;
         };
         Update: {
+          billing_profile?: NonNullable<Json>;
           created_at?: string;
           created_by?: string | null;
           id?: string;
           industries?: string[];
           name?: string;
+          past_due_since?: string | null;
           plan?: Database["public"]["Enums"]["plan_tier"];
+          plan_interval?: string | null;
+          plan_renews_at?: string | null;
           slug?: string;
           trial_ends_at?: string | null;
           updated_at?: string;
@@ -1239,6 +1251,88 @@ export type Database = {
             isOneToOne: false;
             referencedRelation: "orders";
             referencedColumns: ["organization_id", "id"];
+          },
+        ];
+      };
+      platform_invoices: {
+        Row: {
+          buyer: NonNullable<Json>;
+          cgst: number;
+          gst_rate: number;
+          id: string;
+          igst: number;
+          interval: string;
+          issued_at: string;
+          number: string;
+          organization_id: string;
+          period_end: string | null;
+          period_start: string | null;
+          plan: Database["public"]["Enums"]["plan_tier"];
+          provider_payment_id: string;
+          sac_code: string | null;
+          seller: NonNullable<Json>;
+          sgst: number;
+          subscription_id: string | null;
+          taxable: number;
+          total: number;
+        };
+        ComputedFields: never;
+        Insert: {
+          buyer: NonNullable<Json>;
+          cgst?: number;
+          gst_rate: number;
+          id?: string;
+          igst?: number;
+          interval: string;
+          issued_at?: string;
+          number: string;
+          organization_id: string;
+          period_end?: string | null;
+          period_start?: string | null;
+          plan: Database["public"]["Enums"]["plan_tier"];
+          provider_payment_id: string;
+          sac_code?: string | null;
+          seller: NonNullable<Json>;
+          sgst?: number;
+          subscription_id?: string | null;
+          taxable: number;
+          total: number;
+        };
+        Update: {
+          buyer?: NonNullable<Json>;
+          cgst?: number;
+          gst_rate?: number;
+          id?: string;
+          igst?: number;
+          interval?: string;
+          issued_at?: string;
+          number?: string;
+          organization_id?: string;
+          period_end?: string | null;
+          period_start?: string | null;
+          plan?: Database["public"]["Enums"]["plan_tier"];
+          provider_payment_id?: string;
+          sac_code?: string | null;
+          seller?: NonNullable<Json>;
+          sgst?: number;
+          subscription_id?: string | null;
+          taxable?: number;
+          total?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "platform_invoices_organization_id_fkey";
+            columns: ["organization_id"];
+            isOneToOne: false;
+            referencedRelation: "organizations";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "platform_invoices_subscription_id_fkey";
+            columns: ["subscription_id"];
+            isOneToOne: false;
+            referencedRelation: "subscriptions";
+            referencedColumns: ["id"];
           },
         ];
       };
@@ -2206,6 +2300,87 @@ export type Database = {
           },
         ];
       };
+      subscriptions: {
+        Row: {
+          amount: number;
+          base_amount: number;
+          cancel_at_period_end: boolean;
+          created_at: string;
+          created_by: string | null;
+          current_period_end: string | null;
+          current_period_start: string | null;
+          ended_at: string | null;
+          id: string;
+          interval: string;
+          organization_id: string;
+          plan: Database["public"]["Enums"]["plan_tier"];
+          provider: string;
+          provider_subscription_id: string;
+          scheduled_amount: number | null;
+          scheduled_base_amount: number | null;
+          scheduled_interval: string | null;
+          scheduled_plan: Database["public"]["Enums"]["plan_tier"] | null;
+          short_url: string | null;
+          status: string;
+          updated_at: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          amount: number;
+          base_amount: number;
+          cancel_at_period_end?: boolean;
+          created_at?: string;
+          created_by?: string | null;
+          current_period_end?: string | null;
+          current_period_start?: string | null;
+          ended_at?: string | null;
+          id?: string;
+          interval: string;
+          organization_id: string;
+          plan: Database["public"]["Enums"]["plan_tier"];
+          provider?: string;
+          provider_subscription_id: string;
+          scheduled_amount?: number | null;
+          scheduled_base_amount?: number | null;
+          scheduled_interval?: string | null;
+          scheduled_plan?: Database["public"]["Enums"]["plan_tier"] | null;
+          short_url?: string | null;
+          status?: string;
+          updated_at?: string;
+        };
+        Update: {
+          amount?: number;
+          base_amount?: number;
+          cancel_at_period_end?: boolean;
+          created_at?: string;
+          created_by?: string | null;
+          current_period_end?: string | null;
+          current_period_start?: string | null;
+          ended_at?: string | null;
+          id?: string;
+          interval?: string;
+          organization_id?: string;
+          plan?: Database["public"]["Enums"]["plan_tier"];
+          provider?: string;
+          provider_subscription_id?: string;
+          scheduled_amount?: number | null;
+          scheduled_base_amount?: number | null;
+          scheduled_interval?: string | null;
+          scheduled_plan?: Database["public"]["Enums"]["plan_tier"] | null;
+          short_url?: string | null;
+          status?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "subscriptions_organization_id_fkey";
+            columns: ["organization_id"];
+            isOneToOne: false;
+            referencedRelation: "organizations";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       warehouses: {
         Row: {
           address: NonNullable<Json>;
@@ -2781,8 +2956,48 @@ export type Database = {
           isSetofReturn: false;
         };
       };
+      admin_extend_trial: { Args: { p_days: number; p_organization_id: string }; Returns: string };
+      admin_organization: { Args: { p_organization_id: string }; Returns: Json };
+      admin_organizations: {
+        Args: { p_filter?: string; p_limit?: number; p_offset?: number; p_search?: string };
+        Returns: Json;
+      };
+      admin_overview: { Args: Record<PropertyKey, never>; Returns: Json };
+      admin_set_plan: {
+        Args: {
+          p_note: string;
+          p_organization_id: string;
+          p_plan: Database["public"]["Enums"]["plan_tier"];
+        };
+        Returns: undefined;
+      };
       begin_online_payment: { Args: { p_order_token: string }; Returns: Json };
+      begin_subscription: {
+        Args: {
+          p_amount: number;
+          p_base_amount: number;
+          p_interval: string;
+          p_organization_id: string;
+          p_plan: Database["public"]["Enums"]["plan_tier"];
+          p_provider_subscription_id: string;
+          p_short_url: string;
+          p_user_id: string;
+        };
+        Returns: string;
+      };
+      billing_contacts: { Args: { p_organization_id: string }; Returns: Json };
       cancel_order: { Args: { p_order_id: string; p_reason?: string }; Returns: undefined };
+      change_subscription_plan: {
+        Args: {
+          p_amount: number;
+          p_base_amount: number;
+          p_interval: string;
+          p_now: boolean;
+          p_plan: Database["public"]["Enums"]["plan_tier"];
+          p_provider_subscription_id: string;
+        };
+        Returns: undefined;
+      };
       confirm_delivery: { Args: { p_otp: string; p_shipment_id: string }; Returns: Json };
       confirm_order: { Args: { p_order_id: string }; Returns: undefined };
       create_exchange_order: { Args: { p_return_id: string }; Returns: string };
@@ -2849,6 +3064,7 @@ export type Database = {
       disconnect_payment_account: { Args: { p_organization_id: string }; Returns: undefined };
       expire_unpaid_orders: { Args: { p_organization_id?: string }; Returns: number };
       fail_return_refund: { Args: { p_error: string; p_return_id: string }; Returns: undefined };
+      forget_platform_webhook_event: { Args: { p_event_id: string }; Returns: undefined };
       forget_webhook_event: { Args: { p_event_id: string }; Returns: undefined };
       get_billing_overview: { Args: { p_organization_id: string }; Returns: Json };
       get_invitation: { Args: { p_token: string }; Returns: Json };
@@ -2876,12 +3092,26 @@ export type Database = {
         };
         Returns: Json;
       };
+      is_platform_admin: { Args: Record<PropertyKey, never>; Returns: boolean };
       mark_order_paid: { Args: { p_order_id: string }; Returns: undefined };
       mark_return_picked_up: { Args: { p_return_id: string }; Returns: undefined };
+      mark_subscription_cancelling: {
+        Args: { p_provider_subscription_id: string };
+        Returns: undefined;
+      };
       order_invoice: { Args: { p_order_id: string }; Returns: Json };
       order_return_options: { Args: { p_order_id: string }; Returns: Json };
       payment_account_credentials: { Args: { p_organization_id: string }; Returns: Json };
       payments_to_refund: { Args: { p_order_id: string }; Returns: Json };
+      platform_invoice: { Args: { p_invoice_id: string }; Returns: Json };
+      platform_provider_plan: {
+        Args: {
+          p_amount: number;
+          p_interval: string;
+          p_plan: Database["public"]["Enums"]["plan_tier"];
+        };
+        Returns: string;
+      };
       receive_return: { Args: { p_items?: Json; p_return_id: string }; Returns: undefined };
       receive_stock: {
         Args: {
@@ -2937,6 +3167,17 @@ export type Database = {
         Args: { p_provider_order_id: string; p_provider_payment_id: string; p_reason: string };
         Returns: undefined;
       };
+      record_platform_charge: {
+        Args: {
+          p_amount: number;
+          p_gst_rate: number;
+          p_payment_id: string;
+          p_provider_subscription_id: string;
+          p_sac_code: string;
+          p_seller: Json;
+        };
+        Returns: string;
+      };
       record_refund: {
         Args: { p_amount: number; p_payment_id: string; p_refund_id: string };
         Returns: undefined;
@@ -2944,6 +3185,10 @@ export type Database = {
       record_return_refund: {
         Args: { p_amount: number; p_payment_id: string; p_refund_id: string; p_return_id: string };
         Returns: undefined;
+      };
+      register_platform_webhook_event: {
+        Args: { p_event: string; p_event_id: string };
+        Returns: boolean;
       };
       register_webhook_event: {
         Args: { p_event: string; p_event_id: string; p_organization_id: string };
@@ -2995,6 +3240,10 @@ export type Database = {
         Args: { p_from: string; p_organization_id: string; p_shop_id?: string; p_to: string };
         Returns: Json;
       };
+      save_billing_profile: {
+        Args: { p_organization_id: string; p_profile: Json };
+        Returns: undefined;
+      };
       save_payment_account: {
         Args: {
           p_enabled?: boolean;
@@ -3004,6 +3253,16 @@ export type Database = {
           p_webhook_secret_enc?: string;
         };
         Returns: undefined;
+      };
+      save_provider_plan: {
+        Args: {
+          p_amount: number;
+          p_charge_amount: number;
+          p_interval: string;
+          p_plan: Database["public"]["Enums"]["plan_tier"];
+          p_provider_plan_id: string;
+        };
+        Returns: string;
       };
       set_warehouse_shops: {
         Args: { p_shop_ids: string[]; p_warehouse_id: string };
@@ -3132,6 +3391,17 @@ export type Database = {
       storefront_shop: { Args: { p_slug: string }; Returns: Json };
       storefront_sitemap: { Args: { p_shop_id: string }; Returns: Json };
       storefront_variants: { Args: { p_shop_id: string; p_variant_ids: string[] }; Returns: Json };
+      sync_subscription: {
+        Args: {
+          p_current_end?: string;
+          p_current_start?: string;
+          p_provider_plan_id: string;
+          p_provider_subscription_id: string;
+          p_short_url?: string;
+          p_status: string;
+        };
+        Returns: Json;
+      };
       transfer_stock: {
         Args: {
           p_batch_id?: string;

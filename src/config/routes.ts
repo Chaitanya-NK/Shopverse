@@ -72,6 +72,15 @@ export const routes = {
   orgAudit: (orgSlug: string) => `/app/${orgSlug}/team/audit`,
   orgBilling: (orgSlug: string) => `/app/${orgSlug}/billing`,
   orgPayments: (orgSlug: string) => `/app/${orgSlug}/payments`,
+  orgPlatformInvoice: (orgSlug: string, invoiceId: string) =>
+    `/app/${orgSlug}/billing/invoices/${invoiceId}`,
+  /** Shopverse's own admin console (platform admins only). */
+  admin: "/admin",
+  adminBusinesses: "/admin/businesses",
+  adminBusiness: (organizationId: string) => `/admin/businesses/${organizationId}`,
+  adminInvoice: (invoiceId: string) => `/admin/invoices/${invoiceId}`,
+  /** Shopverse's own Razorpay account. */
+  platformWebhook: "/api/webhooks/razorpay/platform",
   /** Where Razorpay sends this business's webhooks. */
   razorpayWebhook: (organizationId: string) => `/api/webhooks/razorpay/${organizationId}`,
   /** Accept a team invitation (public; asks the visitor to sign in). */
@@ -83,7 +92,7 @@ export const routes = {
 } as const;
 
 /** Paths only signed-in users may visit (checked optimistically in the proxy). */
-export const PROTECTED_PREFIXES = ["/app", "/onboarding"] as const;
+export const PROTECTED_PREFIXES = ["/app", "/onboarding", "/admin"] as const;
 
 /** Paths signed-in users are bounced away from. */
 export const AUTH_PAGES = ["/sign-in", "/sign-up", "/verify"] as const;

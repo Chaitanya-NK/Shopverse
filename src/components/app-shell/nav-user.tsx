@@ -1,6 +1,7 @@
 "use client";
 
-import { ChevronsUpDownIcon, LogOutIcon } from "lucide-react";
+import { ChevronsUpDownIcon, LogOutIcon, ShieldIcon } from "lucide-react";
+import Link from "next/link";
 
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
@@ -17,10 +18,17 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar";
+import { routes } from "@/config/routes";
 import { signOut } from "@/features/auth/actions";
 import { initials } from "@/lib/format";
 
-export function NavUser({ user }: { user: { name: string; email: string } }) {
+export function NavUser({
+  user,
+  platformAdmin = false,
+}: {
+  user: { name: string; email: string };
+  platformAdmin?: boolean;
+}) {
   const { isMobile } = useSidebar();
 
   return (
@@ -57,6 +65,17 @@ export function NavUser({ user }: { user: { name: string; email: string } }) {
               <span className="block truncate text-xs text-muted-foreground">{user.email}</span>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
+            {platformAdmin && (
+              <>
+                <DropdownMenuItem asChild>
+                  <Link href={routes.admin}>
+                    <ShieldIcon />
+                    Shopverse admin
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+              </>
+            )}
             <form action={signOut}>
               <DropdownMenuItem asChild>
                 <button type="submit" className="w-full">

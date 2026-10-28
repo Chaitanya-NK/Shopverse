@@ -4,7 +4,7 @@ Multi-shop commerce SaaS for businesses that sell **anything**: clothing, electr
 
 **Stack:** Next.js 16 (App Router, Cache Components, Server Actions) · React 19 · TypeScript (strict) · Supabase (Postgres, Auth, RLS, Storage) · shadcn/ui + Tailwind CSS 4 · Zod 4 · React Hook Form · Vitest
 
-## Status: Phase 9 (returns & credit notes)
+## Status: Phase 10 (Shopverse billing & platform admin)
 
 | Area         | What's in place                                                                                                                                                                                                                                                                                                                               |
 | ------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -28,7 +28,8 @@ Multi-shop commerce SaaS for businesses that sell **anything**: clothing, electr
 | Customers    | Customer list with orders and spend; customer page with order history; verified-email badge; customer order page by private link                                                                                                                                                                                                              |
 | Team         | Invite by email (single-use link, 7-day expiry, token stored hashed), resend and revoke; change roles and shop access; remove members or leave; admins can't touch owners and nobody edits their own role                                                                                                                                     |
 | Audit log    | Every change recorded by the database; filter by type, person and date; shows what changed in plain language                                                                                                                                                                                                                                  |
-| Billing      | Plans with usage meters (shops, seats incl. pending invites, products, warehouses), limits enforced in the database, trial countdown banner; upgrades by request                                                                                                                                                                              |
+| Billing      | Plans billed monthly or yearly (two months free) through Shopverse's Razorpay account: checkout, upgrades at once, downgrades at renewal (only when usage fits), cancel at period end, failed payments with a 7-day grace, a GST tax invoice for every charge; limits enforced in the database                                                |
+| Admin        | Shopverse's own console at `/admin`: revenue and plan mix, every business with search and filters, usage, subscriptions and invoices, extend trials and set plans by hand (audited)                                                                                                                                                           |
 | Shoppers     | Shopper accounts separate from staff: email-code sign-in, orders with a progress tracker, wishlist, saved addresses, profile; one-click signed-in checkout; cancel before packing; buy again                                                                                                                                                  |
 | Photos       | Up to 12 photos per product, resized to WebP (1600/480px) with metadata stripped; cover, reorder, alt text; gallery on product pages                                                                                                                                                                                                          |
 | Invoices     | GST tax invoices issued at dispatch, numbered per shop per financial year; CGST/SGST or IGST by place of supply; print or save as PDF                                                                                                                                                                                                         |
@@ -40,7 +41,7 @@ Multi-shop commerce SaaS for businesses that sell **anything**: clothing, electr
 | GST          | Monthly B2C summary by place of supply and rate, HSN summary, invoice register, built from the issued invoices; CSV exports of orders, customers and stock (safe against spreadsheet formulas)                                                                                                                                                |
 | Returns      | Shoppers ask to return or exchange delivered items within the shop's window (categories can be non-returnable); approve or decline, pickup, receive back into stock (serials and batches too), refunds to the original payment or recorded UPI/bank/cash refunds, replacement orders for exchanges; undelivered parcels handled automatically |
 | Credit notes | Numbered GST credit notes against the invoice for every return, printable by staff and shoppers, netted off the monthly GST report                                                                                                                                                                                                            |
-| Quality      | Strict TypeScript, ESLint and Prettier, 199 unit tests, twelve SQL test suites (RLS, stock, order flow, storefront and checkout, team and billing, shopper accounts, photos, invoices, payments, discounts, analytics, returns), CI, commit hooks                                                                                             |
+| Quality      | Strict TypeScript, ESLint and Prettier, 203 unit tests, thirteen SQL test suites (RLS, stock, order flow, storefront and checkout, team and billing, shopper accounts, photos, invoices, payments, discounts, analytics, returns, platform billing), CI, commit hooks                                                                         |
 
 ## Quick start in GitHub Codespaces
 
@@ -148,6 +149,23 @@ Run `npx supabase db push` (migration 020) and `npm install` (adds `recharts` fo
 
 Run `npx supabase db push` (migration 021). Each shop's settings now has **Returns** (a window of 3–30 days after delivery, or no online returns, and whether to offer exchanges); mark categories such as food as not returnable in **Categories**. Shoppers ask from their order page once signed in; you work through requests in **Returns** (review, collect, settle). Receiving a return restocks it and issues a GST credit note. Orders paid online are refunded to the original payment (managers and above); for cash on delivery, pay the customer's UPI id and record the transaction id. A parcel returned to origin after its invoice was issued gets a credit note automatically, and a refund if it was prepaid.
 
+### Shopverse billing and the admin console (Phase 10)
+
+Run `npx supabase db push` (migration 022). Plans are billed through **Shopverse's own** Razorpay account (separate from the accounts businesses connect for their shops):
+
+1. In Razorpay, turn on Subscriptions and create API keys. Set `PLATFORM_RAZORPAY_KEY_ID` and `PLATFORM_RAZORPAY_KEY_SECRET`. Razorpay plans are created automatically the first time each plan is chosen.
+2. Add a webhook to `<your app>/api/webhooks/razorpay/platform` with the `subscription.*` events and set the same secret as `PLATFORM_RAZORPAY_WEBHOOK_SECRET`.
+3. Set Shopverse's invoice details: `PLATFORM_LEGAL_NAME`, `PLATFORM_GSTIN` and address. With a GSTIN, 18% GST is added to plan prices and every charge gets a tax invoice (CGST + SGST or IGST by the business's state).
+
+Without the keys, Billing shows plans and asks owners to email a request, as before. To open the admin console at `/admin`, make yourself a platform admin in the Supabase SQL editor:
+
+```sql
+insert into private.platform_admins (user_id)
+select id from auth.users where email = 'you@example.com';
+```
+
+This migration also closes a gap where owners and admins could change their organisation's plan through the API: only the name can be edited directly now.
+
 ## Scripts
 
 | Command                                     | Purpose                                                          |
@@ -201,7 +219,7 @@ See **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)** for the design decisions an
 - **Phase 7 (done) — Discounts & promotions:** coupon codes (percentage or flat, minimum order, cap, validity, usage limits overall and per customer, first order only, per shop), automatic offers, discounts applied server-side and spread across lines so GST invoices stay correct, an announcement bar and homepage banners
 - **Phase 8 (done) — Analytics & reports:** sales dashboard (sales, orders, average order, customers vs the previous period, by day, top products, payment methods, states, shops, delivered/returned/cancelled), GST reports (B2C by state and rate, HSN summary, invoice register), CSV exports of orders, invoices, stock and customers
 - **Phase 9 (done) — Returns & credit notes:** return and exchange requests within a window set by the shop, approval, reverse pickup, restocking on receipt, refunds (online to the original payment, COD by UPI), numbered GST credit notes, credit notes netted in the GST report
-- **Phase 10 — Shopverse billing & platform admin:** plan subscriptions through Razorpay Subscriptions, upgrades and downgrades, GST invoices to businesses, failed-payment handling, a platform admin console (businesses, usage, plans)
+- **Phase 10 (done) — Shopverse billing & platform admin:** plan subscriptions through Razorpay Subscriptions (monthly or yearly), upgrades and downgrades, GST invoices to businesses, failed-payment grace period, a platform admin console (businesses, usage, plans)
 - **Phase 11 — Catalogue power tools:** CSV bulk import and export, photos per variant, collections, verified-buyer reviews and ratings, related products, typo-tolerant search
 - **Phase 12 — Operations:** suppliers and purchase orders, low-stock email alerts and a daily digest, courier integration (rates, AWB, labels, tracking updates), packing slips and shipping labels, barcode labels
 - **Phase 13 — Brand & reach:** per-shop logo, colours and banners, custom domains, WhatsApp and SMS order updates, abandoned-cart reminders, installable app (PWA)

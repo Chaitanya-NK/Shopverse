@@ -28,6 +28,25 @@ export const env = createEnv({
       .optional(),
     // Override only for local testing against a stand-in.
     RAZORPAY_API_URL: z.url().default("https://api.razorpay.com"),
+    // Shopverse's own Razorpay account, for plan subscriptions (not the
+    // businesses' accounts). Without these, plans are changed by request.
+    PLATFORM_RAZORPAY_KEY_ID: z.string().min(1).optional(),
+    PLATFORM_RAZORPAY_KEY_SECRET: z.string().min(1).optional(),
+    PLATFORM_RAZORPAY_WEBHOOK_SECRET: z.string().min(1).optional(),
+    // Printed on Shopverse's invoices to businesses. With a GSTIN, plan prices
+    // get GST added and invoices are tax invoices.
+    PLATFORM_LEGAL_NAME: z.string().min(2).default("Shopverse"),
+    PLATFORM_GSTIN: z
+      .string()
+      .regex(/^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][1-9A-Z]Z[0-9A-Z]$/, "Must be a valid GSTIN")
+      .optional(),
+    PLATFORM_ADDRESS: z.string().optional(),
+    PLATFORM_CITY: z.string().optional(),
+    PLATFORM_STATE: z.string().optional(),
+    PLATFORM_POSTAL_CODE: z.string().optional(),
+    PLATFORM_GST_RATE: z.coerce.number().min(0).max(28).default(18),
+    // SAC for software subscriptions; confirm with your accountant.
+    PLATFORM_SAC_CODE: z.string().default("997331"),
   },
   client: {
     NEXT_PUBLIC_SUPABASE_URL: z.url(),

@@ -25,6 +25,31 @@ export type RazorpayRefund = {
   notes?: Record<string, string> | unknown[];
 };
 
+export type RazorpayPlan = {
+  id: string;
+  period: string;
+  interval: number;
+  item: { amount: number };
+};
+export type RazorpaySubscription = {
+  id: string;
+  plan_id: string;
+  status:
+    | "created"
+    | "authenticated"
+    | "active"
+    | "pending"
+    | "halted"
+    | "cancelled"
+    | "completed"
+    | "expired";
+  current_start: number | null;
+  current_end: number | null;
+  short_url?: string | null;
+  notes?: Record<string, string> | unknown[];
+  has_scheduled_changes?: boolean;
+};
+
 /** Rupees (2 decimals) -> paise, the unit Razorpay uses. */
 export const toPaise = (amount: number) => Math.round(amount * 100);
 export const fromPaise = (paise: number) => Math.round(paise) / 100;
@@ -48,13 +73,24 @@ export function verifyPaymentSignature(
 }
 
 /** Webhooks: HMAC of the raw body with the webhook secret. */
+/** Checkout's signature for a subscription's first payment. */
+export function verifySubscriptionSignature(
+  keySecret: string,
+  input: { subscriptionId: string; paymentId: string; signature: string },
+) {
+  return safeEqualHex(
+    hmacHex(keySecret, `${input.paymentId}|${input.subscriptionId}`),
+    input.signature,
+  );
+}
+
 export function verifyWebhookSignature(webhookSecret: string, rawBody: string, signature: string) {
   return safeEqualHex(hmacHex(webhookSecret, rawBody), signature);
 }
 
 async function call<T>(
   credentials: RazorpayCredentials,
-  method: "GET" | "POST",
+  method: "GET" | "POST" | "PATCH",
   path: string,
   body?: unknown,
 ): Promise<T> {
@@ -123,6 +159,49 @@ export const razorpay = {
       "GET",
       `/payments/${encodeURIComponent(paymentId)}/refunds?count=100`,
     ),
+  createPlan: (
+    c: RazorpayCredentials,
+    input: {
+      period: "monthly" | "yearly";
+      name: string;
+      amount: number;
+      notes: Record<string, string>;
+    },
+  ) =>
+    call<RazorpayPlan>(c, "POST", "/plans", {
+      period: input.period,
+      interval: 1,
+      item: { name: input.name, amount: toPaise(input.amount), currency: "INR" },
+      notes: input.notes,
+    }),
+  createSubscription: (
+    c: RazorpayCredentials,
+    input: { planId: string; totalCount: number; notes: Record<string, string> },
+  ) =>
+    call<RazorpaySubscription>(c, "POST", "/subscriptions", {
+      plan_id: input.planId,
+      total_count: input.totalCount,
+      customer_notify: 1,
+      notes: input.notes,
+    }),
+  fetchSubscription: (c: RazorpayCredentials, id: string) =>
+    call<RazorpaySubscription>(c, "GET", `/subscriptions/${encodeURIComponent(id)}`),
+  /** Change the plan now (upgrades) or at the end of the paid period. */
+  updateSubscription: (
+    c: RazorpayCredentials,
+    id: string,
+    planId: string,
+    when: "now" | "cycle_end",
+  ) =>
+    call<RazorpaySubscription>(c, "PATCH", `/subscriptions/${encodeURIComponent(id)}`, {
+      plan_id: planId,
+      schedule_change_at: when,
+      customer_notify: 1,
+    }),
+  cancelSubscription: (c: RazorpayCredentials, id: string, atCycleEnd: boolean) =>
+    call<RazorpaySubscription>(c, "POST", `/subscriptions/${encodeURIComponent(id)}/cancel`, {
+      cancel_at_cycle_end: atCycleEnd ? 1 : 0,
+    }),
   /** A cheap authenticated call, to check keys when they're saved. */
   checkCredentials: (c: RazorpayCredentials) => call<unknown>(c, "GET", "/orders?count=1"),
 };

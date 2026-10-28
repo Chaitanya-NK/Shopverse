@@ -1,4 +1,4 @@
-import { ClockAlertIcon } from "lucide-react";
+import { ClockAlertIcon, CreditCardIcon } from "lucide-react";
 import Link from "next/link";
 import { connection } from "next/server";
 import { Suspense } from "react";
@@ -12,6 +12,7 @@ import { ShopSwitcher } from "@/features/shops/components/shop-switcher";
 import { listShops } from "@/features/shops/queries";
 import { listMyMemberships, requireMembership } from "@/features/organizations/queries";
 import { routes } from "@/config/routes";
+import { isPlatformAdmin } from "@/features/admin/queries";
 import { requireUser } from "@/lib/auth/session";
 import { daysUntil } from "@/lib/format";
 
@@ -47,13 +48,18 @@ export default function OrganizationLayout({ children, params }: LayoutProps<"/a
 
 async function SidebarLoader({ params }: Pick<LayoutProps<"/app/[orgSlug]">, "params">) {
   const { orgSlug } = await params;
-  const [user, memberships] = await Promise.all([requireUser(), listMyMemberships()]);
+  const [user, memberships, platformAdmin] = await Promise.all([
+    requireUser(),
+    listMyMemberships(),
+    isPlatformAdmin(),
+  ]);
   await requireMembership(orgSlug);
 
   return (
     <AppSidebar
       orgSlug={orgSlug}
       user={{ name: user.fullName ?? user.email, email: user.email }}
+      platformAdmin={platformAdmin}
       workspaces={memberships.map((m) => ({
         slug: m.organization.slug,
         name: m.organization.name,
@@ -77,10 +83,21 @@ function SidebarSkeleton() {
   );
 }
 
-/** Nudge when the free trial is about to end, or has ended. */
+/** Nudge when a payment failed, or the free trial is about to end or has ended. */
 async function TrialBanner({ params }: Pick<LayoutProps<"/app/[orgSlug]">, "params">) {
   const { orgSlug } = await params;
   const { organization } = await requireMembership(orgSlug);
+  if (organization.pastDueSince) {
+    return (
+      <Link
+        href={routes.orgBilling(orgSlug)}
+        className="flex items-center justify-center gap-2 bg-destructive/10 px-4 py-2 text-center text-sm text-destructive hover:underline print:hidden"
+      >
+        <CreditCardIcon className="size-4 shrink-0" aria-hidden />
+        Your last Shopverse payment didn&apos;t go through. Update your payment in Billing.
+      </Link>
+    );
+  }
   if (organization.plan !== "trial" || !organization.trialEndsAt) return null;
   await connection();
   const days = daysUntil(organization.trialEndsAt);
@@ -93,7 +110,7 @@ async function TrialBanner({ params }: Pick<LayoutProps<"/app/[orgSlug]">, "para
     >
       <ClockAlertIcon className="size-4 shrink-0" aria-hidden />
       {days <= 0
-        ? "Your free trial has ended. Choose a plan to keep adding products, shops and teammates."
+        ? "You don't have an active plan. Choose one to keep adding products, shops and teammates."
         : `Your free trial ends in ${days} day${days === 1 ? "" : "s"}. Choose a plan.`}
     </Link>
   );
