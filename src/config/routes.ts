@@ -48,6 +48,19 @@ export const routes = {
   storefrontProfile: (shopSlug: string) => `/s/${shopSlug}/account/profile`,
   orgCustomers: (orgSlug: string) => `/app/${orgSlug}/customers`,
   orgDiscounts: (orgSlug: string) => `/app/${orgSlug}/discounts`,
+  orgAnalytics: (orgSlug: string) => `/app/${orgSlug}/analytics`,
+  orgGstReports: (orgSlug: string) => `/app/${orgSlug}/analytics/gst`,
+  /** CSV download; `query` carries the same filters as the page. */
+  orgExport: (
+    orgSlug: string,
+    report: string,
+    query: Record<string, string | null | undefined> = {},
+  ) => {
+    const params = new URLSearchParams();
+    for (const [k, v] of Object.entries(query)) if (v) params.set(k, v);
+    const qs = params.toString();
+    return `/app/${orgSlug}/analytics/export/${report}${qs ? `?${qs}` : ""}`;
+  },
   orgTeam: (orgSlug: string) => `/app/${orgSlug}/team`,
   orgAudit: (orgSlug: string) => `/app/${orgSlug}/team/audit`,
   orgBilling: (orgSlug: string) => `/app/${orgSlug}/billing`,

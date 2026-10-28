@@ -20,6 +20,8 @@ const CAPABILITIES = {
   "orders.cancel": ["owner", "admin", "manager"],
   "audit.read": ["owner", "admin"],
   "payments.manage": ["owner", "admin"],
+  // Sales figures, GST reports and CSV exports.
+  "analytics.read": ["owner", "admin", "manager"],
 } as const satisfies Record<string, readonly OrgRole[]>;
 
 export type Capability = keyof typeof CAPABILITIES;

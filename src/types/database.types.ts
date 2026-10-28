@@ -2482,6 +2482,10 @@ export type Database = {
       };
       get_payment_settings: { Args: { p_organization_id: string }; Returns: Json };
       get_tracking: { Args: { p_token: string }; Returns: Json };
+      gst_invoices: {
+        Args: { p_month: string; p_organization_id: string; p_shop_id?: string };
+        Returns: Json;
+      };
       invite_member: {
         Args: {
           p_all_shops?: boolean;
@@ -2587,6 +2591,10 @@ export type Database = {
         Returns: undefined;
       };
       revoke_invitation: { Args: { p_invitation_id: string }; Returns: undefined };
+      sales_report: {
+        Args: { p_from: string; p_organization_id: string; p_shop_id?: string; p_to: string };
+        Returns: Json;
+      };
       save_payment_account: {
         Args: {
           p_enabled?: boolean;
