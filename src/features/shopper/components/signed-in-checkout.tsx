@@ -24,6 +24,7 @@ import {
   defaultPaymentMethod,
   PaymentMethodChoice,
 } from "@/features/payments/components/payment-method-choice";
+import { MessageOptIn } from "@/features/messaging/components/message-opt-in";
 import { useOnlineCheckout } from "@/features/payments/components/use-online-checkout";
 import { addressSchema, formatAddressLine, type SavedAddress } from "@/features/shopper/schemas";
 import {
@@ -52,6 +53,7 @@ const formSchema = z
     saveAddress: z.boolean(),
     note: z.string().trim().max(300, "Keep it under 300 characters"),
     paymentMethod: z.enum(CHECKOUT_PAYMENT_METHODS),
+    messageOptIn: z.boolean(),
   })
   .superRefine((value, ctx) => {
     if (value.addressId !== NEW) return;
@@ -72,12 +74,14 @@ export function SignedInCheckout({
   addresses,
   paymentMethods,
   codLimit,
+  messageChannel = null,
 }: {
   shopSlug: string;
   currency: string;
   total: number;
   paymentMethods: CheckoutPaymentMethod[];
   codLimit: number | null;
+  messageChannel?: "whatsapp" | "sms" | null;
   email: string;
   name: string | null;
   phone: string | null;
@@ -105,6 +109,7 @@ export function SignedInCheckout({
       saveAddress: true,
       note: "",
       paymentMethod: defaultPaymentMethod(paymentMethods),
+      messageOptIn: false,
     },
   });
   const paymentMethod = useWatch({ control: form.control, name: "paymentMethod" });
@@ -122,6 +127,7 @@ export function SignedInCheckout({
         saveAddress: isNew && values.saveAddress,
         note: values.note,
         paymentMethod: values.paymentMethod,
+        messageOptIn: values.messageOptIn,
       });
       if (!result.ok) {
         applyActionError(form, result.error);
@@ -250,6 +256,21 @@ export function SignedInCheckout({
               />
             )}
           />
+          {messageChannel && (
+            <div className="mt-4">
+              <Controller
+                name="messageOptIn"
+                control={form.control}
+                render={({ field }) => (
+                  <MessageOptIn
+                    channel={messageChannel}
+                    checked={field.value}
+                    onCheckedChange={field.onChange}
+                  />
+                )}
+              />
+            </div>
+          )}
         </CardContent>
       </Card>
 

@@ -3,6 +3,7 @@ import "server-only";
 import { routes } from "@/config/routes";
 import { env } from "@/env";
 import { digestSchema, type LowStockItem } from "@/features/operations/digest";
+import { sendCartReminders } from "@/features/marketing/server";
 import { digestEmail, lowStockEmail } from "@/features/operations/emails";
 import { fromPostgrestError } from "@/lib/errors";
 import { logger } from "@/lib/logger";
@@ -108,11 +109,12 @@ export async function sendDigest(organizationId: string, onlyTo: string | null, 
   return true;
 }
 
-/** Everything the scheduler runs: alerts first, then any digests now due. */
+/** Everything the scheduler runs: alerts, digests now due, and cart reminders. */
 export async function runOperationsJobs(now = new Date()) {
   const alerts = await sendStockAlerts();
   const digests = await sendDueDigests(now);
-  return { alerts, digests };
+  const cartReminders = await sendCartReminders(now);
+  return { alerts, digests, cartReminders };
 }
 
 /** Fire-and-forget after stock changes; failures only log (the scheduler retries). */

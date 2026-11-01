@@ -418,6 +418,13 @@ export const placeSignedInOrder = createAction({
       awaiting_payment: boolean;
     };
     await clearCart(shop.slug);
+    if (input.messageOptIn) {
+      const { error: optInError } = await createAdminClient()
+        .from("orders")
+        .update({ message_opt_in: true })
+        .eq("id", order.order_id);
+      if (optInError) throw fromPostgrestError(optInError);
+    }
     // Online orders are confirmed (and emailed) once the payment arrives.
     if (!order.awaiting_payment) notifyOrder(order.order_id, { type: "confirmed" });
     // Stock is now reserved: tell the team about anything that ran low.

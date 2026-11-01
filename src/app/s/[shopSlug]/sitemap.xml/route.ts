@@ -17,7 +17,9 @@ export async function GET(_request: Request, ctx: RouteContext<"/s/[shopSlug]/si
     getSitemapProducts(shop.id),
     getStorefrontCollections(shop.id),
   ]);
-  const abs = (path: string) => new URL(path, env.NEXT_PUBLIC_APP_URL).toString();
+  // On its own domain, the shop's pages are listed there.
+  const origin = shop.domain ? `https://${shop.domain}` : env.NEXT_PUBLIC_APP_URL;
+  const abs = (path: string) => new URL(path, origin).toString();
   const entries = [
     { loc: abs(routes.storefront(shop.slug)), lastmod: products[0]?.updated_at },
     { loc: abs(routes.storefrontContact(shop.slug)) },

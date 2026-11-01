@@ -8,7 +8,7 @@ import { routes } from "@/config/routes";
 import { initials } from "@/lib/format";
 
 type StorefrontHeaderProps = {
-  shop: { name: string; slug: string };
+  shop: { name: string; slug: string; logoUrl?: string | null };
   cartCount: number;
   query?: string;
   /** Sign-in link or the account menu. */
@@ -23,10 +23,21 @@ export function StorefrontHeader({ shop, cartCount, query = "", account }: Store
           href={routes.storefront(shop.slug)}
           className="flex shrink-0 items-center gap-2.5 font-semibold"
         >
-          <span className="flex size-9 items-center justify-center rounded-xl bg-primary text-sm text-primary-foreground">
-            {initials(shop.name)}
-          </span>
-          <span className="hidden text-lg tracking-tight sm:inline">{shop.name}</span>
+          {shop.logoUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element -- remote logo, any aspect ratio
+            <img
+              src={shop.logoUrl}
+              alt={shop.name}
+              className="h-9 w-auto max-w-40 object-contain"
+            />
+          ) : (
+            <>
+              <span className="flex size-9 items-center justify-center rounded-xl bg-primary text-sm text-primary-foreground">
+                {initials(shop.name)}
+              </span>
+              <span className="hidden text-lg tracking-tight sm:inline">{shop.name}</span>
+            </>
+          )}
         </Link>
         <form action={routes.storefront(shop.slug)} method="get" role="search" className="flex-1">
           <InputGroup className="h-10 rounded-full bg-muted/50">

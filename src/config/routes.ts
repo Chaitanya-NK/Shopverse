@@ -13,6 +13,10 @@ export const routes = {
   org: (orgSlug: string) => `/app/${orgSlug}`,
   orgShops: (orgSlug: string) => `/app/${orgSlug}/shops`,
   orgShop: (orgSlug: string, shopId: string) => `/app/${orgSlug}/shops/${shopId}`,
+  orgShopBrand: (orgSlug: string, shopId: string) => `/app/${orgSlug}/shops/${shopId}/brand`,
+  orgShopDomain: (orgSlug: string, shopId: string) => `/app/${orgSlug}/shops/${shopId}/domain`,
+  orgMarketing: (orgSlug: string) => `/app/${orgSlug}/marketing`,
+  orgMessaging: (orgSlug: string) => `/app/${orgSlug}/settings/messaging`,
   orgCategories: (orgSlug: string) => `/app/${orgSlug}/categories`,
   orgWarehouses: (orgSlug: string) => `/app/${orgSlug}/warehouses`,
   orgProducts: (orgSlug: string) => `/app/${orgSlug}/products`,
@@ -27,6 +31,13 @@ export const routes = {
   orgDeliveries: (orgSlug: string) => `/app/${orgSlug}/deliveries`,
   // Public storefront (no sign-in)
   storefront: (shopSlug: string) => `/s/${shopSlug}`,
+  storefrontManifest: (shopSlug: string) => `/s/${shopSlug}/manifest.webmanifest`,
+  storefrontIcon: (shopSlug: string, size: number) => `/s/${shopSlug}/app-icon/${size}`,
+  storefrontServiceWorker: (shopSlug: string) => `/s/${shopSlug}/sw.js`,
+  storefrontOffline: (shopSlug: string) => `/s/${shopSlug}/offline`,
+  storefrontCartRestore: (shopSlug: string, token: string) =>
+    `/s/${shopSlug}/cart/restore/${token}`,
+  storefrontCartStop: (shopSlug: string, token: string) => `/s/${shopSlug}/cart/stop/${token}`,
   storefrontSearch: (shopSlug: string, query: string) =>
     `/s/${shopSlug}?q=${encodeURIComponent(query)}`,
   storefrontCategory: (shopSlug: string, categoryId: string) =>

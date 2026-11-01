@@ -30,6 +30,8 @@ export const env = createEnv({
     // Protects /api/cron/operations (low-stock alerts, daily digest). Call it
     // every 15 minutes or so with "Authorization: Bearer <CRON_SECRET>".
     CRON_SECRET: z.string().min(16, "Use at least 16 characters").optional(),
+    // Override only for local testing against a stand-in.
+    TWILIO_API_URL: z.url().default("https://api.twilio.com"),
     STRIPE_API_URL: z.url().default("https://api.stripe.com"),
     // Shopverse's own Stripe account, for plan subscriptions (not the
     // businesses' accounts). Without the key, plans are changed by request.

@@ -4,7 +4,7 @@ import { cookies } from "next/headers";
 import { cache } from "react";
 
 import { env } from "@/env";
-import { routes } from "@/config/routes";
+import { storefrontCookiePath } from "@/features/domains/cookie-path";
 import { shopperSchema } from "@/features/shopper/schemas";
 import { Errors, fromPostgrestError } from "@/lib/errors";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -21,8 +21,8 @@ export const SIGN_IN_COOKIE = "sv_signin";
 const SESSION_DAYS = 30;
 const TOKEN = /^[0-9a-f]{64}$/;
 
-const cookieOptions = (shopSlug: string, maxAge: number) => ({
-  path: routes.storefront(shopSlug),
+const cookieOptions = async (shopSlug: string, maxAge: number) => ({
+  path: await storefrontCookiePath(shopSlug),
   httpOnly: true,
   sameSite: "lax" as const,
   secure: env.NODE_ENV === "production",
@@ -35,19 +35,24 @@ export async function readShopperToken(): Promise<string | null> {
 }
 
 export async function setShopperToken(shopSlug: string, token: string) {
-  (await cookies()).set(SHOPPER_COOKIE, token, cookieOptions(shopSlug, SESSION_DAYS * 86_400));
+  (await cookies()).set(
+    SHOPPER_COOKIE,
+    token,
+    await cookieOptions(shopSlug, SESSION_DAYS * 86_400),
+  );
 }
 
 export async function clearShopperToken(shopSlug: string) {
-  (await cookies()).delete({ name: SHOPPER_COOKIE, path: routes.storefront(shopSlug) });
+  (await cookies()).delete({ name: SHOPPER_COOKIE, path: await storefrontCookiePath(shopSlug) });
 }
 
 export async function signInCookie(shopSlug: string) {
   const jar = await cookies();
+  const options = await cookieOptions(shopSlug, 60 * 60);
   return {
     get: () => jar.get(SIGN_IN_COOKIE)?.value ?? null,
-    set: (id: string) => jar.set(SIGN_IN_COOKIE, id, cookieOptions(shopSlug, 60 * 60)),
-    clear: () => jar.delete({ name: SIGN_IN_COOKIE, path: routes.storefront(shopSlug) }),
+    set: (id: string) => jar.set(SIGN_IN_COOKIE, id, options),
+    clear: () => jar.delete({ name: SIGN_IN_COOKIE, path: options.path }),
   };
 }
 

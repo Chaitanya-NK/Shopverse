@@ -1,5 +1,6 @@
 import { z } from "zod";
 
+import { brandingSchema } from "@/features/branding/schemas";
 import { productImageObjectSchema, productImageSchema } from "@/features/products/images";
 import { orderReturnSchema } from "@/features/returns/schemas";
 import { ORDER_STAGES } from "@/features/shopper/stages";
@@ -46,6 +47,9 @@ export const storefrontShopSchema = z
       .array(z.enum(["online", "cod"]))
       .optional()
       .default(["cod"]),
+    branding: brandingSchema.optional(),
+    domain: z.string().nullable().optional().default(null),
+    message_channel: z.enum(["whatsapp", "sms"]).nullable().catch(null).optional().default(null),
   })
   .transform((s) => ({
     id: s.id,
@@ -78,6 +82,11 @@ export const storefrontShopSchema = z
       s.announcement_link && /^(\/(?!\/)|https:\/\/)/.test(s.announcement_link)
         ? s.announcement_link
         : null,
+    branding: s.branding ?? { color: null, logo: null, banners: [] },
+    /** Verified custom domain (null: served under /s/<slug>). */
+    domain: s.domain,
+    /** WhatsApp or SMS order updates offered at checkout. */
+    messageChannel: s.message_channel,
   }));
 export type StorefrontShop = z.output<typeof storefrontShopSchema>;
 
@@ -396,6 +405,8 @@ export const checkoutDetailsSchema = z.object({
   address: streetAddressSchema,
   note: z.string().trim().max(300, "Keep it under 300 characters").optional().default(""),
   paymentMethod: z.enum(CHECKOUT_PAYMENT_METHODS).optional().default("cod"),
+  /** Order updates by WhatsApp or SMS (when the shop offers them). */
+  messageOptIn: z.boolean().optional().default(false),
 });
 export type CheckoutDetailsInput = z.input<typeof checkoutDetailsSchema>;
 

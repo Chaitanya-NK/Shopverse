@@ -56,6 +56,7 @@ async function Checkout({ params }: Pick<Props, "params">) {
             addresses={shopper.addresses}
             paymentMethods={shop.paymentMethods}
             codLimit={shop.codLimit}
+            messageChannel={shop.messageChannel}
           />
         ) : (
           <>
@@ -75,6 +76,7 @@ async function Checkout({ params }: Pick<Props, "params">) {
               total={quote.total}
               paymentMethods={shop.paymentMethods}
               codLimit={shop.codLimit}
+              messageChannel={shop.messageChannel}
             />
           </>
         )}

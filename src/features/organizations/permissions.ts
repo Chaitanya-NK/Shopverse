@@ -31,6 +31,8 @@ const CAPABILITIES = {
   "purchasing.receive": ["owner", "admin", "manager", "staff"],
   // Alerts, the daily digest and the courier.
   "operations.settings": ["owner", "admin"],
+  // Cart reminders and their numbers.
+  "marketing.manage": ["owner", "admin", "manager"],
 } as const satisfies Record<string, readonly OrgRole[]>;
 
 export type Capability = keyof typeof CAPABILITIES;

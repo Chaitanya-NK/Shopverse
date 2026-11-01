@@ -109,6 +109,93 @@ export type Database = {
           },
         ];
       };
+      cart_recoveries: {
+        Row: {
+          clicked_at: string | null;
+          closed_at: string | null;
+          created_at: string;
+          email: string;
+          id: string;
+          last_activity_at: string;
+          lines: NonNullable<Json>;
+          name: string | null;
+          organization_id: string;
+          recovered_order_id: string | null;
+          reminded_at: string | null;
+          shop_id: string;
+          source: string;
+          status: string;
+          subtotal: number;
+          token: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          clicked_at?: string | null;
+          closed_at?: string | null;
+          created_at?: string;
+          email: string;
+          id?: string;
+          last_activity_at?: string;
+          lines: NonNullable<Json>;
+          name?: string | null;
+          organization_id: string;
+          recovered_order_id?: string | null;
+          reminded_at?: string | null;
+          shop_id: string;
+          source: string;
+          status?: string;
+          subtotal?: number;
+          token?: string;
+        };
+        Update: {
+          clicked_at?: string | null;
+          closed_at?: string | null;
+          created_at?: string;
+          email?: string;
+          id?: string;
+          last_activity_at?: string;
+          lines?: NonNullable<Json>;
+          name?: string | null;
+          organization_id?: string;
+          recovered_order_id?: string | null;
+          reminded_at?: string | null;
+          shop_id?: string;
+          source?: string;
+          status?: string;
+          subtotal?: number;
+          token?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "cart_recoveries_organization_id_fkey";
+            columns: ["organization_id"];
+            isOneToOne: false;
+            referencedRelation: "organizations";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "cart_recoveries_recovered_order_id_fkey";
+            columns: ["recovered_order_id"];
+            isOneToOne: false;
+            referencedRelation: "order_overview";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "cart_recoveries_recovered_order_id_fkey";
+            columns: ["recovered_order_id"];
+            isOneToOne: false;
+            referencedRelation: "orders";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "cart_recoveries_shop_id_fkey";
+            columns: ["shop_id"];
+            isOneToOne: false;
+            referencedRelation: "shops";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       categories: {
         Row: {
           created_at: string;
@@ -770,6 +857,74 @@ export type Database = {
           },
         ];
       };
+      message_log: {
+        Row: {
+          body: string;
+          channel: string;
+          created_at: string;
+          error: string | null;
+          event: string;
+          id: string;
+          order_id: string | null;
+          organization_id: string;
+          provider: string;
+          provider_id: string | null;
+          status: string;
+          to_phone: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          body: string;
+          channel: string;
+          created_at?: string;
+          error?: string | null;
+          event: string;
+          id?: string;
+          order_id?: string | null;
+          organization_id: string;
+          provider: string;
+          provider_id?: string | null;
+          status: string;
+          to_phone: string;
+        };
+        Update: {
+          body?: string;
+          channel?: string;
+          created_at?: string;
+          error?: string | null;
+          event?: string;
+          id?: string;
+          order_id?: string | null;
+          organization_id?: string;
+          provider?: string;
+          provider_id?: string | null;
+          status?: string;
+          to_phone?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "message_log_order_id_fkey";
+            columns: ["order_id"];
+            isOneToOne: false;
+            referencedRelation: "order_overview";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "message_log_order_id_fkey";
+            columns: ["order_id"];
+            isOneToOne: false;
+            referencedRelation: "orders";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "message_log_organization_id_fkey";
+            columns: ["organization_id"];
+            isOneToOne: false;
+            referencedRelation: "organizations";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       operations_settings: {
         Row: {
           courier: string | null;
@@ -1059,6 +1214,7 @@ export type Database = {
           invoice_details: Json | null;
           invoice_number: string | null;
           invoiced_at: string | null;
+          message_opt_in: boolean;
           notes: string | null;
           number: string;
           organization_id: string;
@@ -1095,6 +1251,7 @@ export type Database = {
           invoice_details?: Json | null;
           invoice_number?: string | null;
           invoiced_at?: string | null;
+          message_opt_in?: boolean;
           notes?: string | null;
           number: string;
           organization_id: string;
@@ -1130,6 +1287,7 @@ export type Database = {
           invoice_details?: Json | null;
           invoice_number?: string | null;
           invoiced_at?: string | null;
+          message_opt_in?: boolean;
           notes?: string | null;
           number?: string;
           organization_id?: string;
@@ -2591,6 +2749,8 @@ export type Database = {
           created_at: string;
           currency: string;
           custom_domain: string | null;
+          domain_token: string | null;
+          domain_verified_at: string | null;
           id: string;
           name: string;
           order_prefix: string;
@@ -2606,6 +2766,8 @@ export type Database = {
           created_at?: string;
           currency?: string;
           custom_domain?: string | null;
+          domain_token?: string | null;
+          domain_verified_at?: string | null;
           id?: string;
           name: string;
           order_prefix?: string;
@@ -2620,6 +2782,8 @@ export type Database = {
           created_at?: string;
           currency?: string;
           custom_domain?: string | null;
+          domain_token?: string | null;
+          domain_verified_at?: string | null;
           id?: string;
           name?: string;
           order_prefix?: string;
@@ -3650,6 +3814,9 @@ export type Database = {
       };
       billing_contacts: { Args: { p_organization_id: string }; Returns: Json };
       cancel_order: { Args: { p_order_id: string; p_reason?: string }; Returns: undefined };
+      cart_recovery_restore: { Args: { p_token: string }; Returns: Json };
+      cart_recovery_stats: { Args: { p_days?: number; p_organization_id: string }; Returns: Json };
+      cart_reminder_optout: { Args: { p_token: string }; Returns: string };
       change_subscription_plan: {
         Args: {
           p_amount: number;
@@ -3661,6 +3828,7 @@ export type Database = {
         };
         Returns: undefined;
       };
+      claim_cart_reminders: { Args: { p_now?: string }; Returns: Json };
       claim_due_digests: { Args: { p_now?: string }; Returns: Json };
       claim_stock_alerts: { Args: Record<PropertyKey, never>; Returns: Json };
       clear_courier_booking: { Args: { p_shipment_id: string }; Returns: undefined };
@@ -3740,6 +3908,7 @@ export type Database = {
         };
         Returns: string;
       };
+      disconnect_messaging: { Args: { p_organization_id: string }; Returns: undefined };
       disconnect_payment_account: { Args: { p_organization_id: string }; Returns: undefined };
       expire_unpaid_orders: { Args: { p_organization_id?: string }; Returns: number };
       fail_return_refund: { Args: { p_error: string; p_return_id: string }; Returns: undefined };
@@ -3747,6 +3916,7 @@ export type Database = {
       forget_webhook_event: { Args: { p_event_id: string }; Returns: undefined };
       get_billing_overview: { Args: { p_organization_id: string }; Returns: Json };
       get_invitation: { Args: { p_token: string }; Returns: Json };
+      get_messaging_settings: { Args: { p_organization_id: string }; Returns: Json };
       get_operations_settings: { Args: { p_organization_id: string }; Returns: Json };
       get_overview_stats: {
         Args: { p_organization_id: string; p_shop_id?: string };
@@ -3779,10 +3949,15 @@ export type Database = {
       };
       mark_order_paid: { Args: { p_order_id: string }; Returns: undefined };
       mark_return_picked_up: { Args: { p_return_id: string }; Returns: undefined };
+      mark_shop_domain_verified: {
+        Args: { p_domain: string; p_shop_id: string };
+        Returns: boolean;
+      };
       mark_subscription_cancelling: {
         Args: { p_provider_subscription_id: string };
         Returns: undefined;
       };
+      messaging_account: { Args: { p_organization_id: string }; Returns: Json };
       moderate_review: {
         Args: { p_reply?: string; p_review_id: string; p_status: string };
         Returns: undefined;
@@ -3854,6 +4029,21 @@ export type Database = {
         Args: { p_method: string; p_reference: string; p_return_id: string };
         Returns: undefined;
       };
+      record_message: {
+        Args: {
+          p_body: string;
+          p_channel: string;
+          p_error?: string;
+          p_event: string;
+          p_order_id: string;
+          p_organization_id: string;
+          p_provider: string;
+          p_provider_id?: string;
+          p_status: string;
+          p_to: string;
+        };
+        Returns: string;
+      };
       record_payment_attempt: {
         Args: {
           p_amount: number;
@@ -3903,9 +4093,11 @@ export type Database = {
         Args: { p_event: string; p_event_id: string; p_organization_id: string };
         Returns: boolean;
       };
+      release_cart_reminder: { Args: { p_id: string }; Returns: undefined };
       release_digest: { Args: { p_organization_id: string }; Returns: undefined };
       release_stock_alerts: { Args: { p_alert_ids: string[] }; Returns: undefined };
       remove_member: { Args: { p_member_id: string }; Returns: undefined };
+      remove_shop_domain: { Args: { p_shop_id: string }; Returns: undefined };
       remove_stock: {
         Args: {
           p_batch_id?: string;
@@ -3963,6 +4155,23 @@ export type Database = {
         Args: { p_organization_id: string; p_profile: Json };
         Returns: undefined;
       };
+      save_cart_reminder_settings: {
+        Args: { p_code: string; p_delay_hours: number; p_enabled: boolean; p_shop_id: string };
+        Returns: undefined;
+      };
+      save_messaging_settings: {
+        Args: {
+          p_account_sid?: string;
+          p_auth_token_enc?: string;
+          p_channel: string;
+          p_enabled: boolean;
+          p_events: string[];
+          p_organization_id: string;
+          p_provider: string;
+          p_sender?: string;
+        };
+        Returns: undefined;
+      };
       save_operations_settings: {
         Args: {
           p_courier: string;
@@ -4008,15 +4217,18 @@ export type Database = {
         };
         Returns: string;
       };
+      save_shop_branding: { Args: { p_branding: Json; p_shop_id: string }; Returns: undefined };
       service_operations_digest: {
         Args: { p_now?: string; p_organization_id: string };
         Returns: Json;
       };
+      set_shop_domain: { Args: { p_domain: string; p_shop_id: string }; Returns: string };
       set_warehouse_shops: {
         Args: { p_shop_ids: string[]; p_warehouse_id: string };
         Returns: undefined;
       };
       shipment_document: { Args: { p_shipment_id: string }; Returns: Json };
+      shop_for_domain: { Args: { p_host: string }; Returns: string };
       shopper_cancel_order: {
         Args: { p_order_token: string; p_reason?: string; p_shop_id: string; p_token: string };
         Returns: undefined;
@@ -4103,6 +4315,10 @@ export type Database = {
         Returns: Json;
       };
       shopper_sign_out: { Args: { p_token: string }; Returns: undefined };
+      shopper_track_cart: {
+        Args: { p_lines: Json; p_shop_id: string; p_token: string };
+        Returns: undefined;
+      };
       shopper_update_profile: {
         Args: { p_profile: Json; p_shop_id: string; p_token: string };
         Returns: undefined;

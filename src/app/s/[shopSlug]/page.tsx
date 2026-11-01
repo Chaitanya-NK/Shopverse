@@ -16,6 +16,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { routes } from "@/config/routes";
 import { WishlistButton } from "@/features/shopper/components/wishlist-button";
 import { getShopper } from "@/features/shopper/session";
+import { BannerSlider } from "@/features/storefront/components/banner-slider";
 import { CatalogFilters } from "@/features/storefront/components/catalog-filters";
 import { ProductCard } from "@/features/storefront/components/product-card";
 import { SortSelect } from "@/features/storefront/components/sort-select";
@@ -61,7 +62,10 @@ async function Catalog({ params, searchParams }: Props) {
 
   return (
     <div className="space-y-8">
-      {!browsing && (
+      {!browsing && shop.branding.banners.length > 0 && (
+        <BannerSlider banners={shop.branding.banners} shopName={shop.name} />
+      )}
+      {!browsing && shop.branding.banners.length === 0 && (
         <section className="overflow-hidden rounded-3xl bg-gradient-to-br from-primary to-primary/70 px-6 py-12 text-primary-foreground sm:px-10 sm:py-16">
           <h1 className="max-w-xl text-3xl font-semibold tracking-tight sm:text-5xl">
             {shop.name}

@@ -5,7 +5,7 @@ import { after } from "next/server";
 import { cookies } from "next/headers";
 
 import { env } from "@/env";
-import { routes } from "@/config/routes";
+import { storefrontCookiePath } from "@/features/domains/cookie-path";
 import { checkoutCodeEmail } from "@/features/storefront/emails";
 import { clearCart, readDiscountCode } from "@/features/storefront/cart-cookie";
 import { getCart, getStorefrontShop } from "@/features/storefront/queries";
@@ -35,18 +35,19 @@ async function requireLiveShop(slug: string) {
 
 async function checkoutCookie(slug: string) {
   const jar = await cookies();
+  const path = await storefrontCookiePath(slug);
   return {
     get: () => jar.get(CHECKOUT_COOKIE)?.value ?? null,
     set: (id: string) =>
       jar.set(CHECKOUT_COOKIE, id, {
-        path: routes.storefront(slug),
+        path,
         httpOnly: true,
         sameSite: "lax",
         secure: env.NODE_ENV === "production",
         maxAge: 60 * 60,
       }),
     clear: async () => {
-      jar.delete({ name: CHECKOUT_COOKIE, path: routes.storefront(slug) });
+      jar.delete({ name: CHECKOUT_COOKIE, path });
       await clearCart(slug);
     },
   };
@@ -75,6 +76,7 @@ export const startCheckout = createAction({
         email: input.contact.email,
         phone,
         note: input.note || null,
+        message_opt_in: input.messageOptIn,
       },
       p_address: {
         name: input.contact.name,

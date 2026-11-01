@@ -40,6 +40,10 @@ function trustedOrigins(): string[] {
     origins.add("**.github.dev");
     const forwardingDomain = process.env.GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN;
     if (forwardingDomain) origins.add(`**.${forwardingDomain}`);
+    // Extra hosts for trying custom shop domains locally, e.g. "shop.test".
+    for (const host of (process.env.DEV_EXTRA_HOSTS ?? "").split(",")) {
+      if (host.trim()) origins.add(host.trim());
+    }
   }
   return [...origins];
 }

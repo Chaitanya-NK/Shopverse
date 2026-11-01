@@ -32,6 +32,7 @@ import {
   defaultPaymentMethod,
   PaymentMethodChoice,
 } from "@/features/payments/components/payment-method-choice";
+import { MessageOptIn } from "@/features/messaging/components/message-opt-in";
 import { useOnlineCheckout } from "@/features/payments/components/use-online-checkout";
 import { CodeInput } from "@/features/storefront/components/code-input";
 import { type CheckoutPaymentMethod, checkoutDetailsSchema } from "@/features/storefront/schemas";
@@ -45,6 +46,8 @@ const RESEND_SECONDS = 30;
 type PaymentProps = {
   paymentMethods: CheckoutPaymentMethod[];
   codLimit: number | null;
+  /** WhatsApp or SMS updates the shop offers (null: none). */
+  messageChannel?: "whatsapp" | "sms" | null;
 };
 
 export function CheckoutFlow({
@@ -53,6 +56,7 @@ export function CheckoutFlow({
   total,
   paymentMethods,
   codLimit,
+  messageChannel = null,
 }: {
   shopSlug: string;
   currency: string;
@@ -68,6 +72,7 @@ export function CheckoutFlow({
       total={total}
       paymentMethods={paymentMethods}
       codLimit={codLimit}
+      messageChannel={messageChannel}
       onSent={setSentTo}
     />
   );
@@ -79,6 +84,7 @@ function DetailsStep({
   total,
   paymentMethods,
   codLimit,
+  messageChannel,
   onSent,
 }: {
   shopSlug: string;
@@ -95,6 +101,7 @@ function DetailsStep({
       address: { line1: "", line2: "", city: "", state: "", postalCode: "" },
       note: "",
       paymentMethod: defaultPaymentMethod(paymentMethods),
+      messageOptIn: false,
     },
   });
   const paymentMethod = useWatch({ control: form.control, name: "paymentMethod" }) ?? "cod";
@@ -164,6 +171,21 @@ function DetailsStep({
               autoComplete: "tel",
               placeholder: "98765 43210",
             })}
+            {messageChannel && (
+              <div className="sm:col-span-2">
+                <Controller
+                  name="messageOptIn"
+                  control={form.control}
+                  render={({ field }) => (
+                    <MessageOptIn
+                      channel={messageChannel}
+                      checked={field.value ?? false}
+                      onCheckedChange={field.onChange}
+                    />
+                  )}
+                />
+              </div>
+            )}
           </FieldGroup>
         </CardContent>
       </Card>

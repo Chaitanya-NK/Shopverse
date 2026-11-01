@@ -9,7 +9,11 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { routes } from "@/config/routes";
 import { AccountMenu } from "@/features/shopper/components/account-menu";
 import { getShopper } from "@/features/shopper/session";
+import { InstallApp } from "@/features/storefront/components/install-app";
 import { StorefrontHeader } from "@/features/storefront/components/storefront-header";
+import { ThemeColor } from "@/features/storefront/components/theme-color";
+import { brandImageUrl } from "@/features/branding/schemas";
+import { brandTheme, brandThemeCss } from "@/features/branding/theme";
 import { STOREFRONT_POLICIES } from "@/features/storefront/policies";
 import { getCart, getStorefrontShop } from "@/features/storefront/queries";
 
@@ -19,7 +23,21 @@ export async function generateMetadata({
   const { shopSlug } = await params;
   const shop = await getStorefrontShop(shopSlug);
   if (!shop) return { title: "Shop not found" };
+  const logo = shop.branding.logo;
+  const base = shop.domain ? `https://${shop.domain}` : undefined;
   return {
+    ...(base && { metadataBase: new URL(base) }),
+    manifest: routes.storefrontManifest(shop.slug),
+    icons: logo
+      ? {
+          icon: brandImageUrl(logo.path, "logo", "small"),
+          apple: routes.storefrontIcon(shop.slug, 180),
+        }
+      : {
+          icon: routes.storefrontIcon(shop.slug, 192),
+          apple: routes.storefrontIcon(shop.slug, 180),
+        },
+    appleWebApp: { capable: true, title: shop.name, statusBarStyle: "default" },
     title: { default: shop.name, template: `%s · ${shop.name}` },
     description: shop.tagline ?? `Shop ${shop.name} online.`,
     alternates: { canonical: routes.storefront(shop.slug) },
@@ -38,6 +56,9 @@ export async function generateMetadata({
 export default function StorefrontLayout({ params, children }: LayoutProps<"/s/[shopSlug]">) {
   return (
     <div className="flex min-h-dvh flex-col bg-background">
+      <Suspense>
+        <Theme params={params} />
+      </Suspense>
       <Suspense fallback={<Skeleton className="h-16 w-full rounded-none" />}>
         <Chrome params={params} />
       </Suspense>
@@ -46,6 +67,20 @@ export default function StorefrontLayout({ params, children }: LayoutProps<"/s/[
         <Footer params={params} />
       </Suspense>
     </div>
+  );
+}
+
+/** The shop's brand colour, applied to the whole page (dialogs and toasts too). */
+async function Theme({ params }: Pick<LayoutProps<"/s/[shopSlug]">, "params">) {
+  const { shopSlug } = await params;
+  const shop = await getStorefrontShop(shopSlug);
+  if (!shop) return null;
+  const theme = brandTheme(shop.branding.color);
+  return (
+    <>
+      <ThemeColor color={theme.primary} />
+      {shop.branding.color && <style>{brandThemeCss(theme)}</style>}
+    </>
   );
 }
 
@@ -75,7 +110,10 @@ async function Chrome({ params }: Pick<LayoutProps<"/s/[shopSlug]">, "params">) 
         </p>
       )}
       <StorefrontHeader
-        shop={shop}
+        shop={{
+          ...shop,
+          logoUrl: shop.branding.logo && brandImageUrl(shop.branding.logo.path, "logo", "small"),
+        }}
         cartCount={cart.reduce((n, l) => n + l.quantity, 0)}
         account={
           shop.live && (
@@ -172,9 +210,17 @@ async function Footer({ params }: Pick<LayoutProps<"/s/[shopSlug]">, "params">) 
         </div>
       </div>
       <div className="border-t">
-        <p className="mx-auto flex max-w-6xl items-center gap-2 px-4 py-4 text-xs text-muted-foreground">
-          © {shop.name} · Powered by <Logo className="text-xs" />
-        </p>
+        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-4">
+          <p className="flex items-center gap-2 text-xs text-muted-foreground">
+            © {shop.name} · Powered by <Logo className="text-xs" />
+          </p>
+          {shop.live && (
+            <InstallApp
+              swUrl={routes.storefrontServiceWorker(shop.slug)}
+              scope={routes.storefront(shop.slug)}
+            />
+          )}
+        </div>
       </div>
     </footer>
   );

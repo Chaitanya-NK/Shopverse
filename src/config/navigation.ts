@@ -11,6 +11,7 @@ import {
   LayoutDashboardIcon,
   type LucideIcon,
   MegaphoneIcon,
+  MessageCircleIcon,
   PackageIcon,
   ShieldCheckIcon,
   ShoppingCartIcon,
@@ -55,7 +56,7 @@ export function getOrgNavigation(orgSlug: string): NavGroup[] {
       label: "Grow",
       items: [
         { title: "Customers", icon: UsersIcon, href: routes.orgCustomers(orgSlug) },
-        { title: "Marketing", icon: MegaphoneIcon },
+        { title: "Marketing", icon: MegaphoneIcon, href: routes.orgMarketing(orgSlug) },
         { title: "Discounts", icon: BadgePercentIcon, href: routes.orgDiscounts(orgSlug) },
         { title: "Reviews", icon: StarIcon, href: routes.orgReviews(orgSlug) },
         { title: "Analytics", icon: BarChart3Icon, href: routes.orgAnalytics(orgSlug) },
@@ -66,6 +67,7 @@ export function getOrgNavigation(orgSlug: string): NavGroup[] {
       items: [
         { title: "Team & security", icon: ShieldCheckIcon, href: routes.orgTeam(orgSlug) },
         { title: "Payments", icon: LandmarkIcon, href: routes.orgPayments(orgSlug) },
+        { title: "WhatsApp & SMS", icon: MessageCircleIcon, href: routes.orgMessaging(orgSlug) },
         { title: "Alerts & shipping", icon: BellIcon, href: routes.orgOperationsSettings(orgSlug) },
         { title: "Billing", icon: CreditCardIcon, href: routes.orgBilling(orgSlug) },
       ],

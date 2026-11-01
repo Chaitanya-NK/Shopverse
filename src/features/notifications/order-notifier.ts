@@ -9,6 +9,7 @@ import {
   type OrderEmailEvent,
   orderEventEmail,
 } from "@/features/notifications/templates";
+import { sendOrderMessage } from "@/features/messaging/server";
 import { REFUND_METHOD_LABELS, type RefundMethod } from "@/features/returns/schemas";
 import { logger } from "@/lib/logger";
 import { sendMail } from "@/lib/mail";
@@ -82,6 +83,7 @@ export function notifyOrder(
   event: { type: "confirmed" } | { type: "cancelled"; byCustomer: boolean },
 ) {
   after(() => deliver(orderId, event));
+  after(() => sendOrderMessage(orderId, event.type));
 }
 
 /** Shipment events; `otp` is required when the parcel goes out for delivery. */
@@ -114,6 +116,7 @@ export function notifyShipment(shipmentId: string, type: ShipmentEvent, otp?: st
               ? { type, shipmentNumber, trackingUrl }
               : { type: "delivered", shipmentNumber };
       if (event) await deliver(data.order_id, event);
+      await sendOrderMessage(data.order_id, type, { trackingUrl, otp });
     } catch (cause) {
       logger.warn({ err: cause, shipmentId, event: type }, "Shipment email failed");
     }

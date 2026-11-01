@@ -3,7 +3,7 @@ import "server-only";
 import { cookies } from "next/headers";
 
 import { env } from "@/env";
-import { routes } from "@/config/routes";
+import { storefrontCookiePath } from "@/features/domains/cookie-path";
 import { type CartLine, parseCart } from "@/features/storefront/schemas";
 
 /** The cart lives in an httpOnly cookie scoped to the shop's path. */
@@ -15,7 +15,7 @@ export async function readCartLines(): Promise<CartLine[]> {
 
 export async function writeCartLines(shopSlug: string, lines: CartLine[]) {
   (await cookies()).set(CART_COOKIE, JSON.stringify(lines), {
-    path: routes.storefront(shopSlug),
+    path: await storefrontCookiePath(shopSlug),
     httpOnly: true,
     sameSite: "lax",
     secure: env.NODE_ENV === "production",
@@ -26,8 +26,8 @@ export async function writeCartLines(shopSlug: string, lines: CartLine[]) {
 /** After an order: empty the cart and forget the applied code. */
 export async function clearCart(shopSlug: string) {
   const jar = await cookies();
-  jar.delete({ name: CART_COOKIE, path: routes.storefront(shopSlug) });
-  jar.delete({ name: DISCOUNT_COOKIE, path: routes.storefront(shopSlug) });
+  jar.delete({ name: CART_COOKIE, path: await storefrontCookiePath(shopSlug) });
+  jar.delete({ name: DISCOUNT_COOKIE, path: await storefrontCookiePath(shopSlug) });
 }
 
 /** The discount code a shopper applied (validated again at checkout). */
@@ -41,11 +41,11 @@ export async function readDiscountCode(): Promise<string | null> {
 export async function writeDiscountCode(shopSlug: string, code: string | null) {
   const jar = await cookies();
   if (!code) {
-    jar.delete({ name: DISCOUNT_COOKIE, path: routes.storefront(shopSlug) });
+    jar.delete({ name: DISCOUNT_COOKIE, path: await storefrontCookiePath(shopSlug) });
     return;
   }
   jar.set(DISCOUNT_COOKIE, code, {
-    path: routes.storefront(shopSlug),
+    path: await storefrontCookiePath(shopSlug),
     httpOnly: true,
     sameSite: "lax",
     secure: env.NODE_ENV === "production",

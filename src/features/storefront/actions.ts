@@ -1,6 +1,7 @@
 "use server";
 
 import { refresh } from "next/cache";
+import { after } from "next/server";
 import { z } from "zod";
 
 import {
@@ -8,7 +9,8 @@ import {
   writeCartLines,
   writeDiscountCode,
 } from "@/features/storefront/cart-cookie";
-import { getShopper } from "@/features/shopper/session";
+import { trackShopperCart } from "@/features/marketing/server";
+import { getShopper, readShopperToken } from "@/features/shopper/session";
 import { getQuote, getStorefrontShop } from "@/features/storefront/queries";
 import {
   cartVariantsSchema,
@@ -71,6 +73,9 @@ export const changeCart = createAction({
 
     const next = setCartLine(cart, input.variantId, quantity, input.mode);
     await writeCartLines(input.shopSlug, next);
+    // Signed-in shoppers' carts are kept for a reminder if they don't check out.
+    const token = await readShopperToken();
+    if (token) after(() => trackShopperCart(shopId, token, next));
 
     refresh();
     return { count: next.reduce((n, l) => n + l.q, 0), limited: quantity !== input.quantity };

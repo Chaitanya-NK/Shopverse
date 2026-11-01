@@ -83,6 +83,7 @@ export const signedInCheckoutSchema = z
     saveAddress: z.boolean().optional().default(true),
     note: z.string().trim().max(300, "Keep it under 300 characters").optional().default(""),
     paymentMethod: z.enum(CHECKOUT_PAYMENT_METHODS).optional().default("cod"),
+    messageOptIn: z.boolean().optional().default(false),
   })
   .superRefine((value, ctx) => {
     if (!value.addressId && !value.address)
