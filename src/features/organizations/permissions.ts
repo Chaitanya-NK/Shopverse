@@ -33,6 +33,8 @@ const CAPABILITIES = {
   "operations.settings": ["owner", "admin"],
   // Cart reminders and their numbers.
   "marketing.manage": ["owner", "admin", "manager"],
+  // The storefront's layout, pages and style.
+  "storefront.design": ["owner", "admin", "manager"],
 } as const satisfies Record<string, readonly OrgRole[]>;
 
 export type Capability = keyof typeof CAPABILITIES;

@@ -14,7 +14,7 @@ import { getShop } from "@/features/shops/queries";
 
 type Props = LayoutProps<"/app/[orgSlug]/shops/[shopId]">;
 
-/** A shop's settings, brand and domain, under one header. */
+/** A shop's settings, brand, design and domain, under one header. */
 export default function ShopLayout({ params, children }: Props) {
   return (
     <>
@@ -55,6 +55,7 @@ async function Header({ params }: Pick<Props, "params">) {
         tabs={[
           { href: routes.orgShop(orgSlug, shop.id), label: "Settings" },
           { href: routes.orgShopBrand(orgSlug, shop.id), label: "Brand" },
+          { href: routes.orgShopDesign(orgSlug, shop.id), label: "Design" },
           { href: routes.orgShopDomain(orgSlug, shop.id), label: "Domain" },
         ]}
       />

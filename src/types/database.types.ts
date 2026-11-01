@@ -925,6 +925,39 @@ export type Database = {
           },
         ];
       };
+      newsletter_subscribers: {
+        Row: {
+          created_at: string;
+          email: string;
+          id: string;
+          organization_id: string;
+          shop_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          created_at?: string;
+          email: string;
+          id?: string;
+          organization_id: string;
+          shop_id: string;
+        };
+        Update: {
+          created_at?: string;
+          email?: string;
+          id?: string;
+          organization_id?: string;
+          shop_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "newsletter_subscribers_organization_id_shop_id_fkey";
+            columns: ["organization_id", "shop_id"];
+            isOneToOne: false;
+            referencedRelation: "shops";
+            referencedColumns: ["organization_id", "id"];
+          },
+        ];
+      };
       operations_settings: {
         Row: {
           courier: string | null;
@@ -2647,6 +2680,54 @@ export type Database = {
           },
         ];
       };
+      shop_designs: {
+        Row: {
+          created_at: string;
+          draft: Json | null;
+          draft_updated_at: string | null;
+          draft_updated_by: string | null;
+          organization_id: string;
+          published: Json | null;
+          published_at: string | null;
+          published_by: string | null;
+          shop_id: string;
+          version: number;
+        };
+        ComputedFields: never;
+        Insert: {
+          created_at?: string;
+          draft?: Json | null;
+          draft_updated_at?: string | null;
+          draft_updated_by?: string | null;
+          organization_id: string;
+          published?: Json | null;
+          published_at?: string | null;
+          published_by?: string | null;
+          shop_id: string;
+          version?: number;
+        };
+        Update: {
+          created_at?: string;
+          draft?: Json | null;
+          draft_updated_at?: string | null;
+          draft_updated_by?: string | null;
+          organization_id?: string;
+          published?: Json | null;
+          published_at?: string | null;
+          published_by?: string | null;
+          shop_id?: string;
+          version?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "shop_designs_organization_id_shop_id_fkey";
+            columns: ["organization_id", "shop_id"];
+            isOneToOne: false;
+            referencedRelation: "shops";
+            referencedColumns: ["organization_id", "id"];
+          },
+        ];
+      };
       shop_products: {
         Row: {
           created_at: string;
@@ -3908,6 +3989,7 @@ export type Database = {
         };
         Returns: string;
       };
+      discard_design_draft: { Args: { p_shop_id: string; p_version: number }; Returns: number };
       disconnect_messaging: { Args: { p_organization_id: string }; Returns: undefined };
       disconnect_payment_account: { Args: { p_organization_id: string }; Returns: undefined };
       expire_unpaid_orders: { Args: { p_organization_id?: string }; Returns: number };
@@ -3962,6 +4044,7 @@ export type Database = {
         Args: { p_reply?: string; p_review_id: string; p_status: string };
         Returns: undefined;
       };
+      newsletter_subscribe: { Args: { p_email: string; p_shop_id: string }; Returns: undefined };
       operations_contacts: { Args: { p_organization_id: string }; Returns: Json };
       operations_digest: { Args: { p_now?: string; p_organization_id: string }; Returns: Json };
       order_invoice: { Args: { p_order_id: string }; Returns: Json };
@@ -3978,6 +4061,7 @@ export type Database = {
         };
         Returns: string;
       };
+      publish_design: { Args: { p_shop_id: string; p_version: number }; Returns: number };
       receive_purchase_order: {
         Args: { p_lines: Json; p_purchase_order_id: string };
         Returns: Json;
@@ -4097,6 +4181,7 @@ export type Database = {
       release_digest: { Args: { p_organization_id: string }; Returns: undefined };
       release_stock_alerts: { Args: { p_alert_ids: string[] }; Returns: undefined };
       remove_member: { Args: { p_member_id: string }; Returns: undefined };
+      remove_newsletter_subscriber: { Args: { p_id: string }; Returns: undefined };
       remove_shop_domain: { Args: { p_shop_id: string }; Returns: undefined };
       remove_stock: {
         Args: {
@@ -4158,6 +4243,10 @@ export type Database = {
       save_cart_reminder_settings: {
         Args: { p_code: string; p_delay_hours: number; p_enabled: boolean; p_shop_id: string };
         Returns: undefined;
+      };
+      save_design_draft: {
+        Args: { p_design: Json; p_shop_id: string; p_version: number };
+        Returns: number;
       };
       save_messaging_settings: {
         Args: {
@@ -4334,6 +4423,7 @@ export type Database = {
           p_max_price?: number;
           p_min_price?: number;
           p_offset?: number;
+          p_on_sale?: boolean;
           p_search?: string;
           p_shop_id: string;
           p_sort?: string;
@@ -4362,6 +4452,7 @@ export type Database = {
         Args: { p_full_buyer: boolean; p_order_token: string; p_return_id: string };
         Returns: Json;
       };
+      storefront_design: { Args: { p_preview?: boolean; p_shop_id: string }; Returns: Json };
       storefront_invoice: { Args: { p_full_buyer?: boolean; p_token: string }; Returns: Json };
       storefront_order: { Args: { p_token: string }; Returns: Json };
       storefront_policy: { Args: { p_page: string; p_slug: string }; Returns: string };
@@ -4379,6 +4470,10 @@ export type Database = {
         Returns: Json;
       };
       storefront_shop: { Args: { p_slug: string }; Returns: Json };
+      storefront_shop_reviews: {
+        Args: { p_limit?: number; p_min_rating?: number; p_shop_id: string };
+        Returns: Json;
+      };
       storefront_sitemap: { Args: { p_shop_id: string }; Returns: Json };
       storefront_variants: { Args: { p_shop_id: string; p_variant_ids: string[] }; Returns: Json };
       sync_subscription: {

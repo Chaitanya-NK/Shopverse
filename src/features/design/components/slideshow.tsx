@@ -6,14 +6,42 @@ import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
-import { type Banner, BRAND_SIZES, brandImageUrl } from "@/features/branding/schemas";
 import { cn } from "@/lib/utils";
 
+export type Slide = {
+  id: string;
+  src: string;
+  srcSet: string;
+  width: number;
+  height: number;
+  headline: string;
+  subtext: string;
+  buttonLabel: string;
+  /** Resolved link (in the shop or https), or null. */
+  href: string | null;
+  external: boolean;
+  alt: string;
+};
+
+const HEIGHTS = {
+  small: "aspect-[5/2] sm:aspect-[4/1]",
+  medium: "aspect-[2/1] sm:aspect-[3/1]",
+  large: "aspect-[4/5] sm:aspect-[16/7]",
+} as const;
+
 /**
- * The shop's homepage banners: swipe or use the arrows. No autoplay, so
+ * Wide images with a headline: swipe or use the arrows. No autoplay, so
  * nothing moves unless the shopper asks it to.
  */
-export function BannerSlider({ banners, shopName }: { banners: Banner[]; shopName: string }) {
+export function Slideshow({
+  slides: banners,
+  label,
+  height = "medium",
+}: {
+  slides: Slide[];
+  label: string;
+  height?: keyof typeof HEIGHTS;
+}) {
   const track = useRef<HTMLDivElement>(null);
   const [index, setIndex] = useState(0);
 
@@ -34,7 +62,7 @@ export function BannerSlider({ banners, shopName }: { banners: Banner[]; shopNam
   return (
     <section
       aria-roledescription="carousel"
-      aria-label={`${shopName} highlights`}
+      aria-label={label}
       className="relative overflow-hidden rounded-3xl bg-muted"
     >
       <div
@@ -45,24 +73,29 @@ export function BannerSlider({ banners, shopName }: { banners: Banner[]; shopNam
           const image = (
             <>
               <img
-                src={brandImageUrl(b.path, "banner", "large")}
-                srcSet={`${brandImageUrl(b.path, "banner", "small")} ${BRAND_SIZES.banner.small}w, ${brandImageUrl(b.path, "banner", "large")} ${BRAND_SIZES.banner.large}w`}
-                sizes="(min-width: 1152px) 1152px, 100vw"
+                src={b.src}
+                srcSet={b.srcSet}
+                sizes="(min-width: 1280px) 1280px, 100vw"
                 alt={b.alt}
                 width={b.width}
                 height={b.height}
                 fetchPriority={i === 0 ? "high" : "low"}
                 loading={i === 0 ? "eager" : "lazy"}
-                className="aspect-[2/1] w-full object-cover sm:aspect-[3/1]"
+                className={cn("w-full object-cover", HEIGHTS[height] ?? HEIGHTS.medium)}
               />
-              {(b.headline || b.subtext) && (
+              {(b.headline || b.subtext || (b.buttonLabel && b.href)) && (
                 <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent p-5 text-white sm:p-8">
                   {b.headline && (
-                    <p className="max-w-xl text-2xl font-semibold tracking-tight sm:text-4xl">
+                    <p className="sv-heading max-w-xl text-2xl font-semibold tracking-tight sm:text-4xl">
                       {b.headline}
                     </p>
                   )}
                   {b.subtext && <p className="mt-1 max-w-xl sm:text-lg">{b.subtext}</p>}
+                  {b.buttonLabel && b.href && (
+                    <span className="mt-4 inline-flex h-10 items-center rounded-md bg-white px-5 text-sm font-medium text-black">
+                      {b.buttonLabel}
+                    </span>
+                  )}
                 </div>
               )}
             </>
@@ -75,11 +108,21 @@ export function BannerSlider({ banners, shopName }: { banners: Banner[]; shopNam
               aria-label={`${i + 1} of ${banners.length}`}
               className="relative w-full shrink-0 snap-start"
             >
-              {b.link ? (
-                <Link
-                  href={b.link}
+              {b.href && b.external ? (
+                <a
+                  href={b.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="block"
-                  aria-label={b.headline || b.alt || `Banner ${i + 1}`}
+                  aria-label={b.headline || b.alt || `Slide ${i + 1}`}
+                >
+                  {image}
+                </a>
+              ) : b.href ? (
+                <Link
+                  href={b.href}
+                  className="block"
+                  aria-label={b.headline || b.alt || `Slide ${i + 1}`}
                 >
                   {image}
                 </Link>
@@ -95,7 +138,7 @@ export function BannerSlider({ banners, shopName }: { banners: Banner[]; shopNam
           <Button
             size="icon"
             variant="secondary"
-            aria-label="Previous banner"
+            aria-label="Previous slide"
             disabled={index === 0}
             onClick={() => go(index - 1)}
             className="absolute top-1/2 left-3 hidden -translate-y-1/2 rounded-full opacity-90 sm:inline-flex"
@@ -105,7 +148,7 @@ export function BannerSlider({ banners, shopName }: { banners: Banner[]; shopNam
           <Button
             size="icon"
             variant="secondary"
-            aria-label="Next banner"
+            aria-label="Next slide"
             disabled={index === banners.length - 1}
             onClick={() => go(index + 1)}
             className="absolute top-1/2 right-3 hidden -translate-y-1/2 rounded-full opacity-90 sm:inline-flex"
@@ -117,7 +160,7 @@ export function BannerSlider({ banners, shopName }: { banners: Banner[]; shopNam
               <button
                 key={b.id}
                 type="button"
-                aria-label={`Show banner ${i + 1}`}
+                aria-label={`Show slide ${i + 1}`}
                 aria-current={i === index}
                 onClick={() => go(i)}
                 className={cn(

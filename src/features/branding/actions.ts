@@ -4,16 +4,12 @@ import { refresh } from "next/cache";
 import { z } from "zod";
 
 import {
-  bannerRefSchema,
-  bannerTextSchema,
   BRAND_SIZES,
   type BrandImageKind,
   brandColorSchema,
   brandObjectKey,
   type Branding,
   brandingSchema,
-  MAX_BANNERS,
-  moveBannerSchema,
   shopRefSchema,
 } from "@/features/branding/schemas";
 import { DEFAULT_BRAND_COLOR } from "@/features/branding/theme";
@@ -99,7 +95,7 @@ export const saveBrandColor = createAction({
 const uploadSchema = z.object({
   organizationSlug: slugSchema,
   shopId: z.uuid(),
-  kind: z.enum(["logo", "banner"]),
+  kind: z.enum(["logo"]),
   file: z
     .instanceof(File, { message: "Choose an image" })
     .refine((f) => f.size > 0, "This file is empty")
@@ -110,14 +106,12 @@ const uploadSchema = z.object({
     ),
 });
 
-/** Upload the logo (replacing the old one) or add a banner. */
+/** Upload the logo, replacing the old one. (Banners are sections in the shop's design now.) */
 export const uploadBrandImage = createAction({
   name: "branding.upload",
   schema: uploadSchema,
   handler: async (input, { supabase, user }) => {
     const shop = await loadShop(supabase, user.id, input.organizationSlug, input.shopId);
-    if (input.kind === "banner" && shop.branding.banners.length >= MAX_BANNERS)
-      throw Errors.validation({ file: [`A shop can have up to ${MAX_BANNERS} banners`] });
 
     const sizes = BRAND_SIZES[input.kind];
     const source = Buffer.from(await input.file.arrayBuffer());
@@ -125,10 +119,6 @@ export const uploadBrandImage = createAction({
       toWebp(source, sizes.large, 85),
       toWebp(source, sizes.small, 80),
     ]);
-    if (input.kind === "banner" && large.width < large.height)
-      throw Errors.validation({
-        file: ["Banners should be wider than they are tall (for example 1920 × 640)."],
-      });
 
     const id = crypto.randomUUID();
     const path = `${shop.organizationId}/shops/${shop.shopId}/${id}`;
@@ -150,24 +140,14 @@ export const uploadBrandImage = createAction({
     }
 
     const image = { path, width: large.width, height: large.height };
-    const next: Branding =
-      input.kind === "logo"
-        ? { ...shop.branding, logo: image }
-        : {
-            ...shop.branding,
-            banners: [
-              ...shop.branding.banners,
-              { ...image, id, headline: "", subtext: "", link: "", alt: "" },
-            ],
-          };
+    const next: Branding = { ...shop.branding, logo: image };
     try {
       await save(supabase, shop.shopId, next);
     } catch (cause) {
       await removeFiles(input.kind, path);
       throw cause;
     }
-    if (input.kind === "logo" && shop.branding.logo)
-      await removeFiles("logo", shop.branding.logo.path);
+    if (shop.branding.logo) await removeFiles("logo", shop.branding.logo.path);
     return { path };
   },
 });
@@ -180,62 +160,6 @@ export const removeLogo = createAction({
     if (!shop.branding.logo) return null;
     await save(supabase, shop.shopId, { ...shop.branding, logo: null });
     await removeFiles("logo", shop.branding.logo.path);
-    return null;
-  },
-});
-
-export const updateBanner = createAction({
-  name: "branding.updateBanner",
-  schema: bannerTextSchema,
-  handler: async (input, { supabase, user }) => {
-    const shop = await loadShop(supabase, user.id, input.organizationSlug, input.shopId);
-    if (!shop.branding.banners.some((b) => b.id === input.bannerId))
-      throw Errors.notFound("Banner");
-    await save(supabase, shop.shopId, {
-      ...shop.branding,
-      banners: shop.branding.banners.map((b) =>
-        b.id === input.bannerId
-          ? {
-              ...b,
-              headline: input.headline,
-              subtext: input.subtext,
-              link: input.link,
-              alt: input.alt,
-            }
-          : b,
-      ),
-    });
-    return null;
-  },
-});
-
-export const moveBanner = createAction({
-  name: "branding.moveBanner",
-  schema: moveBannerSchema,
-  handler: async (input, { supabase, user }) => {
-    const shop = await loadShop(supabase, user.id, input.organizationSlug, input.shopId);
-    const banners = [...shop.branding.banners];
-    const from = banners.findIndex((b) => b.id === input.bannerId);
-    const to = from + (input.direction === "up" ? -1 : 1);
-    if (from < 0 || to < 0 || to >= banners.length) return null;
-    [banners[from], banners[to]] = [banners[to]!, banners[from]!];
-    await save(supabase, shop.shopId, { ...shop.branding, banners });
-    return null;
-  },
-});
-
-export const removeBanner = createAction({
-  name: "branding.removeBanner",
-  schema: bannerRefSchema,
-  handler: async (input, { supabase, user }) => {
-    const shop = await loadShop(supabase, user.id, input.organizationSlug, input.shopId);
-    const banner = shop.branding.banners.find((b) => b.id === input.bannerId);
-    if (!banner) return null;
-    await save(supabase, shop.shopId, {
-      ...shop.branding,
-      banners: shop.branding.banners.filter((b) => b.id !== input.bannerId),
-    });
-    await removeFiles("banner", banner.path);
     return null;
   },
 });

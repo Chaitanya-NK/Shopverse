@@ -20,7 +20,7 @@ export function ProductCard({
   action?: React.ReactNode;
 }) {
   return (
-    <div className="relative">
+    <div className="sv-card relative">
       {action}
       <Link
         href={routes.storefrontProduct(shopSlug, product.slug)}
@@ -33,7 +33,8 @@ export function ProductCard({
             seed={product.id}
             industry={product.industry}
             className={cn(
-              "transition-transform duration-300 group-hover:scale-[1.02]",
+              // Photo shape from the shop's design (square unless it chose otherwise).
+              "aspect-[var(--sv-ratio,1/1)] transition-transform duration-300 group-hover:scale-[1.02]",
               !product.inStock && "opacity-60",
             )}
           />

@@ -4,6 +4,7 @@ import { Suspense } from "react";
 import { z } from "zod";
 
 import { Skeleton } from "@/components/ui/skeleton";
+import { routes } from "@/config/routes";
 import { BrandEditor } from "@/features/branding/components/brand-editor";
 import { can } from "@/features/organizations/permissions";
 import { requireMembership } from "@/features/organizations/queries";
@@ -39,6 +40,7 @@ async function ShopBrand({ params }: Pick<Props, "params">) {
       shopId={shop.id}
       shopName={shop.name}
       branding={shop.branding}
+      designHref={routes.orgShopDesign(orgSlug, shop.id)}
     />
   );
 }

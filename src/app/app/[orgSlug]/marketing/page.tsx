@@ -1,4 +1,11 @@
-import { IndianRupeeIcon, MailIcon, RotateCcwIcon, ShoppingCartIcon } from "lucide-react";
+import {
+  DownloadIcon,
+  IndianRupeeIcon,
+  MailIcon,
+  MailPlusIcon,
+  RotateCcwIcon,
+  ShoppingCartIcon,
+} from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
@@ -6,6 +13,7 @@ import { Suspense } from "react";
 import { PageHeader } from "@/components/shared/page-header";
 import { StatCard } from "@/components/shared/stat-card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Empty,
@@ -25,7 +33,12 @@ import {
 } from "@/components/ui/table";
 import { routes } from "@/config/routes";
 import { CartReminderForm } from "@/features/marketing/components/cart-reminder-form";
-import { getCartRecoveryStats, listCartRecoveries } from "@/features/marketing/queries";
+import { RemoveSubscriberButton } from "@/features/marketing/components/remove-subscriber-button";
+import {
+  getCartRecoveryStats,
+  listCartRecoveries,
+  listNewsletterSubscribers,
+} from "@/features/marketing/queries";
 import { CART_STATUS_LABELS } from "@/features/marketing/schemas";
 import { can } from "@/features/organizations/permissions";
 import { requireMembership } from "@/features/organizations/queries";
@@ -47,7 +60,10 @@ const timeFormat = new Intl.DateTimeFormat("en-IN", {
 export default function MarketingPage({ params }: Props) {
   return (
     <>
-      <PageHeader title="Marketing" description="Win back shoppers who leave without ordering." />
+      <PageHeader
+        title="Marketing"
+        description="Win back shoppers who leave without ordering, and grow your mailing list."
+      />
       <Suspense fallback={<Skeleton className="h-96 rounded-xl" />}>
         <Marketing params={params} />
       </Suspense>
@@ -64,10 +80,11 @@ async function Marketing({ params }: Pick<Props, "params">) {
         Only owners, admins and managers can see marketing.
       </p>
     );
-  const [stats, carts, shops] = await Promise.all([
+  const [stats, carts, shops, subscribers] = await Promise.all([
     getCartRecoveryStats(organization.id),
     listCartRecoveries(organization.id),
     listShops(organization.id),
+    listNewsletterSubscribers(organization.id),
   ]);
   const shopName = new Map(shops.map((s) => [s.id, s.name]));
   const anyOn = shops.some((s) => s.cartReminders.enabled);
@@ -184,6 +201,74 @@ async function Marketing({ params }: Pick<Props, "params">) {
                             {c.status === "reminded" && c.clickedAt ? " · opened" : ""}
                           </Badge>
                         )}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-3">
+          <div className="space-y-1.5">
+            <CardTitle>Newsletter sign-ups</CardTitle>
+            <CardDescription>
+              {formatNumber(subscribers.total)} from the Newsletter sections in your shops&apos;
+              designs. Download them for your email tool.
+            </CardDescription>
+          </div>
+          {subscribers.total > 0 && (
+            <Button asChild variant="outline" size="sm">
+              <a href={routes.orgMarketingSubscribersCsv(orgSlug)} download>
+                <DownloadIcon />
+                Download CSV
+              </a>
+            </Button>
+          )}
+        </CardHeader>
+        <CardContent>
+          {subscribers.items.length === 0 ? (
+            <Empty className="border">
+              <EmptyHeader>
+                <EmptyMedia variant="icon">
+                  <MailPlusIcon />
+                </EmptyMedia>
+                <EmptyTitle>No sign-ups yet</EmptyTitle>
+                <EmptyDescription>
+                  Add a Newsletter sign-up section to a shop in Shops → Design.
+                </EmptyDescription>
+              </EmptyHeader>
+            </Empty>
+          ) : (
+            <div className="overflow-x-auto rounded-lg border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Email</TableHead>
+                    <TableHead>Shop</TableHead>
+                    <TableHead>Signed up</TableHead>
+                    <TableHead className="w-10">
+                      <span className="sr-only">Actions</span>
+                    </TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {subscribers.items.map((s) => (
+                    <TableRow key={s.id}>
+                      <TableCell className="font-medium">{s.email}</TableCell>
+                      <TableCell>{shopName.get(s.shopId) ?? "—"}</TableCell>
+                      <TableCell className="text-sm whitespace-nowrap text-muted-foreground">
+                        {timeFormat.format(new Date(s.createdAt))}
+                      </TableCell>
+                      <TableCell>
+                        <RemoveSubscriberButton
+                          organizationSlug={orgSlug}
+                          id={s.id}
+                          email={s.email}
+                        />
                       </TableCell>
                     </TableRow>
                   ))}

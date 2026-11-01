@@ -80,3 +80,58 @@ export const listCartRecoveries = cache(
     }));
   },
 );
+
+export type NewsletterSubscriber = { id: string; shopId: string; email: string; createdAt: string };
+
+/** Newsletter sign-ups from the shops' newsletter sections (RLS: managers and up). */
+export const listNewsletterSubscribers = cache(
+  async (
+    organizationId: string,
+    limit = 50,
+  ): Promise<{ total: number; items: NewsletterSubscriber[] }> => {
+    const supabase = await createClient();
+    const { data, error, count } = await supabase
+      .from("newsletter_subscribers")
+      .select("id, shop_id, email, created_at", { count: "exact" })
+      .eq("organization_id", organizationId)
+      .order("created_at", { ascending: false })
+      .limit(limit);
+    if (error) throw fromPostgrestError(error);
+    return {
+      total: count ?? 0,
+      items: (data ?? []).map((r) => ({
+        id: r.id,
+        shopId: r.shop_id,
+        email: r.email,
+        createdAt: r.created_at,
+      })),
+    };
+  },
+);
+
+/** All sign-ups, a page at a time (the API returns at most 1,000 rows per request). */
+export async function listAllNewsletterSubscribers(
+  organizationId: string,
+): Promise<NewsletterSubscriber[]> {
+  const supabase = await createClient();
+  const all: NewsletterSubscriber[] = [];
+  for (let from = 0; ; from += 1000) {
+    const { data, error } = await supabase
+      .from("newsletter_subscribers")
+      .select("id, shop_id, email, created_at")
+      .eq("organization_id", organizationId)
+      .order("created_at", { ascending: true })
+      .order("id")
+      .range(from, from + 999);
+    if (error) throw fromPostgrestError(error);
+    all.push(
+      ...(data ?? []).map((r) => ({
+        id: r.id,
+        shopId: r.shop_id,
+        email: r.email,
+        createdAt: r.created_at,
+      })),
+    );
+    if (!data || data.length < 1000) return all;
+  }
+}

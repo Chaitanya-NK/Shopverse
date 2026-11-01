@@ -42,13 +42,14 @@ export const getCatalog = cache(
     filters: {
       category: string | null;
       q: string;
-      sort: CatalogSort | "featured";
+      sort: CatalogSort | "featured" | "bestselling";
       page: number;
       min?: number | null;
       max?: number | null;
       stock?: boolean;
       collection?: string | null;
       limit?: number;
+      onSale?: boolean;
     },
   ) => {
     const supabase = await createClient();
@@ -64,6 +65,7 @@ export const getCatalog = cache(
       p_max_price: typeof filters.max === "number" && filters.max >= 0 ? filters.max : undefined,
       p_in_stock: filters.stock || undefined,
       p_collection_id: filters.collection ?? undefined,
+      p_on_sale: filters.onSale || undefined,
     });
     if (error) throw fromPostgrestError(error);
     const catalog = catalogSchema.parse(data);
@@ -170,6 +172,30 @@ export const getStorefrontCollections = cache(async (shopId: string) => {
   const { data, error } = await supabase.rpc("storefront_collections", { p_shop_id: shopId });
   if (error) throw fromPostgrestError(error);
   return storefrontCollectionsSchema.parse(data ?? []);
+});
+
+/** The shop's best reviews, newest first, for a reviews section. */
+export const getShopReviews = cache(async (shopId: string, minRating: number, limit: number) => {
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("storefront_shop_reviews", {
+    p_shop_id: shopId,
+    p_min_rating: minRating,
+    p_limit: limit,
+  });
+  if (error) throw fromPostgrestError(error);
+  return z
+    .array(
+      z.object({
+        rating: z.number(),
+        title: z.string().nullable(),
+        body: z.string().nullable(),
+        author: z.string(),
+        created_at: z.string(),
+        product_title: z.string(),
+        product_slug: z.string(),
+      }),
+    )
+    .parse(data ?? []);
 });
 
 /** "You may also like": same category, shared tags or collections. */

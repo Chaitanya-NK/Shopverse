@@ -2,15 +2,13 @@
 
 /* eslint-disable @next/next/no-img-element -- previews of fresh uploads */
 import {
-  ArrowDownIcon,
-  ArrowUpIcon,
   CheckIcon,
-  ImagePlusIcon,
-  PencilIcon,
+  LayoutTemplateIcon,
   Trash2Icon,
   TriangleAlertIcon,
   UploadIcon,
 } from "lucide-react";
+import Link from "next/link";
 import { useRef, useState, useTransition } from "react";
 import { toast } from "sonner";
 
@@ -18,34 +16,11 @@ import { ConfirmDialog } from "@/components/shared/confirm-dialog";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Dialog,
-  DialogClose,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
+import { Field, FieldError, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
-import {
-  moveBanner,
-  removeBanner,
-  removeLogo,
-  saveBrandColor,
-  updateBanner,
-  uploadBrandImage,
-} from "@/features/branding/actions";
-import {
-  type Banner,
-  type BrandImageKind,
-  brandImageUrl,
-  type Branding,
-  MAX_BANNERS,
-} from "@/features/branding/schemas";
+import { removeLogo, saveBrandColor, uploadBrandImage } from "@/features/branding/actions";
+import { brandImageUrl, type Branding } from "@/features/branding/schemas";
 import {
   BRAND_PRESETS,
   brandTheme,
@@ -56,14 +31,36 @@ import { ACCEPTED_IMAGE_TYPES } from "@/features/products/images";
 import { initials } from "@/lib/format";
 import { shrinkImage } from "@/lib/images/shrink";
 
-type Props = { organizationSlug: string; shopId: string; shopName: string; branding: Branding };
+type Props = {
+  organizationSlug: string;
+  shopId: string;
+  shopName: string;
+  branding: Branding;
+  designHref: string;
+};
 
 export function BrandEditor(props: Props) {
   return (
     <div className="space-y-6">
       <ColorCard {...props} />
       <LogoCard {...props} />
-      <BannersCard {...props} />
+      <Card>
+        <CardHeader>
+          <CardTitle>Banners, layout and fonts</CardTitle>
+          <CardDescription>
+            Homepage banners are a Slideshow section in the shop&apos;s design, next to everything
+            else on its pages.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Button asChild variant="outline">
+            <Link href={props.designHref}>
+              <LayoutTemplateIcon />
+              Open the design editor
+            </Link>
+          </Button>
+        </CardContent>
+      </Card>
     </div>
   );
 }
@@ -177,7 +174,7 @@ function ColorCard({ organizationSlug, shopId, shopName, branding }: Props) {
   );
 }
 
-function useUpload(organizationSlug: string, shopId: string, kind: BrandImageKind) {
+function useUpload(organizationSlug: string, shopId: string, kind: "logo") {
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const upload = (file: File, done: string) =>
@@ -302,205 +299,5 @@ function LogoCard({ organizationSlug, shopId, shopName, branding }: Props) {
         )}
       </CardContent>
     </Card>
-  );
-}
-
-function BannersCard({ organizationSlug, shopId, branding }: Props) {
-  const { upload, isPending, error } = useUpload(organizationSlug, shopId, "banner");
-  const [moving, startMoving] = useTransition();
-  const banners = branding.banners;
-  const move = (b: Banner, direction: "up" | "down") =>
-    startMoving(async () => {
-      const result = await moveBanner({ organizationSlug, shopId, bannerId: b.id, direction });
-      if (!result.ok) toast.error(result.error.message);
-    });
-
-  return (
-    <Card>
-      <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-3">
-        <div className="space-y-1.5">
-          <CardTitle>Homepage banners</CardTitle>
-          <CardDescription>
-            Up to {MAX_BANNERS} wide images (about 1920 × 640) at the top of your shop, each with an
-            optional headline and link. Shoppers swipe between them.
-          </CardDescription>
-        </div>
-        <FilePicker
-          label="Add banner"
-          icon={<ImagePlusIcon />}
-          pending={isPending}
-          disabled={banners.length >= MAX_BANNERS}
-          onFile={(f) => upload(f, "Banner added")}
-        />
-      </CardHeader>
-      <CardContent className="space-y-3">
-        {error && (
-          <p role="alert" className="text-sm text-destructive">
-            {error}
-          </p>
-        )}
-        {banners.length === 0 ? (
-          <p className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">
-            No banners yet. Without one, the shop shows its name and tagline in your colour.
-          </p>
-        ) : (
-          <ol className="space-y-3" aria-busy={moving}>
-            {banners.map((b, i) => (
-              <li key={b.id} className="flex flex-wrap items-center gap-3 rounded-lg border p-2">
-                <img
-                  src={brandImageUrl(b.path, "banner", "small")}
-                  alt={b.alt || "Banner"}
-                  className="aspect-[3/1] w-48 rounded-md object-cover"
-                />
-                <div className="min-w-0 flex-1 text-sm">
-                  <p className="truncate font-medium">{b.headline || "No headline"}</p>
-                  <p className="truncate text-muted-foreground">{b.link || "No link"}</p>
-                </div>
-                <div className="flex gap-1">
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    aria-label={`Move banner ${i + 1} up`}
-                    disabled={i === 0 || moving}
-                    onClick={() => move(b, "up")}
-                  >
-                    <ArrowUpIcon />
-                  </Button>
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    aria-label={`Move banner ${i + 1} down`}
-                    disabled={i === banners.length - 1 || moving}
-                    onClick={() => move(b, "down")}
-                  >
-                    <ArrowDownIcon />
-                  </Button>
-                  <BannerDialog
-                    organizationSlug={organizationSlug}
-                    shopId={shopId}
-                    banner={b}
-                    index={i}
-                  />
-                  <ConfirmDialog
-                    title={`Remove banner ${i + 1}?`}
-                    description="The image is deleted from your shop."
-                    confirmLabel="Remove banner"
-                    trigger={
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        aria-label={`Remove banner ${i + 1}`}
-                        className="text-destructive hover:text-destructive"
-                      >
-                        <Trash2Icon />
-                      </Button>
-                    }
-                    onConfirm={async () => {
-                      const result = await removeBanner({
-                        organizationSlug,
-                        shopId,
-                        bannerId: b.id,
-                      });
-                      if (!result.ok) {
-                        toast.error(result.error.message);
-                        return false;
-                      }
-                      toast.success("Banner removed");
-                      return true;
-                    }}
-                  />
-                </div>
-              </li>
-            ))}
-          </ol>
-        )}
-      </CardContent>
-    </Card>
-  );
-}
-
-function BannerDialog({
-  organizationSlug,
-  shopId,
-  banner,
-  index,
-}: {
-  organizationSlug: string;
-  shopId: string;
-  banner: Banner;
-  index: number;
-}) {
-  const [open, setOpen] = useState(false);
-  const [values, setValues] = useState({
-    headline: banner.headline,
-    subtext: banner.subtext,
-    link: banner.link,
-    alt: banner.alt,
-  });
-  const [errors, setErrors] = useState<Record<string, string[]>>({});
-  const [isPending, startTransition] = useTransition();
-  const field = (key: keyof typeof values, label: string, hint?: string) => (
-    <Field data-invalid={Boolean(errors[key])}>
-      <FieldLabel htmlFor={`banner-${key}`}>{label}</FieldLabel>
-      <Input
-        id={`banner-${key}`}
-        value={values[key]}
-        onChange={(e) => setValues((v) => ({ ...v, [key]: e.target.value }))}
-        aria-invalid={Boolean(errors[key])}
-      />
-      {hint && <FieldDescription>{hint}</FieldDescription>}
-      {errors[key] && <FieldError>{errors[key][0]}</FieldError>}
-    </Field>
-  );
-
-  return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button size="icon" variant="ghost" aria-label={`Edit banner ${index + 1}`}>
-          <PencilIcon />
-        </Button>
-      </DialogTrigger>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Banner {index + 1}</DialogTitle>
-          <DialogDescription>Everything here is optional.</DialogDescription>
-        </DialogHeader>
-        <FieldGroup className="gap-4">
-          {field("headline", "Headline")}
-          {field("subtext", "Text under the headline")}
-          {field("link", "Link", "A page in your shop (/s/...) or a full https:// address.")}
-          {field("alt", "Image description", "For screen readers, if the image says something.")}
-        </FieldGroup>
-        <DialogFooter>
-          <DialogClose asChild>
-            <Button variant="outline">Cancel</Button>
-          </DialogClose>
-          <Button
-            disabled={isPending}
-            onClick={() =>
-              startTransition(async () => {
-                const result = await updateBanner({
-                  organizationSlug,
-                  shopId,
-                  bannerId: banner.id,
-                  ...values,
-                });
-                if (!result.ok) {
-                  setErrors({ ...result.error.fieldErrors } as Record<string, string[]>);
-                  if (!result.error.fieldErrors) toast.error(result.error.message);
-                  return;
-                }
-                setErrors({});
-                toast.success("Banner saved");
-                setOpen(false);
-              })
-            }
-          >
-            {isPending && <Spinner />}
-            Save banner
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
   );
 }

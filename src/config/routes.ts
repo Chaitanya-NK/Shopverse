@@ -14,8 +14,10 @@ export const routes = {
   orgShops: (orgSlug: string) => `/app/${orgSlug}/shops`,
   orgShop: (orgSlug: string, shopId: string) => `/app/${orgSlug}/shops/${shopId}`,
   orgShopBrand: (orgSlug: string, shopId: string) => `/app/${orgSlug}/shops/${shopId}/brand`,
+  orgShopDesign: (orgSlug: string, shopId: string) => `/app/${orgSlug}/shops/${shopId}/design`,
   orgShopDomain: (orgSlug: string, shopId: string) => `/app/${orgSlug}/shops/${shopId}/domain`,
   orgMarketing: (orgSlug: string) => `/app/${orgSlug}/marketing`,
+  orgMarketingSubscribersCsv: (orgSlug: string) => `/app/${orgSlug}/marketing/subscribers.csv`,
   orgMessaging: (orgSlug: string) => `/app/${orgSlug}/settings/messaging`,
   orgCategories: (orgSlug: string) => `/app/${orgSlug}/categories`,
   orgWarehouses: (orgSlug: string) => `/app/${orgSlug}/warehouses`,
@@ -39,9 +41,20 @@ export const routes = {
     `/s/${shopSlug}/cart/restore/${token}`,
   storefrontCartStop: (shopSlug: string, token: string) => `/s/${shopSlug}/cart/stop/${token}`,
   storefrontSearch: (shopSlug: string, query: string) =>
-    `/s/${shopSlug}?q=${encodeURIComponent(query)}`,
+    `/s/${shopSlug}/products?q=${encodeURIComponent(query)}`,
   storefrontCategory: (shopSlug: string, categoryId: string) =>
-    `/s/${shopSlug}?category=${categoryId}`,
+    `/s/${shopSlug}/products?category=${categoryId}`,
+  /** Every product, with search, categories and filters. */
+  storefrontProducts: (shopSlug: string, params: { category?: string; q?: string } = {}) => {
+    const query = new URLSearchParams(
+      Object.entries(params).filter((e): e is [string, string] => Boolean(e[1])),
+    ).toString();
+    return `/s/${shopSlug}/products${query ? `?${query}` : ""}`;
+  },
+  storefrontPreview: (shopSlug: string, to?: string) =>
+    `/s/${shopSlug}/preview${to ? `?to=${encodeURIComponent(to)}` : ""}`,
+  storefrontPreviewExit: (shopSlug: string) => `/s/${shopSlug}/preview?exit=1`,
+  storefrontCustomPage: (shopSlug: string, handle: string) => `/s/${shopSlug}/pages/${handle}`,
   storefrontProduct: (shopSlug: string, productSlug: string) => `/s/${shopSlug}/p/${productSlug}`,
   storefrontCart: (shopSlug: string) => `/s/${shopSlug}/cart`,
   storefrontCheckout: (shopSlug: string) => `/s/${shopSlug}/checkout`,

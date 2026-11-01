@@ -1,5 +1,6 @@
 import { env } from "@/env";
 import { routes } from "@/config/routes";
+import { getPublishedDesign } from "@/features/design/queries";
 import { escapeHtml } from "@/lib/html";
 import {
   getSitemapProducts,
@@ -7,22 +8,25 @@ import {
   getStorefrontShop,
 } from "@/features/storefront/queries";
 
-/** A live shop's sitemap: home, contact, policy pages, collections and every product. */
+/** A live shop's sitemap: home, all products, contact, its pages, collections and every product. */
 export async function GET(_request: Request, ctx: RouteContext<"/s/[shopSlug]/sitemap.xml">) {
   const { shopSlug } = await ctx.params;
   const shop = await getStorefrontShop(shopSlug);
   if (!shop || !shop.live) return new Response("Not found", { status: 404 });
 
-  const [products, collections] = await Promise.all([
+  const [products, collections, design] = await Promise.all([
     getSitemapProducts(shop.id),
     getStorefrontCollections(shop.id),
+    getPublishedDesign(shop),
   ]);
   // On its own domain, the shop's pages are listed there.
   const origin = shop.domain ? `https://${shop.domain}` : env.NEXT_PUBLIC_APP_URL;
   const abs = (path: string) => new URL(path, origin).toString();
   const entries = [
     { loc: abs(routes.storefront(shop.slug)), lastmod: products[0]?.updated_at },
+    { loc: abs(routes.storefrontProducts(shop.slug)) },
     { loc: abs(routes.storefrontContact(shop.slug)) },
+    ...design.pages.map((p) => ({ loc: abs(routes.storefrontCustomPage(shop.slug, p.handle)) })),
     ...shop.policies.map((p) => ({ loc: abs(routes.storefrontPolicy(shop.slug, p)) })),
     ...collections.map((c) => ({ loc: abs(routes.storefrontCollection(shop.slug, c.slug)) })),
     ...products.map((p) => ({

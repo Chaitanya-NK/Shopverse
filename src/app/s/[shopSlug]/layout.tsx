@@ -1,20 +1,30 @@
-import { EyeIcon, MailIcon, PhoneIcon } from "lucide-react";
+import "@fontsource-variable/dm-sans/wght.css";
+import "@fontsource-variable/fraunces/wght.css";
+import "@fontsource-variable/lora/wght.css";
+import "@fontsource-variable/nunito/wght.css";
+import "@fontsource-variable/playfair-display/wght.css";
+import "@fontsource-variable/space-grotesk/wght.css";
+
+import { EyeIcon } from "lucide-react";
 import type { Metadata } from "next";
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 
-import { Logo } from "@/components/shared/logo";
 import { Skeleton } from "@/components/ui/skeleton";
 import { routes } from "@/config/routes";
-import { AccountMenu } from "@/features/shopper/components/account-menu";
-import { getShopper } from "@/features/shopper/session";
-import { InstallApp } from "@/features/storefront/components/install-app";
-import { StorefrontHeader } from "@/features/storefront/components/storefront-header";
-import { ThemeColor } from "@/features/storefront/components/theme-color";
 import { brandImageUrl } from "@/features/branding/schemas";
 import { brandTheme, brandThemeCss } from "@/features/branding/theme";
-import { STOREFRONT_POLICIES } from "@/features/storefront/policies";
+import { PreviewBridge } from "@/features/design/components/preview-bridge";
+import { getStorefrontDesign } from "@/features/design/queries";
+import {
+  StorefrontAnnouncement,
+  StorefrontFooter,
+  StorefrontHeader,
+} from "@/features/design/render/chrome";
+import { designCss } from "@/features/design/style";
+import { AccountMenu } from "@/features/shopper/components/account-menu";
+import { getShopper } from "@/features/shopper/session";
+import { ThemeColor } from "@/features/storefront/components/theme-color";
 import { getCart, getStorefrontShop } from "@/features/storefront/queries";
 
 export async function generateMetadata({
@@ -62,7 +72,9 @@ export default function StorefrontLayout({ params, children }: LayoutProps<"/s/[
       <Suspense fallback={<Skeleton className="h-16 w-full rounded-none" />}>
         <Chrome params={params} />
       </Suspense>
-      <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-8 print:p-0">{children}</main>
+      <main className="mx-auto w-full max-w-(--sv-width) flex-1 px-4 py-8 print:p-0">
+        {children}
+      </main>
       <Suspense>
         <Footer params={params} />
       </Suspense>
@@ -70,16 +82,19 @@ export default function StorefrontLayout({ params, children }: LayoutProps<"/s/[
   );
 }
 
-/** The shop's brand colour, applied to the whole page (dialogs and toasts too). */
+/** The shop's brand colour and design style, applied to the whole page (dialogs and toasts too). */
 async function Theme({ params }: Pick<LayoutProps<"/s/[shopSlug]">, "params">) {
   const { shopSlug } = await params;
   const shop = await getStorefrontShop(shopSlug);
   if (!shop) return null;
   const theme = brandTheme(shop.branding.color);
+  const { design, preview } = await getStorefrontDesign(shop);
   return (
     <>
       <ThemeColor color={theme.primary} />
       {shop.branding.color && <style>{brandThemeCss(theme)}</style>}
+      <style>{designCss(design.style)}</style>
+      {preview && <PreviewBridge exitHref={routes.storefrontPreviewExit(shop.slug)} />}
     </>
   );
 }
@@ -88,7 +103,11 @@ async function Chrome({ params }: Pick<LayoutProps<"/s/[shopSlug]">, "params">) 
   const { shopSlug } = await params;
   const shop = await getStorefrontShop(shopSlug);
   if (!shop) notFound();
-  const [cart, shopper] = await Promise.all([getCart(shop.id), getShopper(shop.id)]);
+  const [cart, shopper, { design }] = await Promise.all([
+    getCart(shop.id),
+    getShopper(shop.id),
+    getStorefrontDesign(shop),
+  ]);
 
   return (
     <>
@@ -98,22 +117,10 @@ async function Chrome({ params }: Pick<LayoutProps<"/s/[shopSlug]">, "params">) 
           Preview: this shop isn&apos;t live yet. Only your team can see it.
         </p>
       )}
-      {shop.announcement && (
-        <p className="bg-primary px-4 py-2 text-center text-sm text-primary-foreground print:hidden">
-          {shop.announcementLink ? (
-            <Link href={shop.announcementLink} className="underline-offset-4 hover:underline">
-              {shop.announcement}
-            </Link>
-          ) : (
-            shop.announcement
-          )}
-        </p>
-      )}
+      <StorefrontAnnouncement shop={shop} design={design} />
       <StorefrontHeader
-        shop={{
-          ...shop,
-          logoUrl: shop.branding.logo && brandImageUrl(shop.branding.logo.path, "logo", "small"),
-        }}
+        shop={shop}
+        design={design}
         cartCount={cart.reduce((n, l) => n + l.quantity, 0)}
         account={
           shop.live && (
@@ -132,96 +139,6 @@ async function Footer({ params }: Pick<LayoutProps<"/s/[shopSlug]">, "params">) 
   const { shopSlug } = await params;
   const shop = await getStorefrontShop(shopSlug);
   if (!shop) return null;
-  const link = "text-muted-foreground hover:text-foreground hover:underline";
-  return (
-    <footer className="border-t bg-muted/30 print:hidden">
-      <div className="mx-auto grid max-w-6xl gap-8 px-4 py-10 text-sm sm:grid-cols-2 lg:grid-cols-4">
-        <div className="space-y-2">
-          <p className="font-semibold">{shop.name}</p>
-          {shop.tagline && <p className="text-muted-foreground">{shop.tagline}</p>}
-          <p className="text-muted-foreground">Cash on delivery across India.</p>
-        </div>
-        <nav aria-label="Help" className="space-y-2">
-          <p className="font-medium">Help</p>
-          <ul className="space-y-1.5">
-            <li>
-              <Link href={routes.storefrontContact(shop.slug)} className={link}>
-                Contact us
-              </Link>
-            </li>
-            <li>
-              <Link href={routes.storefrontAccount(shop.slug)} className={link}>
-                Your orders
-              </Link>
-            </li>
-            {shop.policies
-              .filter((p) => p === "shipping" || p === "returns")
-              .map((p) => (
-                <li key={p}>
-                  <Link href={routes.storefrontPolicy(shop.slug, p)} className={link}>
-                    {STOREFRONT_POLICIES[p]}
-                  </Link>
-                </li>
-              ))}
-          </ul>
-        </nav>
-        <nav aria-label="Legal" className="space-y-2">
-          <p className="font-medium">Legal</p>
-          <ul className="space-y-1.5">
-            {shop.policies
-              .filter((p) => p === "privacy" || p === "terms")
-              .map((p) => (
-                <li key={p}>
-                  <Link href={routes.storefrontPolicy(shop.slug, p)} className={link}>
-                    {STOREFRONT_POLICIES[p]}
-                  </Link>
-                </li>
-              ))}
-            {shop.legalName && <li className="text-muted-foreground">{shop.legalName}</li>}
-            {shop.gstin && <li className="text-muted-foreground">GSTIN {shop.gstin}</li>}
-          </ul>
-        </nav>
-        <div className="space-y-2">
-          <p className="font-medium">Get in touch</p>
-          <ul className="space-y-1.5">
-            {shop.supportEmail && (
-              <li>
-                <a
-                  href={`mailto:${shop.supportEmail}`}
-                  className={`inline-flex items-center gap-1.5 ${link}`}
-                >
-                  <MailIcon className="size-3.5" aria-hidden />
-                  {shop.supportEmail}
-                </a>
-              </li>
-            )}
-            {shop.supportPhone && (
-              <li>
-                <a
-                  href={`tel:${shop.supportPhone}`}
-                  className={`inline-flex items-center gap-1.5 ${link}`}
-                >
-                  <PhoneIcon className="size-3.5" aria-hidden />
-                  {shop.supportPhone}
-                </a>
-              </li>
-            )}
-          </ul>
-        </div>
-      </div>
-      <div className="border-t">
-        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-4">
-          <p className="flex items-center gap-2 text-xs text-muted-foreground">
-            © {shop.name} · Powered by <Logo className="text-xs" />
-          </p>
-          {shop.live && (
-            <InstallApp
-              swUrl={routes.storefrontServiceWorker(shop.slug)}
-              scope={routes.storefront(shop.slug)}
-            />
-          )}
-        </div>
-      </div>
-    </footer>
-  );
+  const { design } = await getStorefrontDesign(shop);
+  return <StorefrontFooter shop={shop} design={design} />;
 }
