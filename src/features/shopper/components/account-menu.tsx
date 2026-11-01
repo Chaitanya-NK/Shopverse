@@ -67,15 +67,14 @@ export function AccountMenu({
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="shrink-0 rounded-full"
-          aria-label={t("Your account ({name})", { name: label })}
-        >
-          <span className="flex size-8 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary">
+        <Button variant="ghost" size="icon" className="shrink-0 rounded-full">
+          <span
+            aria-hidden="true"
+            className="flex size-8 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary"
+          >
             {initials(label)}
           </span>
+          <span className="sr-only">{t("Your account ({name})", { name: label })}</span>
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56">

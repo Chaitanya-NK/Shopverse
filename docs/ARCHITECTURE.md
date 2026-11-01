@@ -127,11 +127,15 @@ Migrations are forward-only. Never edit one that has been applied in a shared en
 
 ## Testing
 
-| Layer                                 | Tool                 | Location               |
-| ------------------------------------- | -------------------- | ---------------------- |
-| Pure logic, schemas, security helpers | Vitest               | `src/**/*.test.ts`     |
-| Database: RLS, invariants, RPCs       | SQL assertions       | `supabase/tests/*.sql` |
-| End-to-end                            | Playwright (Phase 2) | `e2e/`                 |
+| Layer                                 | Tool             | Location               |
+| ------------------------------------- | ---------------- | ---------------------- |
+| Pure logic, schemas, security helpers | Vitest           | `src/**/*.test.ts`     |
+| Database: RLS, invariants, RPCs       | SQL assertions   | `supabase/tests/*.sql` |
+| End-to-end, accessibility             | Playwright + axe | `e2e/`                 |
+
+### End-to-end tests
+
+`e2e/` (Playwright Test) drives a production build on port 3100 against a local Supabase stack. All email, Supabase's sign-in codes and the app's own, lands in the stack's Mailpit, and `e2e/support/mail.ts` reads codes from its API, so every sign-in goes through the real screens. The `setup` project signs the owner up (or in, on later runs), creates the business through onboarding, seeds a small catalogue with `e2e/seed.sql` and saves the session for the other tests. Tests create their own shoppers and orders, so they also run against a database with earlier runs' data. Each test gets its own `x-forwarded-for` address, because the proxy's rate limits count per address, and fails on any browser error. CI runs them in the `e2e` job.
 
 ## Observability
 
@@ -153,7 +157,7 @@ Storefront only. The English text is the key: `t("Add to cart")`, `t("{count} it
 
 ## Accessibility
 
-`scripts/a11y-audit.mjs` runs axe-core (WCAG 2.0–2.2 A/AA) on storefront and staff pages in light and dark mode and fails on serious problems. Conventions: every control has a visible label or `aria-label`; icon-only buttons get `sr-only` text; colours come from tokens that meet 4.5:1 (shop brand colours are contrast-checked); the storefront has a skip link to `#main` and sets `<html lang>`.
+`e2e/accessibility.spec.ts` runs axe-core (WCAG 2.0–2.2 A/AA) on every main storefront, shopper-account, staff and admin page in light and dark mode, including pages that only exist later in an order's life (delivered order, invoices, return), and fails on any violation; it also checks the skip link and buying a product with the keyboard alone. Conventions: every control has a visible label or `aria-label`; icon-only buttons get `sr-only` text; colours come from tokens that meet 4.5:1 (shop brand colours are contrast-checked); the storefront has a skip link to `#main` and sets `<html lang>`.
 
 ## Storefront and checkout
 

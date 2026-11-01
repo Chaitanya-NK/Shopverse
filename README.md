@@ -56,8 +56,8 @@ Multi-shop commerce SaaS for businesses that sell **anything**: clothing, electr
 | Background jobs | Emails, WhatsApp/SMS messages, stock alerts and Stripe webhooks run from a job queue in the database: retries with back-off, duplicates collapsed, failures visible and retryable in `/admin/jobs`; webhooks answer Stripe at once                                                                                                                                                                                                                                                                                     |
 | Reliability     | Rate limits per address in the proxy (sign-in and checkout, private links, actions, pages; shared through Upstash Redis when configured), errors grouped and stored in `/admin/errors` with request ids, optional Sentry and OpenTelemetry tracing, nightly encrypted backups with a tested restore and a [runbook](docs/RUNBOOK.md)                                                                                                                                                                                   |
 | Languages       | Storefront in English or Hindi (हिन्दी): pages, cart, checkout, account, order emails and WhatsApp messages; each shop picks its default and shoppers can switch; staff pages stay in English                                                                                                                                                                                                                                                                                                                          |
-| Accessibility   | axe-core audit (WCAG 2.2 AA) of storefront and staff pages in light and dark mode (`npm run audit:a11y`), skip link, labelled controls                                                                                                                                                                                                                                                                                                                                                                                 |
-| Quality         | Strict TypeScript, ESLint and Prettier, 296 unit tests, eighteen SQL test suites (RLS, stock, order flow, storefront and checkout, team and billing, shopper accounts, photos, invoices, payments, discounts, analytics, returns, platform billing, catalogue tools, operations, brand and reach, storefront design, hardening), CI, commit hooks                                                                                                                                                                      |
+| Accessibility   | axe-core audit (WCAG 2.2 AA) of every main storefront, shopper-account, staff and admin page in light and dark mode, plus keyboard checks, run in CI; skip link, labelled controls                                                                                                                                                                                                                                                                                                                                     |
+| Quality         | Strict TypeScript, ESLint and Prettier, 296 unit tests, 14 end-to-end tests (Playwright), nineteen SQL test suites (RLS, stock, order flow, storefront and checkout, team and billing, shopper accounts, photos, invoices, payments, discounts, analytics, returns, platform billing, catalogue tools, operations, brand and reach, storefront design, hardening, customer matching), CI, commit hooks                                                                                                                 |
 
 ## Quick start in GitHub Codespaces
 
@@ -234,22 +234,23 @@ Run `npm install` (new packages) and `npx supabase db push` (migration 028). The
 - **Rate limits** work out of the box on one server. With several servers (or serverless), set `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN` (free Upstash database) so they're shared.
 - **Backups.** Follow [docs/RUNBOOK.md](docs/RUNBOOK.md): add the backup secrets for `.github/workflows/backup.yml`, then practise a restore once.
 - **Hindi.** **Shops → a shop → Settings → Storefront language** sets the default; shoppers switch in the footer. Text you write yourself (product names, sections) is shown as you wrote it.
-- **Accessibility.** `npm run audit:a11y` checks the main pages against WCAG 2.2 AA (`AUDIT_URL`, `AUDIT_SHOP`, and `AUDIT_ORG` plus `AUDIT_STAFF_COOKIE` for staff pages). Run it after changing colours or layouts.
+- **Accessibility.** `npm run audit:a11y` runs the accessibility tests on their own; they're part of the end-to-end suite ([e2e/README.md](e2e/README.md)), which runs in CI.
 
 ## Scripts
 
-| Command                                     | Purpose                                                          |
-| ------------------------------------------- | ---------------------------------------------------------------- |
-| `npm run dev` / `dev:pretty`                | Dev server (`dev:pretty` formats the JSON logs)                  |
-| `npm run check`                             | Typecheck, lint, format check and unit tests: run before pushing |
-| `npm run build`                             | Production build                                                 |
-| `npm test` / `test:watch`                   | Unit tests (Vitest)                                              |
-| `npm run db:start` / `db:stop` / `db:reset` | Local Supabase stack                                             |
-| `npm run db:test`                           | SQL tests for RLS, tenancy and stock invariants (local stack)    |
-| `npm run db:types`                          | Regenerate `src/types/database.types.ts` from the local DB       |
-| `npm run db:migration <name>`               | Create a new migration file                                      |
-| `npm run audit:a11y`                        | Accessibility audit (axe, WCAG 2.2 AA) of a running app          |
-| `npm run backup:db`                         | Dump the database to an (optionally encrypted) archive           |
+| Command                                     | Purpose                                                            |
+| ------------------------------------------- | ------------------------------------------------------------------ |
+| `npm run dev` / `dev:pretty`                | Dev server (`dev:pretty` formats the JSON logs)                    |
+| `npm run check`                             | Typecheck, lint, format check and unit tests: run before pushing   |
+| `npm run build`                             | Production build                                                   |
+| `npm test` / `test:watch`                   | Unit tests (Vitest)                                                |
+| `npm run db:start` / `db:stop` / `db:reset` | Local Supabase stack                                               |
+| `npm run db:test`                           | SQL tests for RLS, tenancy and stock invariants (local stack)      |
+| `npm run db:types`                          | Regenerate `src/types/database.types.ts` from the local DB         |
+| `npm run db:migration <name>`               | Create a new migration file                                        |
+| `npm run test:e2e`                          | End-to-end tests (Playwright, local Supabase): see `e2e/README.md` |
+| `npm run audit:a11y`                        | Just the accessibility tests (axe, WCAG 2.2 AA, keyboard)          |
+| `npm run backup:db`                         | Dump the database to an (optionally encrypted) archive             |
 
 ## Project layout
 

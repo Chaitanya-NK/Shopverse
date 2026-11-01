@@ -17,12 +17,18 @@ export type Mail = {
 let transporter: Transporter | null = null;
 
 function getTransporter(): Transporter | null {
-  if (!env.SMTP_HOST || !env.SMTP_USER || !env.SMTP_PASSWORD || !env.MAIL_FROM) return null;
+  if (!env.SMTP_HOST || !env.MAIL_FROM) return null;
+  // Relays that need no login (a local mail catcher, a trusted relay) work
+  // without SMTP_USER/SMTP_PASSWORD.
+  const auth =
+    env.SMTP_USER && env.SMTP_PASSWORD
+      ? { user: env.SMTP_USER, pass: env.SMTP_PASSWORD }
+      : undefined;
   transporter ??= nodemailer.createTransport({
     host: env.SMTP_HOST,
     port: env.SMTP_PORT,
     secure: env.SMTP_PORT === 465,
-    auth: { user: env.SMTP_USER, pass: env.SMTP_PASSWORD },
+    auth,
   });
   return transporter;
 }

@@ -555,19 +555,21 @@ export function OrderForm({ organizationSlug, shops, defaultShopId }: OrderFormP
 
             <Separator className="my-5" />
 
-            <dl className="space-y-2 text-sm">
-              <Row label="Subtotal" value={formatMoney(totals.subtotal, currency)} />
-              {totals.discount > 0 && (
-                <Row label="Discount" value={`− ${formatMoney(totals.discount, currency)}`} />
-              )}
-              {totals.shipping > 0 && (
-                <Row label="Shipping" value={formatMoney(totals.shipping, currency)} />
-              )}
-              <Row label="Total" value={formatMoney(totals.grandTotal, currency)} strong />
+            <div className="space-y-2 text-sm">
+              <dl className="space-y-2">
+                <Row label="Subtotal" value={formatMoney(totals.subtotal, currency)} />
+                {totals.discount > 0 && (
+                  <Row label="Discount" value={`− ${formatMoney(totals.discount, currency)}`} />
+                )}
+                {totals.shipping > 0 && (
+                  <Row label="Shipping" value={formatMoney(totals.shipping, currency)} />
+                )}
+                <Row label="Total" value={formatMoney(totals.grandTotal, currency)} strong />
+              </dl>
               <p className="text-xs text-muted-foreground">
                 Includes {formatMoney(totals.tax, currency)} GST
               </p>
-            </dl>
+            </div>
           </CardContent>
         </Card>
 

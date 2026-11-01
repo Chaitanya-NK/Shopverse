@@ -60,21 +60,19 @@ async function Overview() {
   const plans: PlanId[] = ["trial", "starter", "growth", "scale"];
   return (
     <>
-      <dl className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {tiles.map(([label, value, hint]) => (
           <Card key={label} className="gap-2">
             <CardHeader>
-              <CardDescription>
-                <dt>{label}</dt>
-              </CardDescription>
+              <CardDescription>{label}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-1">
-              <dd className="font-mono text-2xl font-semibold tabular-nums">{value}</dd>
-              <dd className="text-xs text-muted-foreground">{hint}</dd>
+              <p className="font-mono text-2xl font-semibold tabular-nums">{value}</p>
+              <p className="text-xs text-muted-foreground">{hint}</p>
             </CardContent>
           </Card>
         ))}
-      </dl>
+      </div>
       <div className="grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
         <Card>
           <CardHeader>

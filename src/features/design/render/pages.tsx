@@ -299,9 +299,12 @@ export async function CartMainSection({ section, ctx }: SectionProps) {
                   : `${item.productTitle} · ${item.title}`;
               return (
                 <li key={item.id} className="flex gap-4 p-4">
+                  {/* Same link as the title next to it: skipped by keyboards and screen readers. */}
                   <Link
                     href={routes.storefrontProduct(shop.slug, item.productSlug)}
                     className="w-20 shrink-0 sm:w-24"
+                    tabIndex={-1}
+                    aria-hidden="true"
                   >
                     <ProductVisual
                       image={item.image}

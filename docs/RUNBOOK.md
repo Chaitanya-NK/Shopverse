@@ -134,4 +134,4 @@ shared. For a real attack, turn on your host's firewall or DDoS protection.
 - **Weekly:** `/admin/errors` (anything new?), `/admin/jobs` (nothing failed?),
   last night's Backup run is green.
 - **Monthly:** keep one backup off GitHub; check Supabase usage limits.
-- **Quarterly:** restore drill (section 3); `npm run audit:a11y` against production.
+- **Quarterly:** restore drill (section 3).

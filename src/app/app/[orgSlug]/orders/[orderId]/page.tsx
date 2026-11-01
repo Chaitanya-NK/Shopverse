@@ -256,22 +256,24 @@ async function OrderContent({ params }: Pick<Props, "params">) {
                   </TableBody>
                 </Table>
               </div>
-              <dl className="ml-auto max-w-xs space-y-1.5 text-sm">
-                <TotalRow label="Subtotal" value={money(order.subtotal)} />
-                {order.discountTotal > 0 && (
-                  <TotalRow
-                    label={order.discountCode ? `Discount (${order.discountCode})` : "Discount"}
-                    value={`− ${money(order.discountTotal)}`}
-                  />
-                )}
-                {order.shippingTotal > 0 && (
-                  <TotalRow label="Shipping" value={money(order.shippingTotal)} />
-                )}
-                <TotalRow label="Total" value={money(order.grandTotal)} strong />
+              <div className="ml-auto max-w-xs space-y-1.5 text-sm">
+                <dl className="space-y-1.5">
+                  <TotalRow label="Subtotal" value={money(order.subtotal)} />
+                  {order.discountTotal > 0 && (
+                    <TotalRow
+                      label={order.discountCode ? `Discount (${order.discountCode})` : "Discount"}
+                      value={`− ${money(order.discountTotal)}`}
+                    />
+                  )}
+                  {order.shippingTotal > 0 && (
+                    <TotalRow label="Shipping" value={money(order.shippingTotal)} />
+                  )}
+                  <TotalRow label="Total" value={money(order.grandTotal)} strong />
+                </dl>
                 <p className="text-right text-xs text-muted-foreground">
                   Includes {money(order.taxTotal)} GST
                 </p>
-              </dl>
+              </div>
               {canManage && toShip.length > 0 && (
                 <div className="flex flex-wrap gap-2 border-t pt-4">
                   {toShip.map((group) => (
@@ -338,7 +340,7 @@ async function OrderContent({ params }: Pick<Props, "params">) {
               {order.customer ? (
                 <Link
                   href={routes.orgCustomer(orgSlug, order.customer.id)}
-                  className="font-medium hover:underline"
+                  className="inline-flex min-h-6 items-center font-medium hover:underline"
                 >
                   {order.customer.name ?? a.name}
                 </Link>

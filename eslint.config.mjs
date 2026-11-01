@@ -36,7 +36,14 @@ const eslintConfig = defineConfig([
     files: ["src/components/ui/**"],
     rules: { "@typescript-eslint/consistent-type-imports": "off" },
   },
+  {
+    // Playwright fixtures call `use(...)`, which is not a React hook.
+    files: ["e2e/**"],
+    rules: { "react-hooks/rules-of-hooks": "off" },
+  },
   globalIgnores([
+    "e2e/.results/**",
+    "e2e/.report/**",
     ".next/**",
     "out/**",
     "build/**",
