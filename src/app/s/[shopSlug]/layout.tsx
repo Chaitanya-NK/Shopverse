@@ -1,6 +1,7 @@
 import "@fontsource-variable/dm-sans/wght.css";
 import "@fontsource-variable/fraunces/wght.css";
 import "@fontsource-variable/lora/wght.css";
+import "@fontsource-variable/noto-sans-devanagari/wght.css";
 import "@fontsource-variable/nunito/wght.css";
 import "@fontsource-variable/playfair-display/wght.css";
 import "@fontsource-variable/space-grotesk/wght.css";
@@ -26,6 +27,9 @@ import { AccountMenu } from "@/features/shopper/components/account-menu";
 import { getShopper } from "@/features/shopper/session";
 import { ThemeColor } from "@/features/storefront/components/theme-color";
 import { getCart, getStorefrontShop } from "@/features/storefront/queries";
+import { HtmlLang } from "@/features/storefront/components/language-switcher";
+import { I18nProvider } from "@/i18n/client";
+import { dictionaryFor, getLocale, translator } from "@/i18n/server";
 
 export async function generateMetadata({
   params,
@@ -72,8 +76,10 @@ export default function StorefrontLayout({ params, children }: LayoutProps<"/s/[
       <Suspense fallback={<Skeleton className="h-16 w-full rounded-none" />}>
         <Chrome params={params} />
       </Suspense>
-      <main className="mx-auto w-full max-w-(--sv-width) flex-1 px-4 py-8 print:p-0">
-        {children}
+      <main id="main" className="mx-auto w-full max-w-(--sv-width) flex-1 px-4 py-8 print:p-0">
+        <Suspense>
+          <LocaleRoot params={params}>{children}</LocaleRoot>
+        </Suspense>
       </main>
       <Suspense>
         <Footer params={params} />
@@ -99,28 +105,53 @@ async function Theme({ params }: Pick<LayoutProps<"/s/[shopSlug]">, "params">) {
   );
 }
 
+/** The page in the shopper's language (client components read it with useT). */
+async function LocaleRoot({
+  params,
+  children,
+}: Pick<LayoutProps<"/s/[shopSlug]">, "params"> & { children: React.ReactNode }) {
+  const { shopSlug } = await params;
+  const shop = await getStorefrontShop(shopSlug);
+  const locale = await getLocale(shop?.language);
+  return (
+    <I18nProvider locale={locale} dictionary={dictionaryFor(locale)}>
+      <HtmlLang locale={locale} />
+      <div lang={locale}>{children}</div>
+    </I18nProvider>
+  );
+}
+
 async function Chrome({ params }: Pick<LayoutProps<"/s/[shopSlug]">, "params">) {
   const { shopSlug } = await params;
   const shop = await getStorefrontShop(shopSlug);
   if (!shop) notFound();
-  const [cart, shopper, { design }] = await Promise.all([
+  const [cart, shopper, { design }, locale] = await Promise.all([
     getCart(shop.id),
     getShopper(shop.id),
     getStorefrontDesign(shop),
+    getLocale(shop.language),
   ]);
+  const t = translator(locale);
 
   return (
-    <>
+    <I18nProvider locale={locale} dictionary={dictionaryFor(locale)}>
+      <a
+        href="#main"
+        className="sr-only z-50 rounded-md bg-background px-4 py-2 font-medium shadow focus:not-sr-only focus:fixed focus:top-2 focus:left-2"
+      >
+        {t("Skip to content")}
+      </a>
       {!shop.live && (
         <p className="flex items-center justify-center gap-2 bg-warning px-4 py-2 text-center text-sm text-warning-foreground print:hidden">
           <EyeIcon className="size-4" aria-hidden />
-          Preview: this shop isn&apos;t live yet. Only your team can see it.
+          {t("Preview: this shop isn't live yet. Only your team can see it.")}
         </p>
       )}
       <StorefrontAnnouncement shop={shop} design={design} />
       <StorefrontHeader
         shop={shop}
         design={design}
+        t={t}
         cartCount={cart.reduce((n, l) => n + l.quantity, 0)}
         account={
           shop.live && (
@@ -131,7 +162,7 @@ async function Chrome({ params }: Pick<LayoutProps<"/s/[shopSlug]">, "params">) 
           )
         }
       />
-    </>
+    </I18nProvider>
   );
 }
 
@@ -139,6 +170,13 @@ async function Footer({ params }: Pick<LayoutProps<"/s/[shopSlug]">, "params">) 
   const { shopSlug } = await params;
   const shop = await getStorefrontShop(shopSlug);
   if (!shop) return null;
-  const { design } = await getStorefrontDesign(shop);
-  return <StorefrontFooter shop={shop} design={design} />;
+  const [{ design }, locale] = await Promise.all([
+    getStorefrontDesign(shop),
+    getLocale(shop.language),
+  ]);
+  return (
+    <I18nProvider locale={locale} dictionary={dictionaryFor(locale)}>
+      <StorefrontFooter shop={shop} design={design} t={translator(locale)} />
+    </I18nProvider>
+  );
 }

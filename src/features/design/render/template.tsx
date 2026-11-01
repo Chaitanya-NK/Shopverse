@@ -6,6 +6,7 @@ import { type Section } from "@/features/design/schema";
 import { type TemplateKey } from "@/features/design/sections";
 import { getShopper } from "@/features/shopper/session";
 import { getStorefrontShop } from "@/features/storefront/queries";
+import { getT } from "@/i18n/server";
 
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
 
@@ -13,11 +14,12 @@ type SearchParams = Promise<Record<string, string | string[] | undefined>>;
 export async function loadPage(shopSlug: string) {
   const shop = await getStorefrontShop(shopSlug);
   if (!shop) notFound();
-  const [{ design, preview }, shopper] = await Promise.all([
+  const [{ design, preview }, shopper, t] = await Promise.all([
     getStorefrontDesign(shop),
     getShopper(shop.id),
+    getT(shop.language),
   ]);
-  return { shop, design, preview, shopper };
+  return { shop, design, preview, shopper, t };
 }
 
 /** A storefront page laid out by one of the design's templates. */
@@ -39,12 +41,13 @@ export async function TemplatePage({
   /** Overrides the template's sections (custom pages). */
   sections?: (design: Awaited<ReturnType<typeof loadPage>>["design"]) => Section[];
 }) {
-  const { shop, design, shopper } = await loadPage(shopSlug);
+  const { shop, design, shopper, t } = await loadPage(shopSlug);
   return (
     <SectionList
       sections={sections ? sections(design) : design.templates[template].sections}
       ctx={{
         shop,
+        t,
         saved: new Set(shopper?.wishlist),
         signedIn: Boolean(shopper),
         searchParams,

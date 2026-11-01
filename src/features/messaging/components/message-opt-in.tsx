@@ -2,6 +2,7 @@
 
 import { Checkbox } from "@/components/ui/checkbox";
 import { Field, FieldDescription, FieldLabel } from "@/components/ui/field";
+import { useT } from "@/i18n/client";
 
 /** "Send me order updates on WhatsApp", shown at checkout when the shop offers it. */
 export function MessageOptIn({
@@ -13,6 +14,7 @@ export function MessageOptIn({
   checked: boolean;
   onCheckedChange: (checked: boolean) => void;
 }) {
+  const t = useT();
   return (
     <Field orientation="horizontal">
       <Checkbox
@@ -22,10 +24,12 @@ export function MessageOptIn({
       />
       <span>
         <FieldLabel htmlFor="message-opt-in" className="font-normal">
-          Send me order updates on {channel === "whatsapp" ? "WhatsApp" : "SMS"}
+          {channel === "whatsapp"
+            ? t("Send me order updates on WhatsApp")
+            : t("Send me order updates by SMS")}
         </FieldLabel>
         <FieldDescription>
-          Confirmation, shipping and the delivery code, to your mobile number. No marketing.
+          {t("Confirmation, shipping and the delivery code, to your mobile number. No marketing.")}
         </FieldDescription>
       </span>
     </Field>

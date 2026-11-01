@@ -1,12 +1,18 @@
 "use client";
 
+import { useEffect } from "react";
+
+import { reportClientError } from "@/lib/observability/report";
+
 /** Last-resort boundary when the root layout itself fails. Must render <html>. */
 export default function GlobalError({
+  error,
   reset,
 }: {
   error: Error & { digest?: string };
   reset: () => void;
 }) {
+  useEffect(() => reportClientError(error, "boundary", error.digest), [error]);
   return (
     <html lang="en">
       <body

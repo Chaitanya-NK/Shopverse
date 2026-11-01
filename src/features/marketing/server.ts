@@ -8,6 +8,8 @@ import { type CartLine } from "@/features/storefront/schemas";
 import { fromPostgrestError } from "@/lib/errors";
 import { logger } from "@/lib/logger";
 import { sendMail } from "@/lib/mail";
+import { isLocale, type Locale } from "@/i18n/core";
+import { translator } from "@/i18n/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 const appUrl = (path: string) => new URL(path, env.NEXT_PUBLIC_APP_URL).toString();
@@ -43,7 +45,18 @@ export async function sendCartReminders(now = new Date()) {
   const { data, error } = await admin.rpc("claim_cart_reminders", { p_now: now.toISOString() });
   if (error) throw fromPostgrestError(error);
   let sent = 0;
-  for (const cart of (data ?? []) as Due[]) {
+  const due = (data ?? []) as Due[];
+  // Each shop's own language for its reminders.
+  const { data: shops } = due.length
+    ? await admin
+        .from("shops")
+        .select("slug, settings")
+        .in("slug", [...new Set(due.map((c) => c.shop.slug))])
+    : { data: [] };
+  const language = new Map(
+    (shops ?? []).map((s) => [s.slug, (s.settings as Record<string, unknown> | null)?.language]),
+  );
+  for (const cart of due) {
     try {
       await sendMail(
         cartReminderEmail({
@@ -61,6 +74,11 @@ export async function sendCartReminders(now = new Date()) {
           discountCode: cart.discount_code,
           restoreUrl: appUrl(routes.storefrontCartRestore(cart.shop.slug, cart.token)),
           stopUrl: appUrl(routes.storefrontCartStop(cart.shop.slug, cart.token)),
+          t: translator(
+            isLocale(language.get(cart.shop.slug))
+              ? (language.get(cart.shop.slug) as Locale)
+              : "en",
+          ),
           supportEmail: cart.shop.support_email,
         }),
       );

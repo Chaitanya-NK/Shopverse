@@ -16,22 +16,31 @@ import {
 } from "@/components/ui/empty";
 import { Skeleton } from "@/components/ui/skeleton";
 import { routes } from "@/config/routes";
+import { INTL_LOCALE, type Locale } from "@/i18n/core";
+import { getT } from "@/i18n/server";
 import { OrderActions } from "@/features/shopper/components/order-actions";
 import { requireAccountPage } from "@/features/shopper/guard";
 import { getShopperOrders } from "@/features/shopper/queries";
 import { ORDER_STAGE_LABELS, type OrderStage } from "@/features/shopper/schemas";
 import { formatMoney } from "@/lib/format";
+import { storefrontTitle } from "@/i18n/server";
 
-export const metadata: Metadata = { title: "Your orders", robots: { index: false } };
+export async function generateMetadata({
+  params,
+}: PageProps<"/s/[shopSlug]/account">): Promise<Metadata> {
+  const { shopSlug } = await params;
+  return { title: await storefrontTitle(shopSlug, "Your orders"), robots: { index: false } };
+}
 
 type Props = PageProps<"/s/[shopSlug]/account">;
 
-const dateFormat = new Intl.DateTimeFormat("en-IN", {
-  day: "numeric",
-  month: "short",
-  year: "numeric",
-  timeZone: "Asia/Kolkata",
-});
+const dateFormat = (locale: Locale) =>
+  new Intl.DateTimeFormat(INTL_LOCALE[locale], {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    timeZone: "Asia/Kolkata",
+  });
 
 const STAGE_VARIANT: Record<OrderStage, "default" | "secondary" | "outline" | "destructive"> = {
   awaiting_payment: "outline",
@@ -57,7 +66,7 @@ async function Orders({ params, searchParams }: Props) {
   const { shopSlug } = await params;
   const { shop } = await requireAccountPage(shopSlug, routes.storefrontAccount);
   const page = Number((await searchParams).page) || 1;
-  const orders = await getShopperOrders(shop.id, page);
+  const [orders, t] = await Promise.all([getShopperOrders(shop.id, page), getT(shop.language)]);
   if (!orders) return null;
 
   if (orders.total === 0)
@@ -67,11 +76,13 @@ async function Orders({ params, searchParams }: Props) {
           <EmptyMedia variant="icon">
             <PackageIcon />
           </EmptyMedia>
-          <EmptyTitle>No orders yet</EmptyTitle>
-          <EmptyDescription>When you order from {shop.name}, it shows up here.</EmptyDescription>
+          <EmptyTitle>{t("No orders yet")}</EmptyTitle>
+          <EmptyDescription>
+            {t("When you order from {shop}, it shows up here.", { shop: shop.name })}
+          </EmptyDescription>
         </EmptyHeader>
         <Button asChild>
-          <Link href={routes.storefront(shop.slug)}>Start shopping</Link>
+          <Link href={routes.storefront(shop.slug)}>{t("Start shopping")}</Link>
         </Button>
       </Empty>
     );
@@ -92,13 +103,13 @@ async function Orders({ params, searchParams }: Props) {
                       {order.number}
                     </Link>
                     <p className="text-sm text-muted-foreground">
-                      {dateFormat.format(new Date(order.placedAt))} · {order.itemCount} item
-                      {order.itemCount === 1 ? "" : "s"} ·{" "}
+                      {dateFormat(t.locale).format(new Date(order.placedAt))} ·{" "}
+                      {t.plural(order.itemCount, "{count} item", "{count} items")} ·{" "}
                       {formatMoney(order.grandTotal, order.currency)}
                     </p>
                   </div>
                   <Badge variant={STAGE_VARIANT[order.stage]}>
-                    {ORDER_STAGE_LABELS[order.stage]}
+                    {t(ORDER_STAGE_LABELS[order.stage])}
                   </Badge>
                 </div>
                 <p className="line-clamp-1 text-sm">
@@ -107,7 +118,9 @@ async function Orders({ params, searchParams }: Props) {
                 </p>
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <Button asChild variant="link" className="px-0">
-                    <Link href={routes.storefrontOrder(shop.slug, order.token)}>View details</Link>
+                    <Link href={routes.storefrontOrder(shop.slug, order.token)}>
+                      {t("View details")}
+                    </Link>
                   </Button>
                   <OrderActions
                     shopSlug={shop.slug}
@@ -128,6 +141,7 @@ async function Orders({ params, searchParams }: Props) {
           pageCount={orders.pageCount}
           total={orders.total}
           noun="orders"
+          t={t}
           hrefFor={(p) => `${routes.storefrontAccount(shop.slug)}?page=${p}`}
         />
       )}

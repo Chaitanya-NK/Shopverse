@@ -7,6 +7,7 @@ import { type Banner } from "@/features/branding/schemas";
 import { DESIGN_PREVIEW_COOKIE } from "@/features/design/preview";
 import { defaultDesign, type PresetContext } from "@/features/design/presets";
 import { type Design, parseDesign } from "@/features/design/schema";
+import { makeTranslate, type Translate } from "@/i18n/core";
 import { fromPostgrestError } from "@/lib/errors";
 import { formatMoney } from "@/lib/format";
 import { createClient } from "@/lib/supabase/server";
@@ -23,12 +24,15 @@ type ShopForDesign = {
 
 export function deliveryNote(
   shop: Pick<ShopForDesign, "currency" | "shippingFee" | "freeShippingOver">,
+  t: Translate = makeTranslate("en", null),
 ) {
   return shop.freeShippingOver !== null
-    ? `Free delivery over ${formatMoney(shop.freeShippingOver, shop.currency)}`
+    ? t("Free delivery over {amount}", {
+        amount: formatMoney(shop.freeShippingOver, shop.currency),
+      })
     : shop.shippingFee > 0
-      ? `Delivery ${formatMoney(shop.shippingFee, shop.currency)}`
-      : "Free delivery";
+      ? t("Delivery {amount}", { amount: formatMoney(shop.shippingFee, shop.currency) })
+      : t("Free delivery");
 }
 
 export function presetContext(

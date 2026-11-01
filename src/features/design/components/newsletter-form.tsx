@@ -6,6 +6,7 @@ import { useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { subscribeNewsletter } from "@/features/marketing/newsletter";
+import { useT } from "@/i18n/client";
 
 export function NewsletterForm({
   shopSlug,
@@ -17,6 +18,7 @@ export function NewsletterForm({
   /** On the brand colour. */
   inverted?: boolean;
 }) {
+  const t = useT();
   const [done, setDone] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -25,7 +27,7 @@ export function NewsletterForm({
     return (
       <p className="flex items-center justify-center gap-2 font-medium" role="status">
         <CheckCircle2Icon className="size-5" aria-hidden />
-        You&apos;re on the list. Thank you!
+        {t("You're on the list. Thank you!")}
       </p>
     );
 
@@ -43,7 +45,7 @@ export function NewsletterForm({
             website: String(data.get("website") ?? ""),
           });
           if (result.ok) setDone(true);
-          else setError(result.error.message);
+          else setError(t(result.error.message));
         });
       }}
     >
@@ -54,8 +56,8 @@ export function NewsletterForm({
           required
           maxLength={254}
           autoComplete="email"
-          placeholder="Your email"
-          aria-label="Email address"
+          placeholder={t("Your email")}
+          aria-label={t("Email address")}
           aria-invalid={Boolean(error)}
           className={
             inverted
@@ -73,7 +75,7 @@ export function NewsletterForm({
           aria-hidden
         />
         <Button type="submit" disabled={isPending} variant={inverted ? "secondary" : "default"}>
-          {buttonLabel || "Sign up"}
+          {buttonLabel || t("Sign up")}
         </Button>
       </div>
       {error && (

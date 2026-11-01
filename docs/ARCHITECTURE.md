@@ -137,6 +137,24 @@ Migrations are forward-only. Never edit one that has been applied in a shared en
 
 `lib/logger.ts` (pino) writes structured JSON with automatic redaction of email, token, phone and password fields. Server actions log rejections at `info` and unexpected failures at `error` with the action name.
 
+Errors are captured by `lib/observability/capture.ts`: `onRequestError` in `instrumentation.ts`, `INTERNAL` failures in `createAction`, dead jobs, and browser errors posted to `/api/errors` by `ErrorReporter` and the error boundaries. Each is fingerprinted (kind + message with numbers and ids stripped + top stack frame) and stored by `record_error` in `private.error_groups`/`error_events` (50 samples per group, 60 events a minute at most; a resolved group reopens). `/admin/errors` reads them. With `SENTRY_DSN` the same event goes to Sentry as an envelope over `fetch` (no SDK); with `OTEL_EXPORTER_OTLP_TRACES_ENDPOINT`, `@vercel/otel` exports traces. The proxy gives every request an `x-request-id`.
+
+## Background jobs
+
+`private.jobs` is a Postgres queue. `enqueueJob(kind, payload, { dedupeKey, delaySeconds })` inserts a row (a pending job with the same dedupe key is reused) and, by default, `after()` runs the worker once the response is sent. `claim_jobs` takes a batch with `FOR UPDATE SKIP LOCKED` and a lease, so several workers never run the same job and a crashed one's jobs come back. Failures back off (30 s doubling to 1 h) until `max_attempts`, then the job is dead and captured as an error; `PermanentJobError` skips the retries. Handlers live in `lib/jobs/handlers.ts` and load fresh data by id, so payloads hold ids rather than copies (anything secret is sealed with `PAYMENTS_ENCRYPTION_KEY`). Stripe webhooks verify the signature, record the event and enqueue it, so Stripe gets its 200 at once. `/api/cron/jobs` (every 5 minutes) catches anything `after()` missed.
+
+## Rate limiting
+
+`lib/rate-limit.ts` holds fixed-window rules per client address and route group (`RATE_RULES`), checked in `proxy.ts` before anything else; over the limit returns `429` with `Retry-After` and `RateLimit-*` headers. The store is memory, or Upstash Redis over REST when configured (falling back to memory if Redis is unreachable, so an outage never locks shoppers out). Database-level limits (checkout codes per email, newsletter sign-ups) stay as the second line.
+
+## Languages (i18n)
+
+Storefront only. The English text is the key: `t("Add to cart")`, `t("{count} items", { count })`, `t.plural(n, one, other)`; a missing translation falls back to English. Dictionaries are in `src/i18n/` (`hi.ts`; `indirect.ts` lists keys that reach `t()` through variables). Server code gets a translator from `getT(shop.language)` (the `sv_lang` cookie overrides the shop's default); client components use `useT()` under `I18nProvider`. Emails and WhatsApp messages use the order's `locale`, recorded at checkout. `hi.test.ts` fails when a `t("…")` key in the source has no Hindi entry or the placeholders differ. Invoices and credit notes stay in English (legal documents); owner-written text is shown as written. Fonts fall back to Noto Sans Devanagari.
+
+## Accessibility
+
+`scripts/a11y-audit.mjs` runs axe-core (WCAG 2.0–2.2 A/AA) on storefront and staff pages in light and dark mode and fails on serious problems. Conventions: every control has a visible label or `aria-label`; icon-only buttons get `sr-only` text; colours come from tokens that meet 4.5:1 (shop brand colours are contrast-checked); the storefront has a skip link to `#main` and sets `<html lang>`.
+
 ## Storefront and checkout
 
 - Public pages live under `/s/[shopSlug]` and never need a session. Shop handles are **globally unique** (they are addresses); onboarding gives the first shop the organisation's slug.

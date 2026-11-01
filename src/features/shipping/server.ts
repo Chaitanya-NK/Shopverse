@@ -22,10 +22,10 @@ export async function applyCourierUpdate(courier: string, awb: string, update: T
   if (error) throw fromPostgrestError(error);
   const result = data as { applied: boolean; shipment_id?: string; status?: string };
   if (result.applied && result.shipment_id) {
-    if (update.status === "picked_up") notifyShipment(result.shipment_id, "shipped");
+    if (update.status === "picked_up") await notifyShipment(result.shipment_id, "shipped");
     else if (update.status === "failed_attempt")
-      notifyShipment(result.shipment_id, "delivery_failed");
-    else if (update.status === "delivered") notifyShipment(result.shipment_id, "delivered");
+      await notifyShipment(result.shipment_id, "delivery_failed");
+    else if (update.status === "delivered") await notifyShipment(result.shipment_id, "delivered");
   }
   return result;
 }

@@ -26,10 +26,23 @@ export const env = createEnv({
       .string()
       .refine((v) => Buffer.from(v, "base64").length === 32, "Must be 32 bytes, base64-encoded")
       .optional(),
-    // Override only for local testing against a stand-in.
     // Protects /api/cron/operations (low-stock alerts, daily digest). Call it
     // every 15 minutes or so with "Authorization: Bearer <CRON_SECRET>".
     CRON_SECRET: z.string().min(16, "Use at least 16 characters").optional(),
+    // Optional: also send errors to Sentry (https://<key>@<host>/<project id>).
+    // Errors are always recorded in the admin console (/admin/errors).
+    SENTRY_DSN: z.url().optional(),
+    // Optional: send traces to an OpenTelemetry collector (Grafana, Honeycomb,
+    // Jaeger…), e.g. https://otlp.example.com/v1/traces.
+    OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: z.url().optional(),
+    // "Authorization=Bearer abc,x-team=1": headers for the collector.
+    OTEL_EXPORTER_OTLP_HEADERS: z.string().optional(),
+    // A name for this deployment in error reports (e.g. a git commit).
+    APP_RELEASE: z.string().max(80).optional(),
+    // Optional: share rate limits across servers through Upstash Redis.
+    // Without them each server counts on its own.
+    UPSTASH_REDIS_REST_URL: z.url().optional(),
+    UPSTASH_REDIS_REST_TOKEN: z.string().min(1).optional(),
     // Override only for local testing against a stand-in.
     TWILIO_API_URL: z.url().default("https://api.twilio.com"),
     STRIPE_API_URL: z.url().default("https://api.stripe.com"),

@@ -1,6 +1,7 @@
 import { z } from "zod";
 
-import { getCredentials, settleSession } from "@/features/payments/server";
+import { getCredentials } from "@/features/payments/server";
+import { enqueueJob } from "@/lib/jobs/queue";
 import { logger } from "@/lib/logger";
 import { idOf, verifyWebhookSignature } from "@/lib/payments/stripe";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -26,8 +27,8 @@ const json = (status: number, body: object) => Response.json(body, { status });
 /**
  * Stripe webhooks for one business: /api/webhooks/stripe/<organization id>.
  * Signed with that endpoint's signing secret. Deliveries can repeat or arrive
- * out of order, so everything below is idempotent, and the payment itself is
- * always read back from Stripe before an order is confirmed.
+ * out of order, so handling is idempotent, and the payment itself is always
+ * read back from Stripe before an order is confirmed (see runStripeEventJob).
  */
 export async function POST(
   request: Request,
@@ -77,28 +78,25 @@ export async function POST(
   if (error) return json(500, { error: "retry" });
   if (!isNew) return json(200, { duplicate: true });
 
+  // Handled by a background job (retried with backoff if it fails), so Stripe
+  // gets its answer straight away.
   try {
-    if (
-      type === "checkout.session.completed" ||
-      type === "checkout.session.async_payment_succeeded"
-    ) {
-      const outcome = await settleSession(credentials.secretKey, session.id);
-      return json(200, { result: outcome.result });
-    }
-    if (type === "checkout.session.async_payment_failed" || type === "checkout.session.expired") {
-      await admin.rpc("record_payment_failed", {
-        p_provider_order_id: session.id,
-        p_provider_payment_id: idOf(session.payment_intent) ?? "",
-        p_reason:
-          type === "checkout.session.expired" ? "The payment page expired" : "Payment failed",
-      });
-      return json(200, { recorded: "failed" });
-    }
+    await enqueueJob(
+      "stripe.event",
+      {
+        organizationId,
+        eventId,
+        type,
+        sessionId: session.id,
+        paymentIntent: idOf(session.payment_intent) ?? null,
+      },
+      { dedupeKey: `stripe:${eventId}`, organizationId, maxAttempts: 8 },
+    );
   } catch (cause) {
-    logger.error({ err: cause, type, organizationId }, "Stripe webhook handling failed");
+    logger.error({ err: cause, type, organizationId }, "Queueing a Stripe event failed");
     // Let Stripe retry, and forget this event id so the retry is processed.
     await admin.rpc("forget_webhook_event", { p_event_id: eventId });
     return json(500, { error: "retry" });
   }
-  return json(200, { ignored: type });
+  return json(200, { queued: type });
 }

@@ -1,5 +1,7 @@
 import "server-only";
 
+import { PermanentJobError } from "@/lib/jobs/errors";
+
 import { notifyOrder } from "@/features/notifications/order-notifier";
 import { routes } from "@/config/routes";
 import { env } from "@/env";
@@ -147,7 +149,7 @@ export async function settleCapture(input: {
   if (error) throw fromPostgrestError(error);
   const outcome = data as { result: CaptureResult; order_id?: string };
   const orderId = outcome.order_id ?? null;
-  if (outcome.result === "confirmed" && orderId) notifyOrder(orderId, { type: "confirmed" });
+  if (outcome.result === "confirmed" && orderId) await notifyOrder(orderId, { type: "confirmed" });
   if (["duplicate", "order_closed", "amount_mismatch"].includes(outcome.result) && orderId)
     await refundDuePayments(orderId);
   return { result: outcome.result, orderId };
@@ -243,4 +245,28 @@ export async function expireUnpaidOrders(organizationId?: string) {
     p_organization_id: organizationId,
   });
   if (error) logger.warn({ err: error }, "Expiring unpaid orders failed");
+}
+
+/** stripe.event job: a business's Checkout Session changed. */
+export async function runStripeEventJob(payload: Record<string, unknown>) {
+  const organizationId = String(payload.organizationId ?? "");
+  const type = String(payload.type ?? "");
+  const sessionId = String(payload.sessionId ?? "");
+  if (
+    type === "checkout.session.completed" ||
+    type === "checkout.session.async_payment_succeeded"
+  ) {
+    const credentials = await getCredentials(organizationId);
+    if (!credentials) throw new PermanentJobError("Stripe isn't connected any more");
+    await settleSession(credentials.secretKey, sessionId);
+    return;
+  }
+  if (type === "checkout.session.async_payment_failed" || type === "checkout.session.expired") {
+    const { error } = await createAdminClient().rpc("record_payment_failed", {
+      p_provider_order_id: sessionId,
+      p_provider_payment_id: typeof payload.paymentIntent === "string" ? payload.paymentIntent : "",
+      p_reason: type === "checkout.session.expired" ? "The payment page expired" : "Payment failed",
+    });
+    if (error) throw error;
+  }
 }

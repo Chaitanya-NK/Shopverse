@@ -1,18 +1,10 @@
-import { timingSafeEqual } from "node:crypto";
-
 import { env } from "@/env";
 import { runOperationsJobs } from "@/features/operations/server";
+import { isCronRequest } from "@/lib/cron";
+import { runJobs } from "@/lib/jobs/worker";
 import { logger } from "@/lib/logger";
 
 const json = (status: number, body: object) => Response.json(body, { status });
-
-function authorized(request: Request) {
-  const secret = env.CRON_SECRET;
-  if (!secret) return false;
-  const expected = Buffer.from(`Bearer ${secret}`);
-  const received = Buffer.from(request.headers.get("authorization") ?? "");
-  return received.length === expected.length && timingSafeEqual(received, expected);
-}
 
 /**
  * The operations scheduler: emails new low-stock alerts and any daily digests
@@ -21,9 +13,12 @@ function authorized(request: Request) {
  */
 async function handle(request: Request) {
   if (!env.CRON_SECRET) return json(404, { error: "not configured" });
-  if (!authorized(request)) return json(401, { error: "unauthorized" });
+  if (!isCronRequest(request)) return json(401, { error: "unauthorized" });
   try {
-    return json(200, await runOperationsJobs());
+    const operations = await runOperationsJobs();
+    // Also a chance to run queued jobs, for setups with only this scheduler.
+    const jobs = await runJobs({ limit: 100, budgetMs: 30_000 });
+    return json(200, { ...operations, jobs });
   } catch (cause) {
     logger.error({ err: cause }, "Operations jobs failed");
     return json(500, { error: "failed" });

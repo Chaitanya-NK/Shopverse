@@ -23,6 +23,7 @@ import {
 import { signInEmailSchema } from "@/features/shopper/schemas";
 import { CodeInput } from "@/features/storefront/components/code-input";
 import { applyActionError } from "@/lib/forms/apply-action-error";
+import { useT } from "@/i18n/client";
 
 const RESEND_SECONDS = 30;
 
@@ -58,6 +59,7 @@ function EmailStep({
   shopName: string;
   onSent: (email: string) => void;
 }) {
+  const t = useT();
   const [isPending, startTransition] = useTransition();
   const form = useForm<
     z.input<typeof signInEmailSchema>,
@@ -82,9 +84,9 @@ function EmailStep({
   return (
     <Card>
       <CardHeader className="text-center">
-        <CardTitle className="text-xl">Sign in to {shopName}</CardTitle>
+        <CardTitle className="text-xl">{t("Sign in to {shop}", { shop: shopName })}</CardTitle>
         <CardDescription>
-          Track orders, save addresses and check out faster. No password needed.
+          {t("Track orders, save addresses and check out faster. No password needed.")}
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -94,7 +96,7 @@ function EmailStep({
             control={form.control}
             render={({ field, fieldState }) => (
               <Field data-invalid={fieldState.invalid}>
-                <FieldLabel htmlFor="shopper-email">Email</FieldLabel>
+                <FieldLabel htmlFor="shopper-email">{t("Email")}</FieldLabel>
                 <Input
                   {...field}
                   id="shopper-email"
@@ -106,8 +108,9 @@ function EmailStep({
                   aria-invalid={fieldState.invalid}
                 />
                 <FieldDescription>
-                  New here? The same code creates your account. Orders you placed with this email
-                  will be there.
+                  {t(
+                    "New here? The same code creates your account. Orders you placed with this email will be there.",
+                  )}
                 </FieldDescription>
                 {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
               </Field>
@@ -116,7 +119,7 @@ function EmailStep({
           <FormRootError form={form} />
           <Button type="submit" size="lg" className="w-full" disabled={isPending}>
             {isPending ? <Spinner /> : <MailIcon />}
-            Email me a code
+            {t("Email me a code")}
           </Button>
         </form>
       </CardContent>
@@ -135,6 +138,7 @@ function CodeStep({
   returnTo: string;
   onChangeEmail: () => void;
 }) {
+  const t = useT();
   const router = useRouter();
   const [code, setCode] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -145,8 +149,8 @@ function CodeStep({
 
   useEffect(() => {
     if (cooldown <= 0) return;
-    const t = setTimeout(() => setCooldown((c) => c - 1), 1000);
-    return () => clearTimeout(t);
+    const timer = setTimeout(() => setCooldown((c) => c - 1), 1000);
+    return () => clearTimeout(timer);
   }, [cooldown]);
 
   useEffect(() => {
@@ -156,7 +160,7 @@ function CodeStep({
   const submit = (value = code) =>
     startTransition(async () => {
       if (!/^\d{6}$/.test(value)) {
-        setError("Enter the 6-digit code");
+        setError(t("Enter the 6-digit code"));
         return;
       }
       const result = await verifyShopperSignIn({ shopSlug, code: value });
@@ -165,7 +169,7 @@ function CodeStep({
         setCode("");
         return;
       }
-      toast.success("You're signed in");
+      toast.success(t("You're signed in"));
       // New shoppers add their name first; everyone else goes where they were headed.
       router.replace(
         result.data.needsName
@@ -184,17 +188,18 @@ function CodeStep({
       }
       setError(null);
       setCooldown(RESEND_SECONDS);
-      toast.success("New code sent");
+      toast.success(t("New code sent"));
     });
 
   return (
     <Card>
       <CardHeader className="text-center">
         <ShieldCheckIcon className="mx-auto mb-2 size-8 text-primary" aria-hidden />
-        <CardTitle className="text-xl">Check your email</CardTitle>
+        <CardTitle className="text-xl">{t("Check your email")}</CardTitle>
         <CardDescription>
-          We sent a 6-digit code to <span className="font-medium text-foreground">{email}</span>. It
-          expires in 10 minutes.
+          {t("We sent a 6-digit code to")}{" "}
+          <span className="font-medium text-foreground">{email}</span>.{" "}
+          {t("It expires in 10 minutes.")}
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -207,7 +212,7 @@ function CodeStep({
         >
           <CodeInput
             id="sign-in-code"
-            label="Sign-in code"
+            label={t("Sign-in code")}
             inputRef={inputRef}
             value={code}
             onChange={(v) => {
@@ -220,11 +225,11 @@ function CodeStep({
           />
           <Button type="submit" size="lg" className="w-full" disabled={isPending}>
             {isPending && <Spinner />}
-            Sign in
+            {t("Sign in")}
           </Button>
           <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
             <Button type="button" variant="link" className="px-0" onClick={onChangeEmail}>
-              Use a different email
+              {t("Use a different email")}
             </Button>
             <Button
               type="button"
@@ -234,7 +239,9 @@ function CodeStep({
               onClick={resend}
             >
               {isResending && <Spinner />}
-              {cooldown > 0 ? `Resend code in ${cooldown}s` : "Resend code"}
+              {cooldown > 0
+                ? t("Resend code in {seconds}s", { seconds: cooldown })
+                : t("Resend code")}
             </Button>
           </div>
         </form>

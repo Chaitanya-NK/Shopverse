@@ -37,6 +37,7 @@ import { useOnlineCheckout } from "@/features/payments/components/use-online-che
 import { CodeInput } from "@/features/storefront/components/code-input";
 import { type CheckoutPaymentMethod, checkoutDetailsSchema } from "@/features/storefront/schemas";
 import { applyActionError } from "@/lib/forms/apply-action-error";
+import { useT } from "@/i18n/client";
 
 type FormInput = z.input<typeof checkoutDetailsSchema>;
 type FormOutput = z.output<typeof checkoutDetailsSchema>;
@@ -92,6 +93,7 @@ function DetailsStep({
   total: number;
   onSent: (email: string) => void;
 } & PaymentProps) {
+  const t = useT();
   const [isPending, startTransition] = useTransition();
   const form = useForm<FormInput, unknown, FormOutput>({
     resolver: zodResolver(checkoutDetailsSchema),
@@ -135,7 +137,7 @@ function DetailsStep({
       control={form.control}
       render={({ field, fieldState }) => (
         <Field data-invalid={fieldState.invalid}>
-          <FieldLabel htmlFor={`co-${name}`}>{label}</FieldLabel>
+          <FieldLabel htmlFor={`co-${name}`}>{t(label)}</FieldLabel>
           <Input
             {...field}
             {...props}
@@ -153,8 +155,8 @@ function DetailsStep({
     <form onSubmit={onSubmit} noValidate className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle>Contact</CardTitle>
-          <CardDescription>We&apos;ll email a code to confirm your order.</CardDescription>
+          <CardTitle>{t("Contact")}</CardTitle>
+          <CardDescription>{t("We'll email a code to confirm your order.")}</CardDescription>
         </CardHeader>
         <CardContent>
           <FieldGroup className="grid gap-5 sm:grid-cols-2">
@@ -192,7 +194,7 @@ function DetailsStep({
 
       <Card>
         <CardHeader>
-          <CardTitle>Delivery address</CardTitle>
+          <CardTitle>{t("Delivery address")}</CardTitle>
         </CardHeader>
         <CardContent>
           <FieldGroup>
@@ -205,14 +207,14 @@ function DetailsStep({
                 control={form.control}
                 render={({ field, fieldState }) => (
                   <Field data-invalid={fieldState.invalid}>
-                    <FieldLabel htmlFor="co-state">State</FieldLabel>
+                    <FieldLabel htmlFor="co-state">{t("State")}</FieldLabel>
                     <Select value={field.value || undefined} onValueChange={field.onChange}>
                       <SelectTrigger
                         id="co-state"
                         className="w-full"
                         aria-invalid={fieldState.invalid}
                       >
-                        <SelectValue placeholder="Choose" />
+                        <SelectValue placeholder={t("Choose")} />
                       </SelectTrigger>
                       <SelectContent>
                         {INDIAN_STATES.map((s) => (
@@ -232,7 +234,7 @@ function DetailsStep({
               })}
             </div>
             {text("note", "Delivery instructions (optional)", {
-              placeholder: "Leave with the security guard",
+              placeholder: t("Leave with the security guard"),
             })}
           </FieldGroup>
         </CardContent>
@@ -240,7 +242,7 @@ function DetailsStep({
 
       <Card>
         <CardHeader>
-          <CardTitle>Payment</CardTitle>
+          <CardTitle>{t("Payment")}</CardTitle>
         </CardHeader>
         <CardContent>
           <Controller
@@ -264,8 +266,8 @@ function DetailsStep({
       <Button type="submit" size="lg" className="w-full" disabled={isPending}>
         {isPending ? <Spinner /> : <MailCheckIcon />}
         {paymentMethod === "online"
-          ? "Email me a code, then pay"
-          : "Email me a code to place the order"}
+          ? t("Email me a code, then pay")
+          : t("Email me a code to place the order")}
       </Button>
     </form>
   );
@@ -280,6 +282,7 @@ function CodeStep({
   email: string;
   onChangeDetails: () => void;
 }) {
+  const t = useT();
   const router = useRouter();
   const { pay } = useOnlineCheckout();
   const [code, setCode] = useState("");
@@ -291,8 +294,8 @@ function CodeStep({
 
   useEffect(() => {
     if (cooldown <= 0) return;
-    const t = setTimeout(() => setCooldown((c) => c - 1), 1000);
-    return () => clearTimeout(t);
+    const timer = setTimeout(() => setCooldown((c) => c - 1), 1000);
+    return () => clearTimeout(timer);
   }, [cooldown]);
 
   // The input is disabled while checking; once it's enabled again after a
@@ -304,7 +307,7 @@ function CodeStep({
   const submit = (value = code) =>
     startTransition(async () => {
       if (!/^\d{6}$/.test(value)) {
-        setError("Enter the 6-digit code");
+        setError(t("Enter the 6-digit code"));
         return;
       }
       const result = await confirmCheckout({ shopSlug, otp: value });
@@ -319,9 +322,11 @@ function CodeStep({
         const outcome = await pay(result.data.token);
         // On success the browser is on its way to Stripe's payment page.
         if (outcome.status === "redirecting") return;
-        toast.error(`${outcome.message} Your order is saved; you can pay from its page.`);
+        toast.error(
+          `${t(outcome.message)} ${t("Your order is saved; you can pay from its page.")}`,
+        );
       } else {
-        toast.success(`Order ${result.data.number} placed`);
+        toast.success(t("Order {number} placed", { number: result.data.number }));
       }
       router.replace(orderPage);
     });
@@ -335,17 +340,18 @@ function CodeStep({
       }
       setError(null);
       setCooldown(RESEND_SECONDS);
-      toast.success("New code sent");
+      toast.success(t("New code sent"));
     });
 
   return (
     <Card>
       <CardHeader className="text-center">
         <ShieldCheckIcon className="mx-auto mb-2 size-8 text-primary" aria-hidden />
-        <CardTitle>Check your email</CardTitle>
+        <CardTitle>{t("Check your email")}</CardTitle>
         <CardDescription>
-          We sent a 6-digit code to <span className="font-medium text-foreground">{email}</span>. It
-          expires in 10 minutes.
+          {t("We sent a 6-digit code to")}{" "}
+          <span className="font-medium text-foreground">{email}</span>.{" "}
+          {t("It expires in 10 minutes.")}
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -358,7 +364,7 @@ function CodeStep({
         >
           <CodeInput
             id="checkout-code"
-            label="Order code"
+            label={t("Order code")}
             inputRef={inputRef}
             value={code}
             onChange={(v) => {
@@ -371,11 +377,11 @@ function CodeStep({
           />
           <Button type="submit" size="lg" className="w-full" disabled={isPending}>
             {isPending && <Spinner />}
-            Place order
+            {t("Place order")}
           </Button>
           <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
             <Button type="button" variant="link" className="px-0" onClick={onChangeDetails}>
-              Change details
+              {t("Change details")}
             </Button>
             <Button
               type="button"
@@ -385,7 +391,9 @@ function CodeStep({
               onClick={resend}
             >
               {isResending && <Spinner />}
-              {cooldown > 0 ? `Resend code in ${cooldown}s` : "Resend code"}
+              {cooldown > 0
+                ? t("Resend code in {seconds}s", { seconds: cooldown })
+                : t("Resend code")}
             </Button>
           </div>
         </form>

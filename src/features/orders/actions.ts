@@ -1,7 +1,6 @@
 "use server";
 
 import { refresh } from "next/cache";
-import { after } from "next/server";
 
 import {
   cancelOrderSchema,
@@ -15,7 +14,7 @@ import {
 } from "@/features/orders/schemas";
 import { type Tracking } from "@/features/inventory/schemas";
 import { notifyOrder, notifyShipment } from "@/features/notifications/order-notifier";
-import { sendStockAlertsQuietly } from "@/features/operations/server";
+import { queueStockAlerts } from "@/features/operations/server";
 import { refundDuePayments } from "@/features/payments/server";
 import { authorizeOrganization } from "@/features/organizations/server";
 import { createAction } from "@/lib/actions/create-action";
@@ -68,8 +67,8 @@ export const createOrder = createAction({
     if (error) throw fromPostgrestError(error);
 
     // Phone and counter orders with an email get the same confirmation.
-    if (input.confirm) notifyOrder(data, { type: "confirmed" });
-    after(sendStockAlertsQuietly);
+    if (input.confirm) await notifyOrder(data, { type: "confirmed" });
+    await queueStockAlerts();
     refresh();
     return { id: data };
   },
@@ -88,8 +87,8 @@ export const confirmOrder = createAction({
     );
     const { error } = await supabase.rpc("confirm_order", { p_order_id: input.orderId });
     if (error) throw fromPostgrestError(error);
-    notifyOrder(input.orderId, { type: "confirmed" });
-    after(sendStockAlertsQuietly);
+    await notifyOrder(input.orderId, { type: "confirmed" });
+    await queueStockAlerts();
     refresh();
     return { ok: true };
   },
@@ -111,7 +110,7 @@ export const cancelOrder = createAction({
       p_reason: input.reason || undefined,
     });
     if (error) throw fromPostgrestError(error);
-    notifyOrder(input.orderId, { type: "cancelled", byCustomer: false });
+    await notifyOrder(input.orderId, { type: "cancelled", byCustomer: false });
     // Money paid online goes back automatically.
     const refunds = await refundDuePayments(input.orderId);
     refresh();
@@ -216,10 +215,11 @@ export const updateShipmentStatus = createAction({
 
     // The delivery OTP is returned exactly once, when the parcel goes out; the
     // customer gets it by email (staff can also share it on WhatsApp).
-    if (input.status === "picked_up") notifyShipment(input.shipmentId, "shipped");
+    if (input.status === "picked_up") await notifyShipment(input.shipmentId, "shipped");
     else if (input.status === "out_for_delivery")
-      notifyShipment(input.shipmentId, "out_for_delivery", data);
-    else if (input.status === "failed_attempt") notifyShipment(input.shipmentId, "delivery_failed");
+      await notifyShipment(input.shipmentId, "out_for_delivery", data);
+    else if (input.status === "failed_attempt")
+      await notifyShipment(input.shipmentId, "delivery_failed");
     refresh();
     return { otp: data ?? null };
   },
@@ -255,7 +255,7 @@ export const confirmDelivery = createAction({
         ],
       });
     }
-    notifyShipment(input.shipmentId, "delivered");
+    await notifyShipment(input.shipmentId, "delivered");
     refresh();
     return { ok: true };
   },

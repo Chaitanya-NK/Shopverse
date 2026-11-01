@@ -15,6 +15,7 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
+import { useT } from "@/i18n/client";
 
 export type MenuLink = { id: string; label: string; href: string; external: boolean };
 
@@ -46,6 +47,7 @@ function MenuAnchor({
 
 /** The shop's menu as a side sheet, on small screens. */
 export function MobileMenu({ shopName, links }: { shopName: string; links: MenuLink[] }) {
+  const t = useT();
   const [open, setOpen] = useState(false);
   if (links.length === 0) return null;
   return (
@@ -55,7 +57,7 @@ export function MobileMenu({ shopName, links }: { shopName: string; links: MenuL
           variant="ghost"
           size="icon"
           className="shrink-0 rounded-full md:hidden"
-          aria-label="Menu"
+          aria-label={t("Menu")}
         >
           <MenuIcon className="size-5" />
         </Button>
@@ -63,9 +65,9 @@ export function MobileMenu({ shopName, links }: { shopName: string; links: MenuL
       <SheetContent side="left" className="w-72">
         <SheetHeader>
           <SheetTitle>{shopName}</SheetTitle>
-          <SheetDescription className="sr-only">Shop menu</SheetDescription>
+          <SheetDescription className="sr-only">{t("Shop menu")}</SheetDescription>
         </SheetHeader>
-        <nav aria-label="Shop menu" className="flex flex-col px-2">
+        <nav aria-label={t("Shop menu")} className="flex flex-col px-2">
           {links.map((link) => (
             <MenuAnchor
               key={link.id}
@@ -81,9 +83,10 @@ export function MobileMenu({ shopName, links }: { shopName: string; links: MenuL
 }
 
 export function DesktopMenu({ links, className }: { links: MenuLink[]; className?: string }) {
+  const t = useT();
   if (links.length === 0) return null;
   return (
-    <nav aria-label="Shop menu" className={className}>
+    <nav aria-label={t("Shop menu")} className={className}>
       <ul className="flex flex-wrap items-center gap-x-6 gap-y-1">
         {links.map((link) => (
           <li key={link.id}>
@@ -100,10 +103,16 @@ export function DesktopMenu({ links, className }: { links: MenuLink[]; className
 
 /** A search button that opens a small search box. */
 export function SearchButton({ action }: { action: string }) {
+  const t = useT();
   return (
     <Popover>
       <PopoverTrigger asChild>
-        <Button variant="ghost" size="icon" className="shrink-0 rounded-full" aria-label="Search">
+        <Button
+          variant="ghost"
+          size="icon"
+          className="shrink-0 rounded-full"
+          aria-label={t("Search")}
+        >
           <SearchIcon className="size-5" />
         </Button>
       </PopoverTrigger>
@@ -117,8 +126,8 @@ export function SearchButton({ action }: { action: string }) {
               name="q"
               type="search"
               autoFocus
-              placeholder="Search products"
-              aria-label="Search products"
+              placeholder={t("Search products")}
+              aria-label={t("Search products")}
             />
           </InputGroup>
         </form>

@@ -1,3 +1,5 @@
+"use client";
+
 import { FileTextIcon, Undo2Icon } from "lucide-react";
 import Link from "next/link";
 
@@ -8,12 +10,15 @@ import { ReturnStatusBadge } from "@/features/returns/components/return-status-b
 import { WithdrawReturnButton } from "@/features/returns/components/withdraw-return-button";
 import { type OrderReturn, type RefundMethod } from "@/features/returns/schemas";
 import { formatMoney } from "@/lib/format";
+import { useT } from "@/i18n/client";
+import { INTL_LOCALE, type Locale, type Translate } from "@/i18n/core";
 
-const dateFormat = new Intl.DateTimeFormat("en-IN", {
-  day: "numeric",
-  month: "short",
-  timeZone: "Asia/Kolkata",
-});
+const dateFormat = (locale: Locale) =>
+  new Intl.DateTimeFormat(INTL_LOCALE[locale], {
+    day: "numeric",
+    month: "short",
+    timeZone: "Asia/Kolkata",
+  });
 
 const REFUND_HOW: Record<RefundMethod, string> = {
   original: "to your original payment method",
@@ -22,29 +27,31 @@ const REFUND_HOW: Record<RefundMethod, string> = {
   cash: "in cash",
 };
 
-function message(r: OrderReturn, money: (n: number) => string) {
+function message(r: OrderReturn, money: (n: number) => string, t: Translate) {
   const exchange = r.resolution === "exchange";
   switch (r.status) {
     case "requested":
-      return "We'll review your request soon.";
+      return t("We'll review your request soon.");
     case "approved":
-      return "Approved. Keep the items packed, with tags, ready for pickup.";
+      return t("Approved. Keep the items packed, with tags, ready for pickup.");
     case "picked_up":
-      return "Picked up. We'll check the items when they arrive.";
+      return t("Picked up. We'll check the items when they arrive.");
     case "received":
-      if (exchange) return "Received. Your replacement is being prepared.";
+      if (exchange) return t("Received. Your replacement is being prepared.");
       if (r.refund_status === "processing" || r.refund_status === "due")
-        return `Received. Your refund of ${money(r.refund_amount)} is being processed.`;
-      return "Received.";
+        return t("Received. Your refund of {amount} is being processed.", {
+          amount: money(r.refund_amount),
+        });
+      return t("Received.");
     case "completed":
-      if (exchange) return "Exchanged. Your replacement order is on its way.";
+      if (exchange) return t("Exchanged. Your replacement order is on its way.");
       if (r.refund_status === "refunded")
-        return `Refunded ${money(r.refunded_amount)}${r.refund_method ? ` ${REFUND_HOW[r.refund_method]}` : ""}.${r.refund_method === "cash" ? "" : " Banks can take 5–7 working days."}`;
-      return r.source === "rto" ? "The parcel came back to us. Nothing to pay." : "Closed.";
+        return `${t("Refunded {amount}", { amount: money(r.refunded_amount) })}${r.refund_method ? ` ${t(REFUND_HOW[r.refund_method])}` : ""}.${r.refund_method === "cash" ? "" : ` ${t("Banks can take 5–7 working days.")}`}`;
+      return r.source === "rto" ? t("The parcel came back to us. Nothing to pay.") : t("Closed.");
     case "rejected":
-      return "We couldn't accept this return.";
+      return t("We couldn't accept this return.");
     case "cancelled":
-      return "You withdrew this request.";
+      return t("You withdrew this request.");
   }
 }
 
@@ -62,6 +69,7 @@ export function OrderReturns({
   orderToken: string;
   owner: boolean;
 }) {
+  const t = useT();
   if (returns.length === 0) return null;
   const money = (n: number) => formatMoney(n, currency);
   return (
@@ -69,7 +77,7 @@ export function OrderReturns({
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Undo2Icon className="size-5" aria-hidden />
-          Returns
+          {t("Returns")}
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
@@ -77,7 +85,7 @@ export function OrderReturns({
           <section
             key={r.id}
             className="space-y-2 rounded-lg border p-3 text-sm"
-            aria-label={`Return ${r.number}`}
+            aria-label={t("Return {number}", { number: r.number })}
           >
             <div className="flex flex-wrap items-center justify-between gap-2">
               <span className="flex items-center gap-2">
@@ -85,8 +93,8 @@ export function OrderReturns({
                 <ReturnStatusBadge status={r.status} />
               </span>
               <span className="text-muted-foreground">
-                {r.resolution === "exchange" ? "Exchange" : "Refund"} ·{" "}
-                {dateFormat.format(new Date(r.created_at))}
+                {r.resolution === "exchange" ? t("Exchange") : t("Refund")} ·{" "}
+                {dateFormat(t.locale).format(new Date(r.created_at))}
               </span>
             </div>
             <ul className="text-muted-foreground">
@@ -97,7 +105,7 @@ export function OrderReturns({
                 </li>
               ))}
             </ul>
-            <p>{message(r, money)}</p>
+            <p>{message(r, money, t)}</p>
             {r.staff_note && (r.status === "rejected" || r.status === "approved") && (
               <p className="rounded-md bg-muted px-3 py-2 text-muted-foreground">{r.staff_note}</p>
             )}
@@ -106,14 +114,14 @@ export function OrderReturns({
                 <Button asChild variant="outline" size="sm">
                   <Link href={routes.storefrontCreditNote(shopSlug, orderToken, r.id)}>
                     <FileTextIcon />
-                    Credit note {r.credit_note_number}
+                    {t("Credit note {number}", { number: r.credit_note_number })}
                   </Link>
                 </Button>
               )}
               {r.exchange_order_token && (
                 <Button asChild variant="outline" size="sm">
                   <Link href={routes.storefrontOrder(shopSlug, r.exchange_order_token)}>
-                    Replacement order
+                    {t("Replacement order")}
                   </Link>
                 </Button>
               )}

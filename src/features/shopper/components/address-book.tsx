@@ -57,6 +57,7 @@ import {
   saveAddressSchema,
 } from "@/features/shopper/schemas";
 import { applyActionError } from "@/lib/forms/apply-action-error";
+import { useT } from "@/i18n/client";
 
 export const MAX_ADDRESSES = 10;
 
@@ -67,6 +68,7 @@ export function AddressBook({
   shopSlug: string;
   addresses: SavedAddress[];
 }) {
+  const t = useT();
   const [editing, setEditing] = useState<SavedAddress | "new" | null>(null);
   const [deleting, setDeleting] = useState<SavedAddress | null>(null);
   const [, startTransition] = useTransition();
@@ -74,8 +76,8 @@ export function AddressBook({
   const makeDefault = (address: SavedAddress) =>
     startTransition(async () => {
       const result = await setDefaultShopperAddress({ shopSlug, addressId: address.id });
-      if (result.ok) toast.success("Default address updated");
-      else toast.error(result.error.message);
+      if (result.ok) toast.success(t("Default address updated"));
+      else toast.error(t(result.error.message));
     });
 
   return (
@@ -85,7 +87,7 @@ export function AddressBook({
           {addresses.length} of {MAX_ADDRESSES} saved. Your default is picked at checkout.
         </p>
         <Button onClick={() => setEditing("new")} disabled={addresses.length >= MAX_ADDRESSES}>
-          <PlusIcon /> Add address
+          <PlusIcon /> {t("Add address")}
         </Button>
       </div>
 
@@ -95,9 +97,9 @@ export function AddressBook({
             <EmptyMedia variant="icon">
               <MapPinIcon />
             </EmptyMedia>
-            <EmptyTitle>No saved addresses</EmptyTitle>
+            <EmptyTitle>{t("No saved addresses")}</EmptyTitle>
             <EmptyDescription>
-              Add one now, or save it the next time you check out.
+              {t("Add one now, or save it the next time you check out.")}
             </EmptyDescription>
           </EmptyHeader>
         </Empty>
@@ -109,7 +111,7 @@ export function AddressBook({
                 <div className="min-w-0 flex-1 space-y-1 text-sm">
                   <p className="flex flex-wrap items-center gap-2 font-medium">
                     {address.label || address.name}
-                    {address.isDefault && <Badge variant="secondary">Default</Badge>}
+                    {address.isDefault && <Badge variant="secondary">{t("Default")}</Badge>}
                   </p>
                   {address.label && <p>{address.name}</p>}
                   <p className="text-muted-foreground">{formatAddressLine(address)}</p>
@@ -120,22 +122,22 @@ export function AddressBook({
                     <Button
                       variant="ghost"
                       size="icon"
-                      aria-label={`Options for ${address.label || address.name}`}
+                      aria-label={t("Options for {name}", { name: address.label || address.name })}
                     >
                       <MoreHorizontalIcon />
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
                     <DropdownMenuItem onSelect={() => setEditing(address)}>
-                      <PencilIcon /> Edit
+                      <PencilIcon /> {t("Edit")}
                     </DropdownMenuItem>
                     {!address.isDefault && (
                       <DropdownMenuItem onSelect={() => makeDefault(address)}>
-                        <StarIcon /> Make default
+                        <StarIcon /> {t("Make default")}
                       </DropdownMenuItem>
                     )}
                     <DropdownMenuItem variant="destructive" onSelect={() => setDeleting(address)}>
-                      <Trash2Icon /> Delete
+                      <Trash2Icon /> {t("Delete")}
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
@@ -148,8 +150,8 @@ export function AddressBook({
       <Dialog open={editing !== null} onOpenChange={(open) => !open && setEditing(null)}>
         <DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-xl">
           <DialogHeader>
-            <DialogTitle>{editing === "new" ? "Add address" : "Edit address"}</DialogTitle>
-            <DialogDescription>Where should we deliver?</DialogDescription>
+            <DialogTitle>{editing === "new" ? t("Add address") : t("Edit address")}</DialogTitle>
+            <DialogDescription>{t("Where should we deliver?")}</DialogDescription>
           </DialogHeader>
           {editing !== null && (
             <AddressForm
@@ -165,17 +167,17 @@ export function AddressBook({
       <ConfirmDialog
         open={deleting !== null}
         onOpenChange={(open) => !open && setDeleting(null)}
-        title="Delete this address?"
+        title={t("Delete this address?")}
         description={deleting ? formatAddressLine(deleting) : ""}
-        confirmLabel="Delete"
+        confirmLabel={t("Delete")}
         onConfirm={async () => {
           if (!deleting) return true;
           const result = await deleteShopperAddress({ shopSlug, addressId: deleting.id });
           if (!result.ok) {
-            toast.error(result.error.message);
+            toast.error(t(result.error.message));
             return false;
           }
-          toast.success("Address deleted");
+          toast.success(t("Address deleted"));
           return true;
         }}
       />
@@ -197,6 +199,7 @@ function AddressForm({
   isFirst: boolean;
   onDone: () => void;
 }) {
+  const t = useT();
   const [isPending, startTransition] = useTransition();
   const form = useForm<FormInput, unknown, FormOutput>({
     resolver: zodResolver(saveAddressSchema),
@@ -224,7 +227,7 @@ function AddressForm({
         applyActionError(form, result.error);
         return;
       }
-      toast.success(address ? "Address updated" : "Address saved");
+      toast.success(address ? t("Address updated") : t("Address saved"));
       onDone();
     }),
   );
@@ -237,11 +240,11 @@ function AddressForm({
           control={form.control}
           render={({ field, fieldState }) => (
             <Field data-invalid={fieldState.invalid}>
-              <FieldLabel htmlFor="addr-label">Label (optional)</FieldLabel>
+              <FieldLabel htmlFor="addr-label">{t("Label (optional)")}</FieldLabel>
               <Input
                 {...field}
                 id="addr-label"
-                placeholder="Home, Office…"
+                placeholder={t("Home, Office…")}
                 aria-invalid={fieldState.invalid}
               />
               {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
@@ -261,7 +264,7 @@ function AddressForm({
                 disabled={address?.isDefault}
               />
               <FieldLabel htmlFor="addr-default" className="font-normal">
-                Use as my default address
+                {t("Use as my default address")}
               </FieldLabel>
             </Field>
           )}
@@ -271,12 +274,12 @@ function AddressForm({
       <DialogFooter>
         <DialogClose asChild>
           <Button type="button" variant="outline">
-            Cancel
+            {t("Cancel")}
           </Button>
         </DialogClose>
         <Button type="submit" disabled={isPending}>
           {isPending && <Spinner />}
-          Save address
+          {t("Save address")}
         </Button>
       </DialogFooter>
     </form>

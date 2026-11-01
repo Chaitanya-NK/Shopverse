@@ -5,8 +5,14 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { routes } from "@/config/routes";
 import { AddressBook } from "@/features/shopper/components/address-book";
 import { requireAccountPage } from "@/features/shopper/guard";
+import { storefrontTitle } from "@/i18n/server";
 
-export const metadata: Metadata = { title: "Addresses", robots: { index: false } };
+export async function generateMetadata({
+  params,
+}: PageProps<"/s/[shopSlug]/account/addresses">): Promise<Metadata> {
+  const { shopSlug } = await params;
+  return { title: await storefrontTitle(shopSlug, "Addresses"), robots: { index: false } };
+}
 
 type Props = PageProps<"/s/[shopSlug]/account/addresses">;
 

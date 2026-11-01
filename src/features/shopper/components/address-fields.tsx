@@ -12,6 +12,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { INDIAN_STATES } from "@/features/orders/india";
+import { useT } from "@/i18n/client";
 
 type AddressKey = "name" | "phone" | "line1" | "line2" | "city" | "state" | "postalCode";
 
@@ -28,6 +29,7 @@ export function AddressFields<T extends FieldValues>({
   prefix: string;
   idPrefix: string;
 }) {
+  const t = useT();
   const name = (key: AddressKey) => `${prefix}.${key}` as Path<T>;
   const id = (key: AddressKey) => `${idPrefix}-${key}`;
 
@@ -37,7 +39,7 @@ export function AddressFields<T extends FieldValues>({
       control={control}
       render={({ field, fieldState }) => (
         <Field data-invalid={fieldState.invalid}>
-          <FieldLabel htmlFor={id(key)}>{label}</FieldLabel>
+          <FieldLabel htmlFor={id(key)}>{t(label)}</FieldLabel>
           <Input
             {...field}
             {...props}
@@ -70,14 +72,14 @@ export function AddressFields<T extends FieldValues>({
           control={control}
           render={({ field, fieldState }) => (
             <Field data-invalid={fieldState.invalid}>
-              <FieldLabel htmlFor={id("state")}>State</FieldLabel>
+              <FieldLabel htmlFor={id("state")}>{t("State")}</FieldLabel>
               <Select value={field.value || undefined} onValueChange={field.onChange}>
                 <SelectTrigger
                   id={id("state")}
                   className="w-full"
                   aria-invalid={fieldState.invalid}
                 >
-                  <SelectValue placeholder="Choose" />
+                  <SelectValue placeholder={t("Choose")} />
                 </SelectTrigger>
                 <SelectContent>
                   {INDIAN_STATES.map((s) => (

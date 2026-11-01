@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { changeCart } from "@/features/storefront/actions";
+import { useT } from "@/i18n/client";
 
 export function CartLineControls({
   shopSlug,
@@ -21,11 +22,13 @@ export function CartLineControls({
   max: number;
   label: string;
 }) {
+  const t = useT();
   const [isPending, startTransition] = useTransition();
   const set = (next: number) =>
     startTransition(async () => {
       const result = await changeCart({ shopSlug, variantId, quantity: next, mode: "set" });
-      if (!result.ok) toast.error(result.error.fieldErrors?.variantId?.[0] ?? result.error.message);
+      if (!result.ok)
+        toast.error(t(result.error.fieldErrors?.variantId?.[0] ?? result.error.message));
     });
 
   return (
@@ -33,13 +36,13 @@ export function CartLineControls({
       <div
         className="flex items-center rounded-lg border"
         role="group"
-        aria-label={`Quantity of ${label}`}
+        aria-label={t("Quantity of {item}", { item: label })}
       >
         <Button
           variant="ghost"
           size="icon"
           className="size-8"
-          aria-label="Fewer"
+          aria-label={t("Fewer")}
           disabled={isPending || quantity <= 1}
           onClick={() => set(quantity - 1)}
         >
@@ -52,7 +55,7 @@ export function CartLineControls({
           variant="ghost"
           size="icon"
           className="size-8"
-          aria-label="More"
+          aria-label={t("More")}
           disabled={isPending || quantity >= max}
           onClick={() => set(quantity + 1)}
         >
@@ -63,7 +66,7 @@ export function CartLineControls({
         variant="ghost"
         size="icon"
         className="size-8 text-muted-foreground"
-        aria-label={`Remove ${label}`}
+        aria-label={t("Remove {item}", { item: label })}
         disabled={isPending}
         onClick={() => set(0)}
       >

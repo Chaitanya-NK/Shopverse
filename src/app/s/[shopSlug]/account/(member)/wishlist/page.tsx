@@ -17,8 +17,15 @@ import { WishlistButton } from "@/features/shopper/components/wishlist-button";
 import { requireAccountPage } from "@/features/shopper/guard";
 import { getShopperWishlist } from "@/features/shopper/queries";
 import { ProductCard } from "@/features/storefront/components/product-card";
+import { T } from "@/i18n/client";
+import { storefrontTitle } from "@/i18n/server";
 
-export const metadata: Metadata = { title: "Wishlist", robots: { index: false } };
+export async function generateMetadata({
+  params,
+}: PageProps<"/s/[shopSlug]/account/wishlist">): Promise<Metadata> {
+  const { shopSlug } = await params;
+  return { title: await storefrontTitle(shopSlug, "Wishlist"), robots: { index: false } };
+}
 
 type Props = PageProps<"/s/[shopSlug]/account/wishlist">;
 
@@ -42,13 +49,17 @@ async function Wishlist({ params }: Pick<Props, "params">) {
           <EmptyMedia variant="icon">
             <HeartIcon />
           </EmptyMedia>
-          <EmptyTitle>Nothing saved yet</EmptyTitle>
+          <EmptyTitle>
+            <T>Nothing saved yet</T>
+          </EmptyTitle>
           <EmptyDescription>
-            Tap the heart on any product to keep it here for later.
+            <T>Tap the heart on any product to keep it here for later.</T>
           </EmptyDescription>
         </EmptyHeader>
         <Button asChild>
-          <Link href={routes.storefront(shop.slug)}>Browse products</Link>
+          <Link href={routes.storefront(shop.slug)}>
+            <T>Browse products</T>
+          </Link>
         </Button>
       </Empty>
     );

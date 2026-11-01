@@ -4,6 +4,7 @@ import { Suspense } from "react";
 
 import { ReloadButton } from "@/features/storefront/components/install-app";
 import { getStorefrontShop } from "@/features/storefront/queries";
+import { T } from "@/i18n/client";
 
 export const metadata: Metadata = { title: "You're offline", robots: { index: false } };
 
@@ -14,13 +15,14 @@ export default function OfflinePage({ params }: Props) {
   return (
     <div className="mx-auto flex max-w-md flex-col items-center gap-4 py-16 text-center">
       <WifiOffIcon className="size-12 text-muted-foreground" aria-hidden />
-      <h1 className="text-2xl font-semibold tracking-tight">You&apos;re offline</h1>
+      <h1 className="text-2xl font-semibold tracking-tight">
+        <T>{"You're offline"}</T>
+      </h1>
       <p className="text-muted-foreground">
-        Check your connection.{" "}
-        <Suspense fallback="Your cart is saved">
+        <T>Check your connection.</T>{" "}
+        <Suspense fallback={<T>{"Your cart is saved and will be here when you're back."}</T>}>
           <ShopLine params={params} />
-        </Suspense>{" "}
-        and will be here when you&apos;re back.
+        </Suspense>
       </p>
       <ReloadButton />
     </div>
@@ -30,5 +32,11 @@ export default function OfflinePage({ params }: Props) {
 async function ShopLine({ params }: Pick<Props, "params">) {
   const { shopSlug } = await params;
   const shop = await getStorefrontShop(shopSlug);
-  return <>Your {shop ? `${shop.name} ` : ""}cart is saved</>;
+  return shop ? (
+    <T vars={{ shop: shop.name }}>
+      {"Your {shop} cart is saved and will be here when you're back."}
+    </T>
+  ) : (
+    <T>{"Your cart is saved and will be here when you're back."}</T>
+  );
 }

@@ -12,6 +12,7 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from "@/components/ui/empty";
+import { reportClientError } from "@/lib/observability/report";
 
 export default function ErrorBoundary({
   error,
@@ -21,8 +22,8 @@ export default function ErrorBoundary({
   reset: () => void;
 }) {
   useEffect(() => {
-    // Hook point for an error tracker (Sentry, etc.).
     console.error(error);
+    reportClientError(error, "boundary", error.digest);
   }, [error]);
 
   return (

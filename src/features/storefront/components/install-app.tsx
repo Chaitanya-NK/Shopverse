@@ -4,6 +4,7 @@ import { DownloadIcon, RotateCwIcon } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/button";
+import { useT } from "@/i18n/client";
 
 type InstallPrompt = Event & { prompt: () => Promise<void>; userChoice: Promise<unknown> };
 
@@ -12,6 +13,7 @@ type InstallPrompt = Event & { prompt: () => Promise<void>; userChoice: Promise<
  * never serves stale code) and offers "Install app" where the browser allows.
  */
 export function InstallApp({ swUrl, scope }: { swUrl: string; scope: string }) {
+  const t = useT();
   const [prompt, setPrompt] = useState<InstallPrompt | null>(null);
 
   useEffect(() => {
@@ -37,16 +39,17 @@ export function InstallApp({ swUrl, scope }: { swUrl: string; scope: string }) {
       }}
     >
       <DownloadIcon />
-      Install app
+      {t("Install app")}
     </Button>
   );
 }
 
 export function ReloadButton() {
+  const t = useT();
   return (
     <Button onClick={() => window.location.reload()}>
       <RotateCwIcon />
-      Try again
+      {t("Try again")}
     </Button>
   );
 }

@@ -1,12 +1,11 @@
 "use server";
 
-import { after } from "next/server";
-
 import { cookies } from "next/headers";
 
 import { env } from "@/env";
 import { storefrontCookiePath } from "@/features/domains/cookie-path";
 import { checkoutCodeEmail } from "@/features/storefront/emails";
+import { getLocale, getT, recordOrderLocale } from "@/i18n/server";
 import { clearCart, readDiscountCode } from "@/features/storefront/cart-cookie";
 import { getCart, getStorefrontShop } from "@/features/storefront/queries";
 import {
@@ -17,7 +16,7 @@ import {
   toIndianE164,
 } from "@/features/storefront/schemas";
 import { notifyOrder } from "@/features/notifications/order-notifier";
-import { sendStockAlertsQuietly } from "@/features/operations/server";
+import { queueStockAlerts } from "@/features/operations/server";
 import { createAction } from "@/lib/actions/create-action";
 import { Errors, fromPostgrestError } from "@/lib/errors";
 import { sendMail } from "@/lib/mail";
@@ -107,6 +106,7 @@ export const startCheckout = createAction({
         code: session.otp,
         total: Number(session.grand_total),
         currency: shop.currency,
+        t: await getT(shop.language),
       }),
     );
     (await checkoutCookie(shop.slug)).set(session.checkout_id);
@@ -135,6 +135,7 @@ export const resendCheckoutCode = createAction({
         shopName: shop.name,
         code: result.otp,
         currency: shop.currency,
+        t: await getT(shop.language),
       }),
     );
     return { sendsLeft: result.sends_left };
@@ -177,7 +178,11 @@ export const confirmCheckout = createAction({
         otp: [
           typeof left === "number"
             ? left > 0
-              ? `That code is not right. ${left} ${left === 1 ? "try" : "tries"} left.`
+              ? (await getT(shop.language)).plural(
+                  left,
+                  "That code is not right. {count} try left.",
+                  "That code is not right. {count} tries left.",
+                )
               : "That code is not right. Ask for a new code."
             : (result.message ?? "That code can't be used."),
         ],
@@ -185,11 +190,12 @@ export const confirmCheckout = createAction({
     }
 
     await cookie.clear();
+    await recordOrderLocale(result.order_id!, await getLocale(shop.language));
 
     // Online orders are confirmed (and emailed) once the payment arrives.
-    if (!result.awaiting_payment) notifyOrder(result.order_id!, { type: "confirmed" });
+    if (!result.awaiting_payment) await notifyOrder(result.order_id!, { type: "confirmed" });
     // Stock is now reserved: tell the team about anything that ran low.
-    after(sendStockAlertsQuietly);
+    await queueStockAlerts();
 
     return {
       token: result.public_token!,

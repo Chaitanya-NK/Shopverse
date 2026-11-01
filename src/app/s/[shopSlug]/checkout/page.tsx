@@ -13,8 +13,15 @@ import { DiscountCodeForm } from "@/features/storefront/components/discount-code
 import { OrderSummaryLines } from "@/features/storefront/components/order-summary-lines";
 import { getCart, getQuote, getStorefrontShop } from "@/features/storefront/queries";
 import { formatMoney } from "@/lib/format";
+import { T } from "@/i18n/client";
+import { storefrontTitle } from "@/i18n/server";
 
-export const metadata: Metadata = { title: "Checkout", robots: { index: false } };
+export async function generateMetadata({
+  params,
+}: PageProps<"/s/[shopSlug]/checkout">): Promise<Metadata> {
+  const { shopSlug } = await params;
+  return { title: await storefrontTitle(shopSlug, "Checkout"), robots: { index: false } };
+}
 
 type Props = PageProps<"/s/[shopSlug]/checkout">;
 
@@ -40,10 +47,12 @@ async function Checkout({ params }: Pick<Props, "params">) {
   return (
     <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_22rem]">
       <div className="space-y-6">
-        <h1 className="text-2xl font-semibold tracking-tight">Checkout</h1>
+        <h1 className="text-2xl font-semibold tracking-tight">
+          <T>Checkout</T>
+        </h1>
         {!shop.live ? (
           <p className="rounded-xl border bg-muted/40 p-4 text-sm">
-            This shop is a preview. Set it live in Shops → settings to take orders.
+            <T>This shop is a preview. Set it live in Shops → settings to take orders.</T>
           </p>
         ) : shopper ? (
           <SignedInCheckout
@@ -61,14 +70,14 @@ async function Checkout({ params }: Pick<Props, "params">) {
         ) : (
           <>
             <p className="rounded-xl border bg-muted/40 p-4 text-sm">
-              Have an account?{" "}
+              <T>Have an account?</T>{" "}
               <Link
                 href={routes.storefrontSignIn(shop.slug, routes.storefrontCheckout(shop.slug))}
                 className="font-medium underline-offset-4 hover:underline"
               >
-                Sign in
+                <T>Sign in</T>
               </Link>{" "}
-              to use your saved addresses. Or check out as a guest below.
+              <T>to use your saved addresses. Or check out as a guest below.</T>
             </p>
             <CheckoutFlow
               shopSlug={shop.slug}
@@ -83,7 +92,9 @@ async function Checkout({ params }: Pick<Props, "params">) {
       </div>
       <Card className="h-fit lg:sticky lg:top-24">
         <CardHeader>
-          <CardTitle>Your order</CardTitle>
+          <CardTitle>
+            <T>Your order</T>
+          </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <ul className="space-y-3 text-sm">
@@ -92,7 +103,8 @@ async function Checkout({ params }: Pick<Props, "params">) {
                 <span className="min-w-0">
                   <span className="block truncate">{item.productTitle}</span>
                   <span className="text-muted-foreground">
-                    {item.title !== "Default" && `${item.title} · `}Qty {item.quantity}
+                    {item.title !== "Default" && `${item.title} · `}
+                    <T vars={{ count: item.quantity }}>{"Qty {count}"}</T>
                   </span>
                 </span>
                 <span className="tabular-nums">{money(item.price * item.quantity)}</span>
@@ -112,7 +124,7 @@ async function Checkout({ params }: Pick<Props, "params">) {
             href={routes.storefrontCart(shop.slug)}
             className="block text-center text-sm text-muted-foreground hover:underline"
           >
-            Edit cart
+            <T>Edit cart</T>
           </Link>
         </CardContent>
       </Card>

@@ -12,6 +12,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Switch } from "@/components/ui/switch";
 import { catalogParams } from "@/features/storefront/search-params";
 import { formatMoney } from "@/lib/format";
+import { useT } from "@/i18n/client";
 
 const toNumber = (v: string) => {
   const n = Number(v.replace(/[,\s₹]/g, ""));
@@ -26,6 +27,7 @@ export function CatalogFilters({
   currency: string;
   priceRange: { min: number | null; max: number | null };
 }) {
+  const t = useT();
   const [isPending, startTransition] = useTransition();
   const [params, setParams] = useQueryStates(catalogParams, { shallow: false, startTransition });
   const [open, setOpen] = useState(false);
@@ -60,7 +62,7 @@ export function CatalogFilters({
         <PopoverTrigger asChild>
           <Button variant="outline">
             <SlidersHorizontalIcon />
-            Filters
+            {t("Filters")}
             {active > 0 && (
               <Badge className="h-5 min-w-5 rounded-full px-1 tabular-nums">{active}</Badge>
             )}
@@ -75,11 +77,11 @@ export function CatalogFilters({
             }}
           >
             <fieldset className="space-y-2">
-              <legend className="text-sm font-medium">Price</legend>
+              <legend className="text-sm font-medium">{t("Price")}</legend>
               <div className="grid grid-cols-2 gap-2">
                 <Field>
                   <FieldLabel htmlFor="filter-min" className="text-xs text-muted-foreground">
-                    Min
+                    {t("Min")}
                   </FieldLabel>
                   <Input
                     id="filter-min"
@@ -91,7 +93,7 @@ export function CatalogFilters({
                 </Field>
                 <Field>
                   <FieldLabel htmlFor="filter-max" className="text-xs text-muted-foreground">
-                    Max
+                    {t("Max")}
                   </FieldLabel>
                   <Input
                     id="filter-max"
@@ -99,7 +101,7 @@ export function CatalogFilters({
                     value={max}
                     onChange={(e) => setMax(e.target.value)}
                     placeholder={
-                      priceRange.max !== null ? String(Math.ceil(priceRange.max)) : "Any"
+                      priceRange.max !== null ? String(Math.ceil(priceRange.max)) : t("Any")
                     }
                   />
                 </Field>
@@ -108,7 +110,7 @@ export function CatalogFilters({
             <Field orientation="horizontal">
               <Switch id="filter-stock" checked={stock} onCheckedChange={setStock} />
               <FieldLabel htmlFor="filter-stock" className="font-normal">
-                In stock only
+                {t("In stock only")}
               </FieldLabel>
             </Field>
             <div className="flex justify-between gap-2">
@@ -121,9 +123,9 @@ export function CatalogFilters({
                   setStock(false);
                 }}
               >
-                Clear
+                {t("Clear")}
               </Button>
-              <Button type="submit">Show results</Button>
+              <Button type="submit">{t("Show results")}</Button>
             </div>
           </form>
         </PopoverContent>
@@ -135,20 +137,21 @@ export function CatalogFilters({
             params.min !== null && params.max !== null
               ? `${formatMoney(params.min, currency)} – ${formatMoney(params.max, currency)}`
               : params.min !== null
-                ? `From ${formatMoney(params.min, currency)}`
-                : `Up to ${formatMoney(params.max!, currency)}`
+                ? t("From {amount}", { amount: formatMoney(params.min, currency) })
+                : t("Up to {amount}", { amount: formatMoney(params.max!, currency) })
           }
           onRemove={() => void setParams({ min: null, max: null, page: null })}
         />
       )}
       {params.stock && (
-        <Chip label="In stock" onRemove={() => void setParams({ stock: null, page: null })} />
+        <Chip label={t("In stock")} onRemove={() => void setParams({ stock: null, page: null })} />
       )}
     </div>
   );
 }
 
 function Chip({ label, onRemove }: { label: string; onRemove: () => void }) {
+  const t = useT();
   return (
     <span className="inline-flex items-center gap-1 rounded-full border bg-muted/50 py-1 pr-1 pl-3 text-sm">
       {label}
@@ -156,7 +159,7 @@ function Chip({ label, onRemove }: { label: string; onRemove: () => void }) {
         type="button"
         onClick={onRemove}
         className="rounded-full p-0.5 text-muted-foreground hover:bg-muted hover:text-foreground"
-        aria-label={`Remove filter: ${label}`}
+        aria-label={t("Remove filter: {filter}", { filter: label })}
       >
         <XIcon className="size-3.5" />
       </button>

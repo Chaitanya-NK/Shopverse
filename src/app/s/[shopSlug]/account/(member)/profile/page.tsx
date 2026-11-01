@@ -8,8 +8,15 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { RETURN_TO_PARAM, routes, safeReturnTo } from "@/config/routes";
 import { ProfileForm } from "@/features/shopper/components/profile-form";
 import { requireAccountPage } from "@/features/shopper/guard";
+import { T } from "@/i18n/client";
+import { storefrontTitle } from "@/i18n/server";
 
-export const metadata: Metadata = { title: "Profile", robots: { index: false } };
+export async function generateMetadata({
+  params,
+}: PageProps<"/s/[shopSlug]/account/profile">): Promise<Metadata> {
+  const { shopSlug } = await params;
+  return { title: await storefrontTitle(shopSlug, "Profile"), robots: { index: false } };
+}
 
 type Props = PageProps<"/s/[shopSlug]/account/profile">;
 
@@ -36,14 +43,22 @@ async function Profile({ params, searchParams }: Props) {
       {welcome && (
         <Alert>
           <PartyPopperIcon />
-          <AlertTitle>Welcome to {shop.name}!</AlertTitle>
-          <AlertDescription>Add your name so we know who to deliver to.</AlertDescription>
+          <AlertTitle>
+            <T vars={{ shop: shop.name }}>{"Welcome to {shop}!"}</T>
+          </AlertTitle>
+          <AlertDescription>
+            <T>Add your name so we know who to deliver to.</T>
+          </AlertDescription>
         </Alert>
       )}
       <Card>
         <CardHeader>
-          <CardTitle>Your details</CardTitle>
-          <CardDescription>Used to fill in checkout. We never share them.</CardDescription>
+          <CardTitle>
+            <T>Your details</T>
+          </CardTitle>
+          <CardDescription>
+            <T>Used to fill in checkout. We never share them.</T>
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <ProfileForm

@@ -4,12 +4,16 @@ import { Suspense } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { routes } from "@/config/routes";
 import { TemplatePage } from "@/features/design/render/template";
+import { storefrontTitle } from "@/i18n/server";
 
 type Props = PageProps<"/s/[shopSlug]/products">;
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { shopSlug } = await params;
-  return { title: "All products", alternates: { canonical: routes.storefrontProducts(shopSlug) } };
+  return {
+    title: await storefrontTitle(shopSlug, "All products"),
+    alternates: { canonical: routes.storefrontProducts(shopSlug) },
+  };
 }
 
 /** Every product: search results, categories, filters. */

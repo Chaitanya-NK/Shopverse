@@ -72,7 +72,7 @@ export const requestReturn = createAction({
       }),
     );
     const created = data as { id: string; number: string };
-    notifyReturn(created.id, "requested");
+    await notifyReturn(created.id, "requested");
     refresh();
     return { number: created.number };
   },
@@ -174,7 +174,7 @@ export const reviewReturn = createAction({
       p_note: input.note,
     });
     if (error) throw fromPostgrestError(error);
-    notifyReturn(input.returnId, input.approve ? "approved" : "rejected");
+    await notifyReturn(input.returnId, input.approve ? "approved" : "rejected");
     refresh();
     return null;
   },
@@ -212,7 +212,7 @@ export const receiveReturn = createAction({
       })),
     });
     if (error) throw fromPostgrestError(error);
-    notifyReturn(input.returnId, "received");
+    await notifyReturn(input.returnId, "received");
 
     let refund: "sent" | "failed" | "manual" | "none" = "none";
     const { data: after } = await supabase
@@ -224,7 +224,7 @@ export const receiveReturn = createAction({
       if (can(org.role, "returns.refund") && (await hasOnlinePayment(supabase, ret.order_id))) {
         try {
           await refundReturnToOriginal(supabase, input.returnId);
-          notifyReturn(input.returnId, "refunded");
+          await notifyReturn(input.returnId, "refunded");
           refund = "sent";
         } catch (cause) {
           logger.warn({ err: cause, returnId: input.returnId }, "Automatic return refund failed");
@@ -246,7 +246,7 @@ export const refundReturn = createAction({
     const org = await authorize(supabase, user.id, input.organizationSlug, true);
     await requireReturn(supabase, org.id, input.returnId);
     const result = await refundReturnToOriginal(supabase, input.returnId);
-    notifyReturn(input.returnId, "refunded");
+    await notifyReturn(input.returnId, "refunded");
     refresh();
     return result;
   },
@@ -264,7 +264,7 @@ export const recordManualRefund = createAction({
       p_reference: input.reference,
     });
     if (error) throw fromPostgrestError(error);
-    notifyReturn(input.returnId, "refunded");
+    await notifyReturn(input.returnId, "refunded");
     refresh();
     return null;
   },
@@ -280,7 +280,7 @@ export const sendReplacement = createAction({
       p_return_id: input.returnId,
     });
     if (error) throw fromPostgrestError(error);
-    notifyOrder(data, { type: "confirmed" });
+    await notifyOrder(data, { type: "confirmed" });
     refresh();
     return { orderId: data };
   },

@@ -8,6 +8,7 @@ import { useSelectedVariant } from "@/features/storefront/components/selected-va
 import { orderForVariant, type ProductImage, productImageUrl } from "@/features/products/images";
 import { ProductArt } from "@/features/storefront/components/product-art";
 import { cn } from "@/lib/utils";
+import { useT } from "@/i18n/client";
 
 /**
  * Photos for the chosen option first (e.g. the red ones when Red is picked),
@@ -25,6 +26,7 @@ export function ProductGallery({
   seed: string;
   industry: string | null;
 }) {
+  const t = useT();
   const { variantId } = useSelectedVariant();
   // The chosen photo, remembered per option: picking another option starts at its first photo.
   const [choice, setChoice] = useState<{ variantId: string | null; index: number }>({
@@ -52,13 +54,17 @@ export function ProductGallery({
         />
       </div>
       {images.length > 1 && (
-        <div className="flex gap-2 overflow-x-auto pb-1" role="group" aria-label="Product photos">
+        <div
+          className="flex gap-2 overflow-x-auto pb-1"
+          role="group"
+          aria-label={t("Product photos")}
+        >
           {images.map((image, i) => (
             <button
               key={image.path}
               type="button"
               onClick={() => setSelected(i)}
-              aria-label={`Show photo ${i + 1} of ${images.length}`}
+              aria-label={t("Show photo {n} of {total}", { n: i + 1, total: images.length })}
               aria-pressed={i === selected}
               className={cn(
                 "relative size-16 shrink-0 overflow-hidden rounded-lg border-2 transition-colors sm:size-20",

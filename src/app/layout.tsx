@@ -3,6 +3,7 @@ import { GeistMono } from "geist/font/mono";
 import { GeistSans } from "geist/font/sans";
 import { NuqsAdapter } from "nuqs/adapters/next/app";
 
+import { ErrorReporter } from "@/components/shared/error-reporter";
 import { ThemeProvider } from "@/components/shared/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -39,6 +40,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
             <TooltipProvider delayDuration={200}>{children}</TooltipProvider>
           </NuqsAdapter>
           <Toaster richColors closeButton position="top-right" />
+          <ErrorReporter />
         </ThemeProvider>
       </body>
     </html>

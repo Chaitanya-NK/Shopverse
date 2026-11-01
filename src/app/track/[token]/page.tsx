@@ -9,27 +9,15 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { getTracking, TRACKING_STEPS } from "@/features/orders/tracking";
 import { SHIPMENT_STATUS_LABELS, shipmentEventText } from "@/features/orders/schemas";
 import { cn } from "@/lib/utils";
+import { T } from "@/i18n/client";
+import { INTL_LOCALE } from "@/i18n/core";
+import { getT } from "@/i18n/server";
 
 export const metadata: Metadata = {
   title: "Track your parcel",
   robots: { index: false, follow: false },
   referrer: "no-referrer",
 };
-
-const timeFormat = new Intl.DateTimeFormat("en-IN", {
-  weekday: "short",
-  day: "numeric",
-  month: "short",
-  hour: "numeric",
-  minute: "2-digit",
-  timeZone: "Asia/Kolkata",
-});
-const dayFormat = new Intl.DateTimeFormat("en-IN", {
-  weekday: "long",
-  day: "numeric",
-  month: "long",
-  timeZone: "Asia/Kolkata",
-});
 
 export default function TrackingPage({ params }: PageProps<"/track/[token]">) {
   return (
@@ -38,7 +26,7 @@ export default function TrackingPage({ params }: PageProps<"/track/[token]">) {
         <Tracking params={params} />
       </Suspense>
       <footer className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
-        Powered by <Logo className="text-xs" />
+        <T>Powered by</T> <Logo className="text-xs" />
       </footer>
     </main>
   );
@@ -48,6 +36,21 @@ async function Tracking({ params }: Pick<PageProps<"/track/[token]">, "params">)
   const { token } = await params;
   const parcel = await getTracking(token);
   if (!parcel) notFound();
+  // The shopper's language from the shop they ordered from (the cookie), else English.
+  const t = await getT(null);
+  const dayFormat = new Intl.DateTimeFormat(INTL_LOCALE[t.locale], {
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+    timeZone: "Asia/Kolkata",
+  });
+  const timeFormat = new Intl.DateTimeFormat(INTL_LOCALE[t.locale], {
+    day: "numeric",
+    month: "short",
+    hour: "numeric",
+    minute: "2-digit",
+    timeZone: "Asia/Kolkata",
+  });
 
   const currentStep = TRACKING_STEPS.findIndex((s) => s.statuses.includes(parcel.status));
   const problem = parcel.status === "returned_to_origin" || parcel.status === "cancelled";
@@ -56,36 +59,38 @@ async function Tracking({ params }: Pick<PageProps<"/track/[token]">, "params">)
     <Card>
       <CardHeader>
         <CardDescription>
-          {parcel.shopName} · order <span className="font-mono">{parcel.orderNumber}</span>
+          {parcel.shopName} · {t("order")} <span className="font-mono">{parcel.orderNumber}</span>
         </CardDescription>
         <CardTitle className="text-2xl">
           {parcel.status === "delivered"
-            ? "Delivered"
+            ? t("Delivered")
             : parcel.status === "failed_attempt"
-              ? "We missed you"
-              : SHIPMENT_STATUS_LABELS[parcel.status]}
+              ? t("We missed you")
+              : t(SHIPMENT_STATUS_LABELS[parcel.status])}
         </CardTitle>
         <p className="text-sm text-muted-foreground">
           {parcel.status === "delivered" && parcel.deliveredAt
-            ? `on ${dayFormat.format(new Date(parcel.deliveredAt))}`
+            ? t("on {date}", { date: dayFormat.format(new Date(parcel.deliveredAt)) })
             : parcel.status === "out_for_delivery"
-              ? "Keep your 6-digit delivery code handy. Share it only when you have the parcel."
+              ? t("Keep your 6-digit delivery code handy. Share it only when you have the parcel.")
               : parcel.status === "failed_attempt"
-                ? "The courier will try again. Keep your delivery code handy."
+                ? t("The courier will try again. Keep your delivery code handy.")
                 : parcel.estimatedDelivery && !problem
-                  ? `Expected by ${dayFormat.format(new Date(parcel.estimatedDelivery))}`
+                  ? t("Expected by {date}", {
+                      date: dayFormat.format(new Date(parcel.estimatedDelivery)),
+                    })
                   : null}
           {parcel.destination && (
             <span className="mt-1 flex items-center gap-1">
               <MapPinIcon className="size-3.5" aria-hidden />
-              To {parcel.destination}
+              {t("To {place}", { place: parcel.destination })}
             </span>
           )}
         </p>
       </CardHeader>
       <CardContent className="space-y-8">
         {!problem && (
-          <ol className="grid grid-cols-4 gap-2" aria-label="Delivery progress">
+          <ol className="grid grid-cols-4 gap-2" aria-label={t("Delivery progress")}>
             {TRACKING_STEPS.map((step, i) => {
               const done = i <= currentStep;
               return (
@@ -102,7 +107,7 @@ async function Tracking({ params }: Pick<PageProps<"/track/[token]">, "params">)
                     )}
                   >
                     {done && i < currentStep && <CheckIcon className="size-3" aria-hidden />}
-                    {step.label}
+                    {t(step.label)}
                   </p>
                 </li>
               );
@@ -113,7 +118,7 @@ async function Tracking({ params }: Pick<PageProps<"/track/[token]">, "params">)
         <section aria-labelledby="parcel-items" className="space-y-2">
           <h2 id="parcel-items" className="flex items-center gap-2 text-sm font-medium">
             <PackageIcon className="size-4" aria-hidden />
-            In this parcel
+            {t("In this parcel")}
           </h2>
           <ul className="space-y-1 text-sm text-muted-foreground">
             {parcel.items.map((item) => (
@@ -132,7 +137,7 @@ async function Tracking({ params }: Pick<PageProps<"/track/[token]">, "params">)
 
         <section aria-labelledby="parcel-history" className="space-y-3">
           <h2 id="parcel-history" className="text-sm font-medium">
-            History
+            {t("History")}
           </h2>
           <ol className="relative space-y-4 border-l pl-5 text-sm">
             {parcel.events.map((e, i) => (
@@ -145,7 +150,7 @@ async function Tracking({ params }: Pick<PageProps<"/track/[token]">, "params">)
                   aria-hidden
                 />
                 <p className={i === 0 ? "font-medium" : undefined}>
-                  {shipmentEventText(e.status, e.description)}
+                  {t(shipmentEventText(e.status, e.description))}
                 </p>
                 <p className="text-xs text-muted-foreground">
                   {timeFormat.format(new Date(e.occurredAt))}

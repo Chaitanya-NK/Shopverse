@@ -3,6 +3,7 @@
 /* eslint-disable @next/next/no-img-element -- cover image from public storage or YouTube */
 import { PlayIcon } from "lucide-react";
 import { useState } from "react";
+import { useT } from "@/i18n/client";
 
 /**
  * A video that loads nothing from YouTube or Vimeo until the shopper presses
@@ -19,6 +20,7 @@ export function VideoPlayer({
   title: string;
   poster: { src: string; srcSet?: string } | null;
 }) {
+  const t = useT();
   const [playing, setPlaying] = useState(false);
   const src =
     provider === "youtube"
@@ -45,7 +47,7 @@ export function VideoPlayer({
           type="button"
           onClick={() => setPlaying(true)}
           className="group absolute inset-0 flex items-center justify-center outline-none focus-visible:ring-4 focus-visible:ring-ring"
-          aria-label={`Play video: ${title}`}
+          aria-label={t("Play video: {title}", { title })}
         >
           {cover && (
             <img

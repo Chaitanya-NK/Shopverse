@@ -403,6 +403,29 @@ export function ShopSettingsForm({
                 </Field>
               )}
             />
+            <Controller
+              name="settings.language"
+              control={form.control}
+              render={({ field }) => (
+                <Field>
+                  <FieldLabel htmlFor="shop-language">Storefront language</FieldLabel>
+                  <Select value={field.value ?? "en"} onValueChange={field.onChange}>
+                    <SelectTrigger id="shop-language" className="w-full sm:w-64">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="en">English</SelectItem>
+                      <SelectItem value="hi">हिन्दी (Hindi)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FieldDescription>
+                    What shoppers see first, including emails and WhatsApp messages. They can switch
+                    language at the bottom of every page. Your own text (product names, sections)
+                    shows as you wrote it.
+                  </FieldDescription>
+                </Field>
+              )}
+            />
           </FieldGroup>
         </CardContent>
       </Card>

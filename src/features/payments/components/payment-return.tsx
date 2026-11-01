@@ -5,6 +5,7 @@ import { useEffect, useRef } from "react";
 import { toast } from "sonner";
 
 import { confirmOnlinePayment } from "@/features/payments/actions";
+import { useT } from "@/i18n/client";
 
 /**
  * On the order page after Stripe Checkout (?checkout=<session id> or
@@ -20,6 +21,7 @@ export function PaymentReturn({
   checkout: string;
   path: string;
 }) {
+  const t = useT();
   const router = useRouter();
   const done = useRef(false);
 
@@ -31,20 +33,21 @@ export function PaymentReturn({
       router.refresh();
     };
     if (checkout === "cancelled") {
-      toast.info("Payment not completed. Your order is saved; pay before the time runs out.");
+      toast.info(t("Payment not completed. Your order is saved; pay before the time runs out."));
       finish();
       return;
     }
     void confirmOnlinePayment({ orderToken, sessionId: checkout }).then((result) => {
-      if (!result.ok) toast.error(result.error.message);
+      if (!result.ok) toast.error(t(result.error.message));
       else if (result.data.result === "unpaid")
-        toast.info("We're waiting for Stripe to confirm the payment. This page will update.");
+        toast.info(t("We're waiting for Stripe to confirm the payment. This page will update."));
       else if (result.data.result === "confirmed" || result.data.result === "already_recorded")
-        toast.success("Payment received. Your order is confirmed.");
-      else toast.warning("This order was already paid or closed, so the payment will be refunded.");
+        toast.success(t("Payment received. Your order is confirmed."));
+      else
+        toast.warning(t("This order was already paid or closed, so the payment will be refunded."));
       finish();
     });
-  }, [checkout, orderToken, path, router]);
+  }, [checkout, orderToken, path, router, t]);
 
   return null;
 }

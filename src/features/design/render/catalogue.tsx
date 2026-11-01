@@ -75,9 +75,9 @@ export function SlideshowSection({ section, ctx }: SectionProps) {
         ...designImageSrc(img),
         width: img.width,
         height: img.height,
-        headline: str(s.headline),
-        subtext: str(s.subtext),
-        buttonLabel: str(s.buttonLabel),
+        headline: ctx.t(str(s.headline)),
+        subtext: ctx.t(str(s.subtext)),
+        buttonLabel: ctx.t(str(s.buttonLabel)),
         href,
         external: Boolean(href && isExternal(href)),
         alt: str(s.alt) || str(s.headline),
@@ -89,7 +89,7 @@ export function SlideshowSection({ section, ctx }: SectionProps) {
     <SectionFrame id={section.id}>
       <Slideshow
         slides={slides}
-        label={`${ctx.shop.name} highlights`}
+        label={ctx.t("{shop} highlights", { shop: ctx.shop.name })}
         height={(["small", "medium", "large"] as const).find((h) => h === section.settings.height)}
       />
     </SectionFrame>
@@ -106,7 +106,7 @@ export function HeroSection({ section, ctx }: SectionProps) {
   const s = section.settings;
   const img = image(s.image);
   const center = s.align === "center";
-  const heading = str(s.heading) || ctx.shop.name;
+  const heading = ctx.t(str(s.heading)) || ctx.shop.name;
   const Title = ctx.index === 0 ? "h1" : "h2";
   return (
     <SectionFrame id={section.id}>
@@ -135,7 +135,7 @@ export function HeroSection({ section, ctx }: SectionProps) {
         <Title className="max-w-2xl text-3xl font-semibold tracking-tight sm:text-5xl">
           {heading}
         </Title>
-        {str(s.text) && <p className="mt-3 max-w-xl text-lg opacity-90">{str(s.text)}</p>}
+        {str(s.text) && <p className="mt-3 max-w-xl text-lg opacity-90">{ctx.t(str(s.text))}</p>}
         <DesignButton
           shopSlug={ctx.shop.slug}
           label={s.buttonLabel}
@@ -146,8 +146,8 @@ export function HeroSection({ section, ctx }: SectionProps) {
         {s.showDelivery === true && (
           <p className="mt-6 inline-flex w-fit items-center gap-2 rounded-full bg-black/10 px-4 py-2 text-sm ring-1 ring-current/15 backdrop-blur-sm">
             <TruckIcon className="size-4" aria-hidden />
-            {deliveryNote(ctx.shop)}
-            {ctx.shop.paymentMethods.includes("cod") && " · Cash on delivery"}
+            {deliveryNote(ctx.shop, ctx.t)}
+            {ctx.shop.paymentMethods.includes("cod") && ` · ${ctx.t("Cash on delivery")}`}
           </p>
         )}
       </div>
@@ -196,7 +196,7 @@ async function CollectionRow({
               href={routes.storefrontCollection(ctx.shop.slug, collection.slug)}
               className="shrink-0 text-sm font-medium hover:underline"
             >
-              See all {catalog.total}
+              {ctx.t("See all {count}", { count: catalog.total })}
             </Link>
           )
         }
@@ -222,7 +222,7 @@ export async function FeaturedCollectionSection({ section, ctx }: SectionProps) 
       // The first row is the section the editor points at.
       sectionId={i === 0 ? section.id : `${section.id}-${i}`}
       collection={c}
-      heading={s.collection === "auto" ? "" : str(s.heading)}
+      heading={s.collection === "auto" ? "" : ctx.t(str(s.heading))}
       count={num(s.count, 4)}
       layout={str(s.layout)}
       showAll={s.showAll !== false}
@@ -254,9 +254,9 @@ export async function ProductGridSection({ section, ctx }: SectionProps) {
         ? `${shopLinks.products}?sort=rating`
         : shopLinks.products;
   return (
-    <SectionFrame id={section.id} label={str(s.heading)}>
+    <SectionFrame id={section.id} label={ctx.t(str(s.heading))}>
       <SectionHeading
-        title={str(s.heading)}
+        title={ctx.t(str(s.heading))}
         action={
           s.showAll !== false &&
           catalog.total > catalog.items.length && (
@@ -264,7 +264,7 @@ export async function ProductGridSection({ section, ctx }: SectionProps) {
               href={shopHref(ctx.shop.slug, viewAll)!}
               className="shrink-0 text-sm font-medium hover:underline"
             >
-              View all
+              {ctx.t("View all")}
             </Link>
           )
         }
@@ -310,11 +310,11 @@ export async function ShopBySection({ section, ctx }: SectionProps) {
   if (tiles.length === 0) return null;
 
   return (
-    <SectionFrame id={section.id} label={str(s.heading)}>
-      <SectionHeading title={str(s.heading)} />
+    <SectionFrame id={section.id} label={ctx.t(str(s.heading))}>
+      <SectionHeading title={ctx.t(str(s.heading))} />
       {s.style === "chips" ? (
         <nav
-          aria-label={str(s.heading) || "Categories"}
+          aria-label={ctx.t(str(s.heading)) || ctx.t("Categories")}
           className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1"
         >
           {tiles.map((t) => (
@@ -379,16 +379,19 @@ export async function CatalogueSection({ section, ctx }: SectionProps) {
   const href = (patch: Partial<typeof filters>) =>
     productsPath + serializeCatalogParams({ ...filters, page: 1, ...patch });
   const title = filters.q
-    ? `Results for “${filters.q}”`
-    : (activeCategory?.name ?? (str(s.heading) || "All products"));
+    ? ctx.t("Results for “{query}”", { query: filters.q })
+    : (activeCategory?.name ?? (ctx.t(str(s.heading)) || ctx.t("All products")));
   const Title = ctx.index === 0 ? "h1" : "h2";
 
   return (
     <SectionFrame id={section.id} className="space-y-8">
       {s.showCategories !== false && (categories.length > 0 || collections.length > 0) && (
-        <nav aria-label="Categories" className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1">
+        <nav
+          aria-label={ctx.t("Categories")}
+          className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1"
+        >
           <CategoryChip href={href({ category: null })} active={!filters.category}>
-            All
+            {ctx.t("All")}
           </CategoryChip>
           {categories.map((c) => (
             <CategoryChip
@@ -415,7 +418,7 @@ export async function CatalogueSection({ section, ctx }: SectionProps) {
         <div>
           <Title className="text-xl font-semibold tracking-tight">{title}</Title>
           <p className="text-sm text-muted-foreground">
-            {catalog.total} product{catalog.total === 1 ? "" : "s"}
+            {ctx.t.plural(catalog.total, "{count} product", "{count} products")}
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -437,6 +440,7 @@ export async function CatalogueSection({ section, ctx }: SectionProps) {
               pageCount={catalog.pageCount}
               total={catalog.total}
               noun="products"
+              t={ctx.t}
               hrefFor={(page) => productsPath + serializeCatalogParams({ ...filters, page })}
             />
           )}
@@ -447,16 +451,18 @@ export async function CatalogueSection({ section, ctx }: SectionProps) {
             <EmptyMedia variant="icon">
               <PackageSearchIcon />
             </EmptyMedia>
-            <EmptyTitle>{browsing ? "Nothing matches" : "New arrivals coming soon"}</EmptyTitle>
+            <EmptyTitle>
+              {browsing ? ctx.t("Nothing matches") : ctx.t("New arrivals coming soon")}
+            </EmptyTitle>
             <EmptyDescription>
               {browsing
-                ? "Try another search, category or filter."
-                : "This shop hasn’t listed any products yet."}
+                ? ctx.t("Try another search, category or filter.")
+                : ctx.t("This shop hasn’t listed any products yet.")}
             </EmptyDescription>
           </EmptyHeader>
           {browsing && (
             <Button asChild variant="outline">
-              <Link href={productsPath}>See everything</Link>
+              <Link href={productsPath}>{ctx.t("See everything")}</Link>
             </Button>
           )}
         </Empty>

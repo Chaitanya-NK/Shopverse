@@ -25,6 +25,7 @@ import {
 import { routes } from "@/config/routes";
 import { signOutShopper } from "@/features/shopper/actions";
 import { initials } from "@/lib/format";
+import { useT } from "@/i18n/client";
 
 export function AccountMenu({
   shopSlug,
@@ -33,6 +34,7 @@ export function AccountMenu({
   shopSlug: string;
   shopper: { name: string | null; email: string } | null;
 }) {
+  const t = useT();
   const pathname = usePathname();
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -43,7 +45,7 @@ export function AccountMenu({
       <Button asChild variant="ghost" className="shrink-0 rounded-full max-sm:size-9 max-sm:p-0">
         <Link href={routes.storefrontSignIn(shopSlug, onAccountPage ? undefined : pathname)}>
           <UserIcon className="size-5" />
-          <span className="max-sm:sr-only">Sign in</span>
+          <span className="max-sm:sr-only">{t("Sign in")}</span>
         </Link>
       </Button>
     );
@@ -53,10 +55,10 @@ export function AccountMenu({
     startTransition(async () => {
       const result = await signOutShopper({ shopSlug });
       if (!result.ok) {
-        toast.error(result.error.message);
+        toast.error(t(result.error.message));
         return;
       }
-      toast.success("Signed out");
+      toast.success(t("Signed out"));
       router.replace(routes.storefront(shopSlug));
       router.refresh();
     });
@@ -69,7 +71,7 @@ export function AccountMenu({
           variant="ghost"
           size="icon"
           className="shrink-0 rounded-full"
-          aria-label={`Your account (${label})`}
+          aria-label={t("Your account ({name})", { name: label })}
         >
           <span className="flex size-8 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary">
             {initials(label)}
@@ -78,28 +80,28 @@ export function AccountMenu({
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56">
         <DropdownMenuLabel className="font-normal">
-          <span className="block truncate font-medium">{shopper.name ?? "Your account"}</span>
+          <span className="block truncate font-medium">{shopper.name ?? t("Your account")}</span>
           <span className="block truncate text-xs text-muted-foreground">{shopper.email}</span>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuItem asChild>
           <Link href={routes.storefrontAccount(shopSlug)}>
-            <PackageIcon /> Orders
+            <PackageIcon /> {t("Orders")}
           </Link>
         </DropdownMenuItem>
         <DropdownMenuItem asChild>
           <Link href={routes.storefrontWishlist(shopSlug)}>
-            <HeartIcon /> Wishlist
+            <HeartIcon /> {t("Wishlist")}
           </Link>
         </DropdownMenuItem>
         <DropdownMenuItem asChild>
           <Link href={routes.storefrontAddresses(shopSlug)}>
-            <MapPinIcon /> Addresses
+            <MapPinIcon /> {t("Addresses")}
           </Link>
         </DropdownMenuItem>
         <DropdownMenuItem asChild>
           <Link href={routes.storefrontProfile(shopSlug)}>
-            <UserRoundIcon /> Profile
+            <UserRoundIcon /> {t("Profile")}
           </Link>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
@@ -110,7 +112,7 @@ export function AccountMenu({
             signOut();
           }}
         >
-          <LogOutIcon /> Sign out
+          <LogOutIcon /> {t("Sign out")}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

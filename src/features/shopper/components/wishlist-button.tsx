@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { routes } from "@/config/routes";
 import { setWishlist } from "@/features/shopper/actions";
 import { cn } from "@/lib/utils";
+import { useT } from "@/i18n/client";
 
 /**
  * Save / unsave a product. Signed-out shoppers are sent to sign in and brought
@@ -30,10 +31,13 @@ export function WishlistButton({
   signedIn: boolean;
   variant?: "button" | "overlay";
 }) {
+  const t = useT();
   const pathname = usePathname();
   const [saved, setSaved] = useState(initiallySaved);
   const [isPending, startTransition] = useTransition();
-  const label = saved ? `Remove ${productTitle} from wishlist` : `Save ${productTitle} to wishlist`;
+  const label = saved
+    ? t("Remove {product} from wishlist", { product: productTitle })
+    : t("Save {product} to wishlist", { product: productTitle });
   const icon = (
     <HeartIcon className={cn("size-5", saved && "fill-rose-500 text-rose-500")} aria-hidden />
   );
@@ -51,7 +55,7 @@ export function WishlistButton({
       >
         <Link href={routes.storefrontSignIn(shopSlug, pathname)} aria-label={label}>
           {icon}
-          {variant === "button" && "Save"}
+          {variant === "button" && t("Save")}
         </Link>
       </Button>
     );
@@ -64,10 +68,10 @@ export function WishlistButton({
       const result = await setWishlist({ shopSlug, productId, saved: next });
       if (!result.ok) {
         setSaved(!next);
-        toast.error(result.error.message);
+        toast.error(t(result.error.message));
         return;
       }
-      toast.success(next ? "Saved to your wishlist" : "Removed from your wishlist");
+      toast.success(next ? t("Saved to your wishlist") : t("Removed from your wishlist"));
     });
   };
 
@@ -83,7 +87,7 @@ export function WishlistButton({
       onClick={toggle}
     >
       {icon}
-      {variant === "button" && (saved ? "Saved" : "Save")}
+      {variant === "button" && (saved ? t("Saved") : t("Save"))}
     </Button>
   );
 }

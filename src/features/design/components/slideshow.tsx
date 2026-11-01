@@ -7,6 +7,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { useT } from "@/i18n/client";
 
 export type Slide = {
   id: string;
@@ -42,6 +43,7 @@ export function Slideshow({
   label: string;
   height?: keyof typeof HEIGHTS;
 }) {
+  const t = useT();
   const track = useRef<HTMLDivElement>(null);
   const [index, setIndex] = useState(0);
 
@@ -105,7 +107,7 @@ export function Slideshow({
               key={b.id}
               role="group"
               aria-roledescription="slide"
-              aria-label={`${i + 1} of ${banners.length}`}
+              aria-label={t("{n} of {total}", { n: i + 1, total: banners.length })}
               className="relative w-full shrink-0 snap-start"
             >
               {b.href && b.external ? (
@@ -114,7 +116,7 @@ export function Slideshow({
                   target="_blank"
                   rel="noopener noreferrer"
                   className="block"
-                  aria-label={b.headline || b.alt || `Slide ${i + 1}`}
+                  aria-label={b.headline || b.alt || t("Slide {n}", { n: i + 1 })}
                 >
                   {image}
                 </a>
@@ -122,7 +124,7 @@ export function Slideshow({
                 <Link
                   href={b.href}
                   className="block"
-                  aria-label={b.headline || b.alt || `Slide ${i + 1}`}
+                  aria-label={b.headline || b.alt || t("Slide {n}", { n: i + 1 })}
                 >
                   {image}
                 </Link>
@@ -138,7 +140,7 @@ export function Slideshow({
           <Button
             size="icon"
             variant="secondary"
-            aria-label="Previous slide"
+            aria-label={t("Previous slide")}
             disabled={index === 0}
             onClick={() => go(index - 1)}
             className="absolute top-1/2 left-3 hidden -translate-y-1/2 rounded-full opacity-90 sm:inline-flex"
@@ -148,7 +150,7 @@ export function Slideshow({
           <Button
             size="icon"
             variant="secondary"
-            aria-label="Next slide"
+            aria-label={t("Next slide")}
             disabled={index === banners.length - 1}
             onClick={() => go(index + 1)}
             className="absolute top-1/2 right-3 hidden -translate-y-1/2 rounded-full opacity-90 sm:inline-flex"
@@ -160,7 +162,7 @@ export function Slideshow({
               <button
                 key={b.id}
                 type="button"
-                aria-label={`Show slide ${i + 1}`}
+                aria-label={t("Show slide {n}", { n: i + 1 })}
                 aria-current={i === index}
                 onClick={() => go(i)}
                 className={cn(

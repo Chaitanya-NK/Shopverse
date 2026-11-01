@@ -16,6 +16,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { routes } from "@/config/routes";
+import { INTL_LOCALE } from "@/i18n/core";
+import { getT } from "@/i18n/server";
 import { SHIPMENT_STATUS_LABELS } from "@/features/orders/schemas";
 import { PayNowButton } from "@/features/payments/components/pay-now-button";
 import { PaymentReturn } from "@/features/payments/components/payment-return";
@@ -36,19 +38,6 @@ export const metadata: Metadata = {
 };
 
 type Props = PageProps<"/s/[shopSlug]/orders/[token]">;
-
-const dateFormat = new Intl.DateTimeFormat("en-IN", {
-  day: "numeric",
-  month: "long",
-  year: "numeric",
-  timeZone: "Asia/Kolkata",
-});
-
-const timeFormat = new Intl.DateTimeFormat("en-IN", {
-  hour: "numeric",
-  minute: "2-digit",
-  timeZone: "Asia/Kolkata",
-});
 
 const HEADLINE: Record<OrderStage, string> = {
   awaiting_payment: "Complete your payment",
@@ -75,10 +64,24 @@ async function CustomerOrder({ params, searchParams }: Props) {
   const { checkout } = await searchParams;
   const [order, shop] = await Promise.all([getCustomerOrder(token), getStorefrontShop(shopSlug)]);
   if (!order || !shop || order.shop.slug !== shopSlug) notFound();
-  const [access, shopper] = await Promise.all([
+  const [access, shopper, t] = await Promise.all([
     getOrderAccess(shop.id, token),
     getShopper(shop.id),
+    getT(shop.language),
   ]);
+  const dateFormat = new Intl.DateTimeFormat(INTL_LOCALE[t.locale], {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+    timeZone: "Asia/Kolkata",
+  });
+  const timeFormat = new Intl.DateTimeFormat(INTL_LOCALE[t.locale], {
+    day: "numeric",
+    month: "short",
+    hour: "numeric",
+    minute: "2-digit",
+    timeZone: "Asia/Kolkata",
+  });
   const money = (n: number) => formatMoney(n, order.currency);
 
   return (
@@ -96,17 +99,17 @@ async function CustomerOrder({ params, searchParams }: Props) {
         ) : (
           <CheckCircle2Icon className="mx-auto size-12 text-emerald-600" aria-hidden />
         )}
-        <h1 className="text-2xl font-semibold tracking-tight">{HEADLINE[order.stage]}</h1>
+        <h1 className="text-2xl font-semibold tracking-tight">{t(HEADLINE[order.stage])}</h1>
         <p className="text-muted-foreground">
-          Order <span className="font-mono font-medium text-foreground">{order.number}</span> ·
-          placed {dateFormat.format(new Date(order.placed_at))}
+          {t("Order")} <span className="font-mono font-medium text-foreground">{order.number}</span>{" "}
+          · {t("placed {date}", { date: dateFormat.format(new Date(order.placed_at)) })}
         </p>
         {order.invoice_number && (
           <div className="flex justify-center pt-2">
             <Button asChild variant="outline" size="sm">
               <Link href={routes.storefrontInvoice(shop.slug, token)}>
                 <FileTextIcon />
-                Invoice {order.invoice_number}
+                {t("Invoice {number}", { number: order.invoice_number })}
               </Link>
             </Button>
           </div>
@@ -129,9 +132,11 @@ async function CustomerOrder({ params, searchParams }: Props) {
                 href={routes.storefrontSignIn(shop.slug, routes.storefrontOrder(shop.slug, token))}
                 className="font-medium text-foreground underline-offset-4 hover:underline"
               >
-                Sign in
+                {t("Sign in")}
               </Link>{" "}
-              with the email you ordered with to cancel, return, reorder or see all your orders.
+              {t(
+                "with the email you ordered with to cancel, return, reorder or see all your orders.",
+              )}
             </p>
           )
         )}
@@ -141,11 +146,11 @@ async function CustomerOrder({ params, searchParams }: Props) {
         <Card className="border-primary">
           <CardContent className="flex flex-col items-center gap-3 text-center">
             <p className="text-sm text-muted-foreground">
-              We&apos;re holding your items until{" "}
+              {t("We're holding your items until")}{" "}
               <span className="font-medium text-foreground">
                 {timeFormat.format(new Date(order.payment_due_at))}
               </span>
-              . Pay now to confirm the order; otherwise it&apos;s cancelled automatically.
+              . {t("Pay now to confirm the order; otherwise it's cancelled automatically.")}
             </p>
             <PayNowButton orderToken={token} amount={order.grand_total} currency={order.currency} />
           </CardContent>
@@ -175,12 +180,13 @@ async function CustomerOrder({ params, searchParams }: Props) {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <TruckIcon className="size-5" aria-hidden />
-              Delivery
+              {t("Delivery")}
             </CardTitle>
             {order.stage === "out_for_delivery" && (
               <CardDescription>
-                We&apos;ve emailed your delivery code. Share it with the courier only once you have
-                the parcel.
+                {t(
+                  "We've emailed your delivery code. Share it with the courier only once you have the parcel.",
+                )}
               </CardDescription>
             )}
           </CardHeader>
@@ -191,10 +197,11 @@ async function CustomerOrder({ params, searchParams }: Props) {
                 className="flex items-center justify-between gap-3 rounded-lg border p-3 text-sm"
               >
                 <span>
-                  <span className="font-mono">{s.number}</span> · {SHIPMENT_STATUS_LABELS[s.status]}
+                  <span className="font-mono">{s.number}</span> ·{" "}
+                  {t(SHIPMENT_STATUS_LABELS[s.status])}
                 </span>
                 <Button asChild size="sm" variant="outline">
-                  <Link href={routes.tracking(s.tracking_token)}>Track</Link>
+                  <Link href={routes.tracking(s.tracking_token)}>{t("Track")}</Link>
                 </Button>
               </div>
             ))}
@@ -206,7 +213,7 @@ async function CustomerOrder({ params, searchParams }: Props) {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <PackageIcon className="size-5" aria-hidden />
-            Items
+            {t("Items")}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -230,23 +237,23 @@ async function CustomerOrder({ params, searchParams }: Props) {
           </ul>
           <dl className="space-y-1.5 border-t pt-3 text-sm">
             <div className="flex justify-between">
-              <dt className="text-muted-foreground">Subtotal</dt>
+              <dt className="text-muted-foreground">{t("Subtotal")}</dt>
               <dd className="tabular-nums">{money(order.subtotal)}</dd>
             </div>
             {order.discount_total > 0 && (
               <div className="flex justify-between text-emerald-700 dark:text-emerald-400">
                 <dt>
                   {order.discount_code
-                    ? `Discount (${order.discount_code})`
-                    : (order.discount_title ?? "Discount")}
+                    ? t("Discount ({code})", { code: order.discount_code })
+                    : (order.discount_title ?? t("Discount"))}
                 </dt>
                 <dd className="tabular-nums">−{money(order.discount_total)}</dd>
               </div>
             )}
             <div className="flex justify-between">
-              <dt className="text-muted-foreground">Delivery</dt>
+              <dt className="text-muted-foreground">{t("Delivery")}</dt>
               <dd className="tabular-nums">
-                {order.shipping_total === 0 ? "Free" : money(order.shipping_total)}
+                {order.shipping_total === 0 ? t("Free") : money(order.shipping_total)}
               </dd>
             </div>
             <div className="flex justify-between border-t pt-2 text-base font-semibold">
@@ -254,22 +261,23 @@ async function CustomerOrder({ params, searchParams }: Props) {
                 {order.status !== "cancelled" &&
                 order.payment_method === "cod" &&
                 (order.payment_status === "pending" || order.payment_status === "authorized")
-                  ? "To pay on delivery"
-                  : "Total"}
+                  ? t("To pay on delivery")
+                  : t("Total")}
               </dt>
               <dd className="tabular-nums">{money(order.grand_total)}</dd>
             </div>
           </dl>
           <p className="text-sm text-muted-foreground">
-            Delivering to {order.ship_to.name}, {order.ship_to.city}, {order.ship_to.state}{" "}
-            {order.ship_to.postal_code}
+            {t("Delivering to {address}", {
+              address: `${order.ship_to.name}, ${order.ship_to.city}, ${order.ship_to.state} ${order.ship_to.postal_code}`,
+            })}
           </p>
         </CardContent>
       </Card>
 
       {(order.shop.support_email || order.shop.support_phone) && (
         <p className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
-          Questions? Contact {order.shop.name}:
+          {t("Questions? Contact {shop}:", { shop: order.shop.name })}
           {order.shop.support_email && (
             <a
               className="inline-flex items-center gap-1 hover:underline"
@@ -292,7 +300,7 @@ async function CustomerOrder({ params, searchParams }: Props) {
       )}
       <div className="text-center">
         <Button asChild variant="outline">
-          <Link href={routes.storefront(order.shop.slug)}>Continue shopping</Link>
+          <Link href={routes.storefront(order.shop.slug)}>{t("Continue shopping")}</Link>
         </Button>
       </div>
     </div>

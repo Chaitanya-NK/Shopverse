@@ -9,6 +9,8 @@ import { cn } from "@/lib/utils";
 const LINKS = [
   { href: routes.admin, label: "Overview", exact: true },
   { href: routes.adminBusinesses, label: "Businesses", exact: false },
+  { href: routes.adminErrors, label: "Errors", exact: false },
+  { href: routes.adminJobs, label: "Jobs", exact: false },
 ];
 
 export function AdminNav() {

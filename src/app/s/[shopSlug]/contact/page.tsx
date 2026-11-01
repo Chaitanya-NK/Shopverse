@@ -7,12 +7,17 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { routes } from "@/config/routes";
 import { getStorefrontShop } from "@/features/storefront/queries";
+import { T } from "@/i18n/client";
+import { storefrontTitle } from "@/i18n/server";
 
 type Props = PageProps<"/s/[shopSlug]/contact">;
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { shopSlug } = await params;
-  return { title: "Contact us", alternates: { canonical: routes.storefrontContact(shopSlug) } };
+  return {
+    title: await storefrontTitle(shopSlug, "Contact us"),
+    alternates: { canonical: routes.storefrontContact(shopSlug) },
+  };
 }
 
 export default function ContactPage({ params }: Props) {
@@ -32,9 +37,11 @@ async function Contact({ params }: Pick<Props, "params">) {
   return (
     <div className="mx-auto max-w-2xl space-y-6">
       <header className="space-y-1">
-        <h1 className="text-3xl font-semibold tracking-tight">Contact us</h1>
+        <h1 className="text-3xl font-semibold tracking-tight">
+          <T>Contact us</T>
+        </h1>
         <p className="text-muted-foreground">
-          Questions about an order? Include your order number and we&apos;ll get back to you.
+          <T>{"Questions about an order? Include your order number and we'll get back to you."}</T>
         </p>
       </header>
       <Card>
@@ -43,7 +50,9 @@ async function Contact({ params }: Pick<Props, "params">) {
             <div className="flex items-start gap-3">
               <MailIcon className="mt-0.5 size-5 text-muted-foreground" aria-hidden />
               <div>
-                <p className="text-sm text-muted-foreground">Email</p>
+                <p className="text-sm text-muted-foreground">
+                  <T>Email</T>
+                </p>
                 <a href={`mailto:${shop.supportEmail}`} className="font-medium hover:underline">
                   {shop.supportEmail}
                 </a>
@@ -54,7 +63,9 @@ async function Contact({ params }: Pick<Props, "params">) {
             <div className="flex items-start gap-3">
               <PhoneIcon className="mt-0.5 size-5 text-muted-foreground" aria-hidden />
               <div>
-                <p className="text-sm text-muted-foreground">Phone / WhatsApp</p>
+                <p className="text-sm text-muted-foreground">
+                  <T>Phone / WhatsApp</T>
+                </p>
                 <a href={`tel:${shop.supportPhone}`} className="font-medium hover:underline">
                   {shop.supportPhone}
                 </a>
@@ -65,7 +76,7 @@ async function Contact({ params }: Pick<Props, "params">) {
                     rel="noopener noreferrer"
                     className="ml-3 text-sm text-primary hover:underline"
                   >
-                    Chat on WhatsApp
+                    <T>Chat on WhatsApp</T>
                   </a>
                 )}
               </div>
@@ -75,7 +86,9 @@ async function Contact({ params }: Pick<Props, "params">) {
             <div className="flex items-start gap-3">
               <BuildingIcon className="mt-0.5 size-5 text-muted-foreground" aria-hidden />
               <div className="text-sm">
-                <p className="text-muted-foreground">Registered business</p>
+                <p className="text-muted-foreground">
+                  <T>Registered business</T>
+                </p>
                 {shop.legalName && <p className="font-medium">{shop.legalName}</p>}
                 {shop.businessAddress && <p>{shop.businessAddress}</p>}
                 {shop.gstin && (
@@ -88,7 +101,7 @@ async function Contact({ params }: Pick<Props, "params">) {
           )}
           {!shop.supportEmail && !shop.supportPhone && (
             <p className="text-sm text-muted-foreground">
-              This shop hasn&apos;t added contact details yet.
+              <T>{"This shop hasn't added contact details yet."}</T>
             </p>
           )}
         </CardContent>

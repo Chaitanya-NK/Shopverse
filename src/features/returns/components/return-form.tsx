@@ -42,12 +42,15 @@ import { type ActionResult } from "@/lib/actions/result";
 import { formatMoney } from "@/lib/format";
 import { applyActionError } from "@/lib/forms/apply-action-error";
 import { cn } from "@/lib/utils";
+import { useT } from "@/i18n/client";
+import { INTL_LOCALE } from "@/i18n/core";
 
-const dayFormat = new Intl.DateTimeFormat("en-IN", {
-  day: "numeric",
-  month: "short",
-  timeZone: "Asia/Kolkata",
-});
+const dayFormat = (locale: "en" | "hi") =>
+  new Intl.DateTimeFormat(INTL_LOCALE[locale], {
+    day: "numeric",
+    month: "short",
+    timeZone: "Asia/Kolkata",
+  });
 
 /**
  * Choose items, a reason and refund or exchange. Used by shoppers on their
@@ -68,6 +71,7 @@ export function ReturnForm({
   onSubmit: (values: ReturnFormOutput) => Promise<ActionResult<unknown>>;
   onDone: () => void;
 }) {
+  const t = useT();
   const [isPending, startTransition] = useTransition();
   // Staff can take back anything delivered; shoppers only what the rules allow.
   const selectable = (i: ReturnOptions["items"][number]) =>
@@ -114,7 +118,7 @@ export function ReturnForm({
   return (
     <form onSubmit={submit} noValidate className="space-y-6">
       <FieldSet>
-        <FieldLegend>What are you returning?</FieldLegend>
+        <FieldLegend>{t("What are you returning?")}</FieldLegend>
         <ul className="divide-y rounded-xl border">
           {options.items.map((item, i) => {
             const enabled = selectable(item);
@@ -133,7 +137,7 @@ export function ReturnForm({
                         disabled={!enabled}
                         checked={chosen}
                         onCheckedChange={(on) => field.onChange(on ? item.returnable : 0)}
-                        aria-label={`Return ${item.title}`}
+                        aria-label={t("Return {item}", { item: item.title })}
                       />
                     )}
                   />
@@ -148,15 +152,18 @@ export function ReturnForm({
                   <label htmlFor={`return-${item.orderItemId}`} className="min-w-0 flex-1 text-sm">
                     <span className="block font-medium">{item.title}</span>
                     <span className="text-muted-foreground">
-                      {formatMoney(item.unitPaid, currency)} each
-                      {item.delivered > 0 && ` · ${item.delivered} delivered`}
+                      {t("{amount} each", { amount: formatMoney(item.unitPaid, currency) })}
+                      {item.delivered > 0 &&
+                        ` · ${t("{count} delivered", { count: item.delivered })}`}
                     </span>
                     <span className="block text-xs text-muted-foreground">
                       {item.blocked
-                        ? RETURN_BLOCK_LABELS[item.blocked] +
+                        ? t(RETURN_BLOCK_LABELS[item.blocked]) +
                           (staff && enabled ? " (you can still accept it)" : "")
                         : item.windowEndsAt
-                          ? `Return by ${dayFormat.format(new Date(item.windowEndsAt))}`
+                          ? t("Return by {date}", {
+                              date: dayFormat(t.locale).format(new Date(item.windowEndsAt)),
+                            })
                           : null}
                     </span>
                   </label>
@@ -169,7 +176,10 @@ export function ReturnForm({
                           value={String(field.value)}
                           onValueChange={(v) => field.onChange(Number(v))}
                         >
-                          <SelectTrigger className="w-20" aria-label={`How many ${item.title}`}>
+                          <SelectTrigger
+                            className="w-20"
+                            aria-label={t("How many {item}", { item: item.title })}
+                          >
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
@@ -191,7 +201,7 @@ export function ReturnForm({
                     render={({ field, fieldState }) => (
                       <Field data-invalid={fieldState.invalid} className="pl-7 sm:pl-[5.75rem]">
                         <FieldLabel htmlFor={`exchange-${item.orderItemId}`}>
-                          Exchange for
+                          {t("Exchange for")}
                         </FieldLabel>
                         {item.exchangeFor.length > 0 ? (
                           <Select value={field.value ?? ""} onValueChange={field.onChange}>
@@ -200,7 +210,7 @@ export function ReturnForm({
                               className="w-full sm:w-64"
                               aria-invalid={fieldState.invalid}
                             >
-                              <SelectValue placeholder="Choose an option" />
+                              <SelectValue placeholder={t("Choose an option")} />
                             </SelectTrigger>
                             <SelectContent>
                               {item.exchangeFor.map((v) => (
@@ -212,7 +222,7 @@ export function ReturnForm({
                           </Select>
                         ) : (
                           <FieldDescription>
-                            No other option is in stock right now.
+                            {t("No other option is in stock right now.")}
                           </FieldDescription>
                         )}
                         <FieldError errors={[fieldState.error]} />
@@ -224,7 +234,7 @@ export function ReturnForm({
             );
           })}
         </ul>
-        {linesError && <p className="text-sm text-destructive">{linesError}</p>}
+        {linesError && <p className="text-sm text-destructive">{t(linesError)}</p>}
       </FieldSet>
 
       <FieldGroup>
@@ -233,19 +243,19 @@ export function ReturnForm({
           name="reason"
           render={({ field, fieldState }) => (
             <Field data-invalid={fieldState.invalid}>
-              <FieldLabel htmlFor="return-reason">Reason</FieldLabel>
+              <FieldLabel htmlFor="return-reason">{t("Reason")}</FieldLabel>
               <Select value={field.value ?? ""} onValueChange={field.onChange}>
                 <SelectTrigger
                   id="return-reason"
                   className="w-full sm:w-80"
                   aria-invalid={fieldState.invalid}
                 >
-                  <SelectValue placeholder="Choose a reason" />
+                  <SelectValue placeholder={t("Choose a reason")} />
                 </SelectTrigger>
                 <SelectContent>
                   {RETURN_REASONS.map((r) => (
                     <SelectItem key={r} value={r}>
-                      {RETURN_REASON_LABELS[r]}
+                      {t(RETURN_REASON_LABELS[r])}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -260,7 +270,7 @@ export function ReturnForm({
           render={({ field, fieldState }) => (
             <Field data-invalid={fieldState.invalid}>
               <FieldLabel htmlFor="return-note">
-                {staff ? "Note (optional)" : "Anything the shop should know? (optional)"}
+                {staff ? "Note (optional)" : t("Anything the shop should know? (optional)")}
               </FieldLabel>
               <Textarea
                 id="return-note"
@@ -280,7 +290,7 @@ export function ReturnForm({
             name="resolution"
             render={({ field }) => (
               <FieldSet>
-                <FieldLegend variant="label">What would you like?</FieldLegend>
+                <FieldLegend variant="label">{t("What would you like?")}</FieldLegend>
                 <RadioGroup
                   value={field.value}
                   onValueChange={field.onChange}
@@ -305,8 +315,8 @@ export function ReturnForm({
                       <RadioGroupItem id={`resolution-${value}`} value={value} className="mt-0.5" />
                       <Icon className="mt-0.5 size-4 text-primary" aria-hidden />
                       <span>
-                        <span className="block font-medium">{title}</span>
-                        <span className="text-muted-foreground">{hint}</span>
+                        <span className="block font-medium">{t(title)}</span>
+                        <span className="text-muted-foreground">{t(hint)}</span>
                       </span>
                     </label>
                   ))}
@@ -323,7 +333,9 @@ export function ReturnForm({
             render={({ field, fieldState }) => (
               <Field data-invalid={fieldState.invalid}>
                 <FieldLabel htmlFor="return-upi">
-                  {staff ? "Customer's UPI id for the refund (optional)" : "UPI id for your refund"}
+                  {staff
+                    ? "Customer's UPI id for the refund (optional)"
+                    : t("UPI id for your refund")}
                 </FieldLabel>
                 <Input
                   id="return-upi"
@@ -337,7 +349,7 @@ export function ReturnForm({
                 <FieldDescription>
                   {staff
                     ? "Cash-on-delivery orders are refunded by UPI or bank transfer."
-                    : "You paid on delivery, so we'll send the refund to this UPI id."}
+                    : t("You paid on delivery, so we'll send the refund to this UPI id.")}
                 </FieldDescription>
                 <FieldError errors={[fieldState.error]} />
               </Field>
@@ -351,8 +363,10 @@ export function ReturnForm({
         <p className="text-sm text-muted-foreground">
           {refundTotal > 0 &&
             (resolution === "refund"
-              ? `Refund of about ${formatMoney(refundTotal, currency)} once the items are back.`
-              : "Nothing to pay: the replacement is settled against what you paid.")}
+              ? t("Refund of about {amount} once the items are back.", {
+                  amount: formatMoney(refundTotal, currency),
+                })
+              : t("Nothing to pay: the replacement is settled against what you paid."))}
         </p>
         <Button type="submit" disabled={isPending}>
           {isPending && <Spinner />}

@@ -45,6 +45,7 @@ import {
 } from "@/features/design/render/frame";
 import { StarRating } from "@/features/reviews/components/star-rating";
 import { getShopReviews } from "@/features/storefront/queries";
+import { INTL_LOCALE, type Locale } from "@/i18n/core";
 import { cn } from "@/lib/utils";
 
 const ICONS: Record<string, LucideIcon> = {
@@ -71,7 +72,7 @@ export function ImageWithTextSection({ section, ctx }: SectionProps) {
   const s = section.settings;
   const img = image(s.image);
   return (
-    <SectionFrame id={section.id} background={str(s.background)} label={str(s.heading)}>
+    <SectionFrame id={section.id} background={str(s.background)} label={ctx.t(str(s.heading))}>
       <div className={cn("grid items-center gap-8", img && "md:grid-cols-2 md:gap-12")}>
         {img && (
           <DesignImg
@@ -81,13 +82,15 @@ export function ImageWithTextSection({ section, ctx }: SectionProps) {
           />
         )}
         <div className="space-y-4">
-          {str(s.heading) && (
-            <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">{str(s.heading)}</h2>
+          {ctx.t(str(s.heading)) && (
+            <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">
+              {ctx.t(str(s.heading))}
+            </h2>
           )}
-          <Paragraphs text={s.text} className="opacity-85" />
+          <Paragraphs text={ctx.t(str(s.text))} className="opacity-85" />
           <DesignButton
             shopSlug={ctx.shop.slug}
-            label={s.buttonLabel}
+            label={ctx.t(str(s.buttonLabel))}
             link={s.link}
             variant={onBrand(s.background) ? "secondary" : "default"}
           />
@@ -101,22 +104,24 @@ export function RichTextSection({ section, ctx }: SectionProps) {
   const s = section.settings;
   const center = s.align !== "left";
   const Title = ctx.index === 0 ? "h1" : "h2";
-  if (!str(s.heading) && !str(s.text) && !str(s.eyebrow)) return null;
+  if (!ctx.t(str(s.heading)) && !ctx.t(str(s.text)) && !ctx.t(str(s.eyebrow))) return null;
   return (
-    <SectionFrame id={section.id} background={str(s.background)} label={str(s.heading)}>
+    <SectionFrame id={section.id} background={str(s.background)} label={ctx.t(str(s.heading))}>
       <div className={cn("mx-auto max-w-3xl space-y-4", center && "text-center")}>
-        {str(s.eyebrow) && (
-          <p className="text-sm font-medium tracking-wide uppercase opacity-70">{str(s.eyebrow)}</p>
+        {ctx.t(str(s.eyebrow)) && (
+          <p className="text-sm font-medium tracking-wide uppercase opacity-70">
+            {ctx.t(str(s.eyebrow))}
+          </p>
         )}
-        {str(s.heading) && (
+        {ctx.t(str(s.heading)) && (
           <Title className="text-3xl font-semibold tracking-tight text-balance sm:text-4xl">
-            {str(s.heading)}
+            {ctx.t(str(s.heading))}
           </Title>
         )}
-        <Paragraphs text={s.text} className="text-lg opacity-85" />
+        <Paragraphs text={ctx.t(str(s.text))} className="text-lg opacity-85" />
         <DesignButton
           shopSlug={ctx.shop.slug}
-          label={s.buttonLabel}
+          label={ctx.t(str(s.buttonLabel))}
           link={s.link}
           variant={onBrand(s.background) ? "secondary" : "default"}
           className="mt-2"
@@ -126,22 +131,22 @@ export function RichTextSection({ section, ctx }: SectionProps) {
   );
 }
 
-export function VideoSection({ section }: SectionProps) {
+export function VideoSection({ section, ctx }: SectionProps) {
   const s = section.settings;
   const video = parseVideo(str(s.video));
   if (!video) return null;
   const poster = image(s.poster);
   return (
-    <SectionFrame id={section.id} label={str(s.heading) || "Video"}>
-      <SectionHeading title={str(s.heading)} />
+    <SectionFrame id={section.id} label={ctx.t(str(s.heading)) || ctx.t("Video")}>
+      <SectionHeading title={ctx.t(str(s.heading))} />
       <VideoPlayer
         provider={video.provider}
         id={video.id}
-        title={str(s.heading) || str(s.caption) || "Video"}
+        title={ctx.t(str(s.heading)) || ctx.t(str(s.caption)) || ctx.t("Video")}
         poster={poster ? designImageSrc(poster) : null}
       />
-      {str(s.caption) && (
-        <p className="mt-3 text-center text-sm text-muted-foreground">{str(s.caption)}</p>
+      {ctx.t(str(s.caption)) && (
+        <p className="mt-3 text-center text-sm text-muted-foreground">{ctx.t(str(s.caption))}</p>
       )}
     </SectionFrame>
   );
@@ -166,20 +171,22 @@ export function GallerySection({ section, ctx }: SectionProps) {
   const columns =
     GALLERY_COLUMNS[num(s.columns, 3) as keyof typeof GALLERY_COLUMNS] ?? GALLERY_COLUMNS[3];
   return (
-    <SectionFrame id={section.id} label={str(s.heading) || "Gallery"}>
-      <SectionHeading title={str(s.heading)} />
+    <SectionFrame id={section.id} label={ctx.t(str(s.heading)) || ctx.t("Gallery")}>
+      <SectionHeading title={ctx.t(str(s.heading))} />
       <ul className={cn("grid grid-cols-2 gap-3", columns)}>
         {pictures.map((p) => {
           const figure = (
             <figure className="space-y-2">
               <DesignImg
                 image={image(p.image)!}
-                alt={str(p.alt) || str(p.caption)}
+                alt={str(p.alt) || ctx.t(str(p.caption))}
                 sizes="(min-width: 1024px) 33vw, 50vw"
                 className={cn("w-full rounded-2xl", ratio)}
               />
-              {str(p.caption) && (
-                <figcaption className="text-sm text-muted-foreground">{str(p.caption)}</figcaption>
+              {ctx.t(str(p.caption)) && (
+                <figcaption className="text-sm text-muted-foreground">
+                  {ctx.t(str(p.caption))}
+                </figcaption>
               )}
             </figure>
           );
@@ -204,20 +211,20 @@ export function GallerySection({ section, ctx }: SectionProps) {
   );
 }
 
-export function FaqSection({ section }: SectionProps) {
+export function FaqSection({ section, ctx }: SectionProps) {
   const s = section.settings;
   const items = list(s.items).filter((i) => str(i.question));
   if (items.length === 0) return null;
   return (
-    <SectionFrame id={section.id} label={str(s.heading) || "Questions and answers"}>
+    <SectionFrame id={section.id} label={ctx.t(str(s.heading)) || ctx.t("Questions and answers")}>
       <div className="mx-auto max-w-3xl">
-        <SectionHeading title={str(s.heading)} subtitle={str(s.intro) || undefined} />
+        <SectionHeading title={ctx.t(str(s.heading))} subtitle={ctx.t(str(s.intro)) || undefined} />
         <Accordion type="single" collapsible className="rounded-2xl border px-5">
           {items.map((item) => (
             <AccordionItem key={str(item.id)} value={str(item.id)}>
-              <AccordionTrigger className="text-base">{str(item.question)}</AccordionTrigger>
+              <AccordionTrigger className="text-base">{ctx.t(str(item.question))}</AccordionTrigger>
               <AccordionContent>
-                <Paragraphs text={item.answer} className="text-muted-foreground" />
+                <Paragraphs text={ctx.t(str(item.answer))} className="text-muted-foreground" />
               </AccordionContent>
             </AccordionItem>
           ))}
@@ -228,19 +235,20 @@ export function FaqSection({ section }: SectionProps) {
 }
 
 // ---------------------------------------------------------------- marketing
-const reviewDate = new Intl.DateTimeFormat("en-IN", {
-  month: "long",
-  year: "numeric",
-  timeZone: "Asia/Kolkata",
-});
+const reviewDate = (locale: Locale) =>
+  new Intl.DateTimeFormat(INTL_LOCALE[locale], {
+    month: "long",
+    year: "numeric",
+    timeZone: "Asia/Kolkata",
+  });
 
 export async function ReviewsSection({ section, ctx }: SectionProps) {
   const s = section.settings;
   const reviews = await getShopReviews(ctx.shop.id, num(s.minRating, 4), num(s.count, 3));
   if (reviews.length === 0) return null;
   return (
-    <SectionFrame id={section.id} label={str(s.heading) || "Customer reviews"}>
-      <SectionHeading title={str(s.heading)} />
+    <SectionFrame id={section.id} label={ctx.t(str(s.heading)) || ctx.t("Customer reviews")}>
+      <SectionHeading title={ctx.t(str(s.heading))} />
       <ul className="grid gap-4 md:grid-cols-3">
         {reviews.map((r, i) => (
           <li key={i} className="flex flex-col gap-3 rounded-2xl border bg-card p-5">
@@ -253,7 +261,7 @@ export async function ReviewsSection({ section, ctx }: SectionProps) {
               <span className="font-medium">{r.author}</span>
               <span className="text-muted-foreground">
                 {" "}
-                · {reviewDate.format(new Date(r.created_at))}
+                · {reviewDate(ctx.t.locale).format(new Date(r.created_at))}
               </span>
             </p>
             <Link
@@ -269,13 +277,13 @@ export async function ReviewsSection({ section, ctx }: SectionProps) {
   );
 }
 
-export function PromisesSection({ section }: SectionProps) {
+export function PromisesSection({ section, ctx }: SectionProps) {
   const s = section.settings;
   const items = list(s.items).filter((i) => str(i.title));
   if (items.length === 0) return null;
   const cards = s.style === "cards";
   return (
-    <SectionFrame id={section.id} label="Our promises">
+    <SectionFrame id={section.id} label={ctx.t("Our promises")}>
       <ul
         className={cn(
           "grid gap-4 sm:grid-cols-2",
@@ -298,9 +306,9 @@ export function PromisesSection({ section }: SectionProps) {
                 <Icon className="size-5" aria-hidden />
               </span>
               <div className="min-w-0">
-                <p className="font-medium">{str(item.title)}</p>
-                {str(item.text) && (
-                  <p className="text-sm text-muted-foreground">{str(item.text)}</p>
+                <p className="font-medium">{ctx.t(str(item.title))}</p>
+                {ctx.t(str(item.text)) && (
+                  <p className="text-sm text-muted-foreground">{ctx.t(str(item.text))}</p>
                 )}
               </div>
             </li>
@@ -321,18 +329,24 @@ export function CountdownSection({ section, ctx }: SectionProps) {
   // A sale without an end date, or one that's over, shows nothing.
   if (!endsAt || hasEnded(endsAt)) return null;
   return (
-    <SectionFrame id={section.id} background={str(s.background) || "brand"} label={str(s.heading)}>
+    <SectionFrame
+      id={section.id}
+      background={str(s.background) || "brand"}
+      label={ctx.t(str(s.heading))}
+    >
       <div className="mx-auto max-w-2xl space-y-5 text-center">
         <div className="space-y-2">
-          {str(s.heading) && (
-            <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">{str(s.heading)}</h2>
+          {ctx.t(str(s.heading)) && (
+            <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">
+              {ctx.t(str(s.heading))}
+            </h2>
           )}
-          {str(s.text) && <p className="opacity-85">{str(s.text)}</p>}
+          {ctx.t(str(s.text)) && <p className="opacity-85">{ctx.t(str(s.text))}</p>}
         </div>
         <Countdown endsAt={endsAt} />
         <DesignButton
           shopSlug={ctx.shop.slug}
-          label={s.buttonLabel}
+          label={ctx.t(str(s.buttonLabel))}
           link={s.link}
           variant={onBrand(s.background ?? "brand") ? "secondary" : "default"}
         />
@@ -347,23 +361,25 @@ export function NewsletterSection({ section, ctx }: SectionProps) {
     <SectionFrame
       id={section.id}
       background={str(s.background)}
-      label={str(s.heading) || "Newsletter"}
+      label={ctx.t(str(s.heading)) || ctx.t("Newsletter")}
     >
       <div className="mx-auto max-w-2xl space-y-5 text-center">
         <div className="space-y-2">
-          {str(s.heading) && (
-            <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">{str(s.heading)}</h2>
+          {ctx.t(str(s.heading)) && (
+            <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">
+              {ctx.t(str(s.heading))}
+            </h2>
           )}
-          {str(s.text) && <p className="opacity-85">{str(s.text)}</p>}
+          {ctx.t(str(s.text)) && <p className="opacity-85">{ctx.t(str(s.text))}</p>}
         </div>
         {ctx.shop.live ? (
           <NewsletterForm
             shopSlug={ctx.shop.slug}
-            buttonLabel={str(s.buttonLabel)}
+            buttonLabel={ctx.t(str(s.buttonLabel))}
             inverted={onBrand(s.background)}
           />
         ) : (
-          <p className="text-sm opacity-75">Sign-ups open when the shop goes live.</p>
+          <p className="text-sm opacity-75">{ctx.t("Sign-ups open when the shop goes live.")}</p>
         )}
       </div>
     </SectionFrame>
@@ -374,9 +390,9 @@ export function NewsletterSection({ section, ctx }: SectionProps) {
 export function BrandStorySection({ section, ctx }: SectionProps) {
   const s = section.settings;
   const img = image(s.image);
-  const stats = list(s.stats).filter((x) => str(x.value));
+  const stats = list(s.stats).filter((x) => ctx.t(str(x.value)));
   return (
-    <SectionFrame id={section.id} label={str(s.heading) || "Our story"}>
+    <SectionFrame id={section.id} label={ctx.t(str(s.heading)) || ctx.t("Our story")}>
       <div className={cn("grid items-center gap-8", img && "md:grid-cols-2 md:gap-14")}>
         {img && (
           <DesignImg
@@ -386,23 +402,25 @@ export function BrandStorySection({ section, ctx }: SectionProps) {
           />
         )}
         <div className="space-y-5">
-          {str(s.eyebrow) && (
+          {ctx.t(str(s.eyebrow)) && (
             <p className="text-sm font-medium tracking-wide text-primary uppercase">
-              {str(s.eyebrow)}
+              {ctx.t(str(s.eyebrow))}
             </p>
           )}
-          {str(s.heading) && (
+          {ctx.t(str(s.heading)) && (
             <h2 className="text-3xl font-semibold tracking-tight text-balance sm:text-4xl">
-              {str(s.heading)}
+              {ctx.t(str(s.heading))}
             </h2>
           )}
-          <Paragraphs text={s.text} className="text-muted-foreground" />
+          <Paragraphs text={ctx.t(str(s.text))} className="text-muted-foreground" />
           {stats.length > 0 && (
             <dl className="grid grid-cols-2 gap-4 pt-2">
               {stats.map((x) => (
                 <div key={str(x.id)} className="border-l-2 border-primary pl-4">
-                  <dt className="text-sm text-muted-foreground">{str(x.label)}</dt>
-                  <dd className="sv-heading order-first text-2xl font-semibold">{str(x.value)}</dd>
+                  <dt className="text-sm text-muted-foreground">{ctx.t(str(x.label))}</dt>
+                  <dd className="sv-heading order-first text-2xl font-semibold">
+                    {ctx.t(str(x.value))}
+                  </dd>
                 </div>
               ))}
             </dl>
@@ -416,16 +434,16 @@ export function BrandStorySection({ section, ctx }: SectionProps) {
 
 export function LocationsSection({ section, ctx }: SectionProps) {
   const s = section.settings;
-  const places = list(s.items).filter((p) => str(p.name) || str(p.address));
+  const places = list(s.items).filter((p) => ctx.t(str(p.name)) || str(p.address));
   if (places.length === 0 && s.showContact === false) return null;
   return (
-    <SectionFrame id={section.id} label={str(s.heading) || "Visit us"}>
+    <SectionFrame id={section.id} label={ctx.t(str(s.heading)) || ctx.t("Visit us")}>
       <SectionHeading
-        title={str(s.heading)}
+        title={ctx.t(str(s.heading))}
         action={
           s.showContact !== false && (
             <Button asChild variant="outline">
-              <Link href={routes.storefrontContact(ctx.shop.slug)}>Contact us</Link>
+              <Link href={routes.storefrontContact(ctx.shop.slug)}>{ctx.t("Contact us")}</Link>
             </Button>
           )
         }
@@ -434,17 +452,17 @@ export function LocationsSection({ section, ctx }: SectionProps) {
         <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {places.map((p) => (
             <li key={str(p.id)} className="space-y-3 rounded-2xl border p-5">
-              {str(p.name) && <p className="font-medium">{str(p.name)}</p>}
+              {ctx.t(str(p.name)) && <p className="font-medium">{ctx.t(str(p.name))}</p>}
               {str(p.address) && (
                 <p className="flex gap-2 text-sm whitespace-pre-line text-muted-foreground">
                   <MapPinIcon className="mt-0.5 size-4 shrink-0" aria-hidden />
                   {str(p.address)}
                 </p>
               )}
-              {str(p.hours) && (
+              {ctx.t(str(p.hours)) && (
                 <p className="flex gap-2 text-sm text-muted-foreground">
                   <ClockIcon className="mt-0.5 size-4 shrink-0" aria-hidden />
-                  {str(p.hours)}
+                  {ctx.t(str(p.hours))}
                 </p>
               )}
               {str(p.phone) && (
@@ -462,7 +480,7 @@ export function LocationsSection({ section, ctx }: SectionProps) {
                   link={str(p.link)}
                   className="inline-block text-sm font-medium text-primary hover:underline"
                 >
-                  Get directions
+                  {ctx.t("Get directions")}
                 </DesignLink>
               )}
             </li>
@@ -480,15 +498,15 @@ export function SocialGridSection({ section, ctx }: SectionProps) {
   const follow = str(s.link) ? (
     <Button asChild variant="outline">
       <DesignLink shopSlug={ctx.shop.slug} link={str(s.link)}>
-        Follow {str(s.handle) || "us"}
+        {str(s.handle) ? ctx.t("Follow {handle}", { handle: str(s.handle) }) : ctx.t("Follow us")}
       </DesignLink>
     </Button>
   ) : null;
   return (
-    <SectionFrame id={section.id} label={str(s.heading) || "Social"}>
+    <SectionFrame id={section.id} label={ctx.t(str(s.heading)) || ctx.t("Social")}>
       <SectionHeading
-        title={str(s.heading)}
-        subtitle={str(s.handle) || undefined}
+        title={ctx.t(str(s.heading))}
+        subtitle={ctx.t(str(s.handle)) || undefined}
         action={follow}
       />
       <ul className="grid grid-cols-3 gap-1.5 sm:gap-3">

@@ -41,7 +41,7 @@ export function NavUser({
               className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
             >
               <Avatar className="size-8 rounded-lg">
-                <AvatarFallback className="rounded-lg bg-sidebar-accent text-xs">
+                <AvatarFallback className="rounded-lg bg-sidebar-accent text-xs text-sidebar-accent-foreground">
                   {initials(user.name)}
                 </AvatarFallback>
               </Avatar>

@@ -1,7 +1,5 @@
 "use server";
 
-import { after } from "next/server";
-
 import { refresh } from "next/cache";
 import { headers } from "next/headers";
 
@@ -34,6 +32,7 @@ import {
   writeCartLines,
 } from "@/features/storefront/cart-cookie";
 import { signInCodeEmail } from "@/features/storefront/emails";
+import { getLocale, getT, recordOrderLocale } from "@/i18n/server";
 import { getCart, getStorefrontShop } from "@/features/storefront/queries";
 import {
   cartVariantsSchema,
@@ -44,7 +43,7 @@ import {
 } from "@/features/storefront/schemas";
 import { notifyOrder } from "@/features/notifications/order-notifier";
 import { refundDuePayments } from "@/features/payments/server";
-import { sendStockAlertsQuietly } from "@/features/operations/server";
+import { queueStockAlerts } from "@/features/operations/server";
 import { createAction } from "@/lib/actions/create-action";
 import { type AppError, Errors, fromPostgrestError } from "@/lib/errors";
 import { sendMail } from "@/lib/mail";
@@ -92,7 +91,14 @@ export const startShopperSignIn = createAction({
     if (error) throw fromPostgrestError(error);
 
     const result = data as { sign_in_id: string; otp: string; email: string };
-    await sendMail(signInCodeEmail({ to: result.email, shopName: shop.name, code: result.otp }));
+    await sendMail(
+      signInCodeEmail({
+        to: result.email,
+        shopName: shop.name,
+        code: result.otp,
+        t: await getT(shop.language),
+      }),
+    );
     (await signInCookie(shop.slug)).set(result.sign_in_id);
     return { email: maskEmailAddress(result.email) };
   },
@@ -112,7 +118,14 @@ export const resendShopperSignIn = createAction({
     });
     if (error) throw fromPostgrestError(error);
     const result = data as { otp: string; email: string; sends_left: number };
-    await sendMail(signInCodeEmail({ to: result.email, shopName: shop.name, code: result.otp }));
+    await sendMail(
+      signInCodeEmail({
+        to: result.email,
+        shopName: shop.name,
+        code: result.otp,
+        t: await getT(shop.language),
+      }),
+    );
     return { sendsLeft: result.sends_left };
   },
 });
@@ -147,7 +160,11 @@ export const verifyShopperSignIn = createAction({
         code: [
           typeof left === "number"
             ? left > 0
-              ? `That code is not right. ${left} ${left === 1 ? "try" : "tries"} left.`
+              ? (await getT(shop.language)).plural(
+                  left,
+                  "That code is not right. {count} try left.",
+                  "That code is not right. {count} tries left.",
+                )
               : "That code is not right. Ask for a new code."
             : (result.message ?? "That code can't be used."),
         ],
@@ -301,7 +318,7 @@ export const cancelMyOrder = createAction({
       .eq("public_token", input.orderToken)
       .maybeSingle();
     if (order) {
-      notifyOrder(order.id, { type: "cancelled", byCustomer: true });
+      await notifyOrder(order.id, { type: "cancelled", byCustomer: true });
       await refundDuePayments(order.id);
     }
     refresh();
@@ -418,6 +435,7 @@ export const placeSignedInOrder = createAction({
       awaiting_payment: boolean;
     };
     await clearCart(shop.slug);
+    await recordOrderLocale(order.order_id, await getLocale(shop.language));
     if (input.messageOptIn) {
       const { error: optInError } = await createAdminClient()
         .from("orders")
@@ -426,9 +444,9 @@ export const placeSignedInOrder = createAction({
       if (optInError) throw fromPostgrestError(optInError);
     }
     // Online orders are confirmed (and emailed) once the payment arrives.
-    if (!order.awaiting_payment) notifyOrder(order.order_id, { type: "confirmed" });
+    if (!order.awaiting_payment) await notifyOrder(order.order_id, { type: "confirmed" });
     // Stock is now reserved: tell the team about anything that ran low.
-    after(sendStockAlertsQuietly);
+    await queueStockAlerts();
     return {
       token: order.public_token,
       number: order.order_number,

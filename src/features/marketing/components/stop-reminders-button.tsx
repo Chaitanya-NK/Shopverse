@@ -6,8 +6,10 @@ import { useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { stopCartReminders } from "@/features/marketing/actions";
+import { useT } from "@/i18n/client";
 
 export function StopRemindersButton({ shopSlug, token }: { shopSlug: string; token: string }) {
+  const t = useT();
   const [done, setDone] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -15,7 +17,7 @@ export function StopRemindersButton({ shopSlug, token }: { shopSlug: string; tok
     return (
       <p role="status" className="flex items-center gap-2 text-sm">
         <CheckCircle2Icon className="size-4 text-emerald-600" aria-hidden />
-        Done. You won&apos;t get cart reminders from this shop.
+        {t("Done. You won't get cart reminders from this shop.")}
       </p>
     );
   return (
@@ -31,7 +33,7 @@ export function StopRemindersButton({ shopSlug, token }: { shopSlug: string; tok
         }
       >
         {isPending && <Spinner />}
-        Stop cart reminders
+        {t("Stop cart reminders")}
       </Button>
       {error && (
         <p role="alert" className="text-sm text-destructive">

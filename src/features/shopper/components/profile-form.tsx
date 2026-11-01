@@ -16,6 +16,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { updateShopperProfile } from "@/features/shopper/actions";
 import { profileSchema } from "@/features/shopper/schemas";
 import { applyActionError } from "@/lib/forms/apply-action-error";
+import { useT } from "@/i18n/client";
 
 type FormInput = z.input<typeof profileSchema>;
 type FormOutput = z.output<typeof profileSchema>;
@@ -32,6 +33,7 @@ export function ProfileForm({
   /** After a first-time save, continue here. */
   redirectTo?: string;
 }) {
+  const t = useT();
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const form = useForm<FormInput, unknown, FormOutput>({
@@ -51,7 +53,7 @@ export function ProfileForm({
         applyActionError(form, result.error);
         return;
       }
-      toast.success("Profile saved");
+      toast.success(t("Profile saved"));
       form.reset(values);
       if (redirectTo) router.replace(redirectTo);
     }),
@@ -61,10 +63,10 @@ export function ProfileForm({
     <form onSubmit={onSubmit} noValidate className="space-y-6">
       <FieldGroup>
         <Field>
-          <FieldLabel htmlFor="profile-email">Email</FieldLabel>
+          <FieldLabel htmlFor="profile-email">{t("Email")}</FieldLabel>
           <Input id="profile-email" value={profile.email} disabled readOnly />
           <FieldDescription>
-            You sign in with this email. It can&apos;t be changed here.
+            {t("You sign in with this email. It can't be changed here.")}
           </FieldDescription>
         </Field>
         <div className="grid gap-5 sm:grid-cols-2">
@@ -73,7 +75,7 @@ export function ProfileForm({
             control={form.control}
             render={({ field, fieldState }) => (
               <Field data-invalid={fieldState.invalid}>
-                <FieldLabel htmlFor="profile-name">Full name</FieldLabel>
+                <FieldLabel htmlFor="profile-name">{t("Full name")}</FieldLabel>
                 <Input
                   {...field}
                   id="profile-name"
@@ -89,7 +91,7 @@ export function ProfileForm({
             control={form.control}
             render={({ field, fieldState }) => (
               <Field data-invalid={fieldState.invalid}>
-                <FieldLabel htmlFor="profile-phone">Mobile number (optional)</FieldLabel>
+                <FieldLabel htmlFor="profile-phone">{t("Mobile number (optional)")}</FieldLabel>
                 <Input
                   {...field}
                   value={field.value ?? ""}
@@ -124,7 +126,7 @@ export function ProfileForm({
       <FormRootError form={form} />
       <Button type="submit" disabled={isPending || (!form.formState.isDirty && !redirectTo)}>
         {isPending && <Spinner />}
-        {redirectTo ? "Save and continue" : "Save changes"}
+        {redirectTo ? t("Save and continue") : t("Save changes")}
       </Button>
     </form>
   );

@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { routes } from "@/config/routes";
+import { getT } from "@/i18n/server";
 import { RequestReturnForm } from "@/features/returns/components/request-return-form";
 import { getShopperReturnOptions } from "@/features/returns/queries";
 import { requireAccountPage } from "@/features/shopper/guard";
@@ -40,6 +41,7 @@ async function ReturnRequest({ params }: Pick<Props, "params">) {
     getShopperReturnOptions(shop.id, token),
   ]);
   if (!order || order.shop.slug !== shop.slug || !options) notFound();
+  const t = await getT(shop.language);
   const anything = options.items.some((i) => i.blocked === null && i.returnable > 0);
 
   return (
@@ -47,22 +49,27 @@ async function ReturnRequest({ params }: Pick<Props, "params">) {
       <Button asChild variant="ghost" size="sm" className="-ml-2 text-muted-foreground">
         <Link href={routes.storefrontOrder(shop.slug, token)}>
           <ArrowLeftIcon />
-          Order {order.number}
+          {t("Order {number}", { number: order.number })}
         </Link>
       </Button>
       <Card>
         <CardHeader>
-          <CardTitle className="text-xl">Return or exchange</CardTitle>
+          <CardTitle className="text-xl">{t("Return or exchange")}</CardTitle>
           <CardDescription>
             {options.windowDays > 0
-              ? `Items can be returned within ${options.windowDays} days of delivery, unused and with their tags.`
-              : "This shop doesn't accept returns online."}{" "}
+              ? t(
+                  "Items can be returned within {days} days of delivery, unused and with their tags.",
+                  {
+                    days: options.windowDays,
+                  },
+                )
+              : t("This shop doesn't accept returns online.")}{" "}
             {shop.policies.includes("returns") && (
               <Link
                 href={routes.storefrontPolicy(shop.slug, "returns")}
                 className="font-medium text-foreground underline-offset-4 hover:underline"
               >
-                Read the returns policy
+                {t("Read the returns policy")}
               </Link>
             )}
           </CardDescription>
@@ -78,11 +85,16 @@ async function ReturnRequest({ params }: Pick<Props, "params">) {
           ) : (
             <Alert>
               <InfoIcon />
-              <AlertTitle>Nothing on this order can be returned online</AlertTitle>
+              <AlertTitle>{t("Nothing on this order can be returned online")}</AlertTitle>
               <AlertDescription>
                 {shop.supportEmail || shop.supportPhone
-                  ? `Contact ${shop.name} at ${[shop.supportEmail, shop.supportPhone].filter(Boolean).join(" or ")} and they'll help.`
-                  : `Contact ${shop.name} and they'll help.`}
+                  ? t("Contact {shop} at {contact} and they'll help.", {
+                      shop: shop.name,
+                      contact: [shop.supportEmail, shop.supportPhone]
+                        .filter(Boolean)
+                        .join(` ${t("or")} `),
+                    })
+                  : t("Contact {shop} and they'll help.", { shop: shop.name })}
               </AlertDescription>
             </Alert>
           )}

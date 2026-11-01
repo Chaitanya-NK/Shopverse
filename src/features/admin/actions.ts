@@ -5,6 +5,7 @@ import { z } from "zod";
 
 import { isPlatformAdmin } from "@/features/admin/queries";
 import { createAction } from "@/lib/actions/create-action";
+import { kickJobs } from "@/lib/jobs/queue";
 import { Errors, fromPostgrestError } from "@/lib/errors";
 import { Constants } from "@/types/database.types";
 
@@ -42,6 +43,34 @@ export const setPlan = createAction({
       p_note: input.note,
     });
     if (error) throw fromPostgrestError(error);
+    refresh();
+    return null;
+  },
+});
+
+export const resolveError = createAction({
+  name: "admin.resolveError",
+  schema: z.object({ fingerprint: z.string().regex(/^[0-9a-f]{16,64}$/), resolved: z.boolean() }),
+  handler: async (input, { supabase }) => {
+    await requireAdmin();
+    const { error } = await supabase.rpc("admin_resolve_error", {
+      p_fingerprint: input.fingerprint,
+      p_resolved: input.resolved,
+    });
+    if (error) throw fromPostgrestError(error);
+    refresh();
+    return null;
+  },
+});
+
+export const retryJob = createAction({
+  name: "admin.retryJob",
+  schema: z.object({ id: z.number().int().positive() }),
+  handler: async (input, { supabase }) => {
+    await requireAdmin();
+    const { error } = await supabase.rpc("admin_retry_job", { p_id: input.id });
+    if (error) throw fromPostgrestError(error);
+    kickJobs();
     refresh();
     return null;
   },

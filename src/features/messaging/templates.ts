@@ -1,5 +1,7 @@
 /** Order updates by WhatsApp or SMS: short, plain text, one link. */
 
+import { makeTranslate, type Translate } from "@/i18n/core";
+
 export const MESSAGE_EVENTS = {
   confirmed: "Order confirmed",
   shipped: "Shipped (with tracking link)",
@@ -21,27 +23,64 @@ export type MessageContext = {
   otp?: string | null;
 };
 
-const hi = (name: string | null) => {
-  const first = name?.trim().split(/\s+/)[0];
-  return first ? `Hi ${first}, ` : "";
-};
+const english = makeTranslate("en", null);
 
-export function messageBody(event: MessageEvent, c: MessageContext): string | null {
-  const greet = hi(c.customerName);
+/** The message for one event, in the customer's language (English by default). */
+export function messageBody(
+  event: MessageEvent,
+  c: MessageContext,
+  t: Translate = english,
+): string | null {
+  const first = c.customerName?.trim().split(/\s+/)[0];
+  const greet = first ? t("Hi {name}, ", { name: first }) : "";
+  const vars = { shop: c.shopName, number: c.orderNumber };
   switch (event) {
     case "confirmed":
-      return `${greet}your ${c.shopName} order ${c.orderNumber} (${c.total}) is confirmed. Details: ${c.orderUrl}`;
+      return (
+        greet +
+        t("your {shop} order {number} ({total}) is confirmed. Details: {url}", {
+          ...vars,
+          total: c.total,
+          url: c.orderUrl,
+        })
+      );
     case "shipped":
-      return `${greet}your ${c.shopName} order ${c.orderNumber} is on its way. Track it: ${c.trackingUrl ?? c.orderUrl}`;
+      return (
+        greet +
+        t("your {shop} order {number} is on its way. Track it: {url}", {
+          ...vars,
+          url: c.trackingUrl ?? c.orderUrl,
+        })
+      );
     case "out_for_delivery":
       // Without the code, this update is only useful by email.
       if (!c.otp) return null;
-      return `${greet}your ${c.shopName} order ${c.orderNumber} arrives today. Delivery code: ${c.otp}. Share it with the courier only when you have your parcel.`;
+      return (
+        greet +
+        t(
+          "your {shop} order {number} arrives today. Delivery code: {code}. Share it with the courier only when you have your parcel.",
+          { ...vars, code: c.otp },
+        )
+      );
     case "delivery_failed":
-      return `${greet}we couldn't deliver ${c.shopName} order ${c.orderNumber} today. We'll try again; track it: ${c.trackingUrl ?? c.orderUrl}`;
+      return (
+        greet +
+        t("we couldn't deliver {shop} order {number} today. We'll try again; track it: {url}", {
+          ...vars,
+          url: c.trackingUrl ?? c.orderUrl,
+        })
+      );
     case "delivered":
-      return `${greet}your ${c.shopName} order ${c.orderNumber} was delivered. Thank you for shopping with us!`;
+      return (
+        greet + t("your {shop} order {number} was delivered. Thank you for shopping with us!", vars)
+      );
     case "cancelled":
-      return `${greet}your ${c.shopName} order ${c.orderNumber} has been cancelled. Details: ${c.orderUrl}`;
+      return (
+        greet +
+        t("your {shop} order {number} has been cancelled. Details: {url}", {
+          ...vars,
+          url: c.orderUrl,
+        })
+      );
   }
 }

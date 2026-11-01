@@ -1,7 +1,6 @@
 "use server";
 
 import { refresh } from "next/cache";
-import { after } from "next/server";
 
 import {
   movementHistorySchema,
@@ -15,7 +14,7 @@ import {
   variantSearchSchema,
 } from "@/features/inventory/schemas";
 import { authorizeOrganization } from "@/features/organizations/server";
-import { sendStockAlertsQuietly } from "@/features/operations/server";
+import { queueStockAlerts } from "@/features/operations/server";
 import { createAction } from "@/lib/actions/create-action";
 import { Errors, fromPostgrestError } from "@/lib/errors";
 import { containsPattern } from "@/lib/postgrest";
@@ -89,7 +88,7 @@ export const removeStock = createAction({
     if (error) throw fromPostgrestError(error);
 
     refresh();
-    after(sendStockAlertsQuietly);
+    await queueStockAlerts();
     return { onHand: data.on_hand };
   },
 });
@@ -120,7 +119,7 @@ export const transferStock = createAction({
     if (error) throw fromPostgrestError(error);
 
     refresh();
-    after(sendStockAlertsQuietly);
+    await queueStockAlerts();
     return { transferId: data };
   },
 });
@@ -149,7 +148,7 @@ export const setReorderPoint = createAction({
     if (!data) throw Errors.notFound("Stock location");
 
     refresh();
-    after(sendStockAlertsQuietly);
+    await queueStockAlerts();
     return data;
   },
 });

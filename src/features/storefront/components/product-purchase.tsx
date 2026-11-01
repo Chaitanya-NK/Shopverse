@@ -19,6 +19,7 @@ import {
   isChoiceAvailable,
 } from "@/features/storefront/variant-selection";
 import { cn } from "@/lib/utils";
+import { useT } from "@/i18n/client";
 
 type ProductPurchaseProps = {
   shopSlug: string;
@@ -27,6 +28,7 @@ type ProductPurchaseProps = {
 };
 
 export function ProductPurchase({ shopSlug, product, currency }: ProductPurchaseProps) {
+  const t = useT();
   const router = useRouter();
   const [selected, setSelected] = useState(() => initialSelection(product.variants));
   const [quantity, setQuantity] = useState(1);
@@ -44,12 +46,18 @@ export function ProductPurchase({ shopSlug, product, currency }: ProductPurchase
       if (!variant) return;
       const result = await changeCart({ shopSlug, variantId: variant.id, quantity, mode: "add" });
       if (!result.ok) {
-        toast.error(result.error.fieldErrors?.variantId?.[0] ?? result.error.message);
+        toast.error(t(result.error.fieldErrors?.variantId?.[0] ?? result.error.message));
         return;
       }
-      toast.success(result.data.limited ? "Added what's left in stock" : "Added to your cart", {
-        action: { label: "View cart", onClick: () => router.push(routes.storefrontCart(shopSlug)) },
-      });
+      toast.success(
+        result.data.limited ? t("Added what's left in stock") : t("Added to your cart"),
+        {
+          action: {
+            label: t("View cart"),
+            onClick: () => router.push(routes.storefrontCart(shopSlug)),
+          },
+        },
+      );
       setQuantity(1);
     });
 
@@ -58,7 +66,7 @@ export function ProductPurchase({ shopSlug, product, currency }: ProductPurchase
       {variant && (
         <Price price={variant.price} compareAt={variant.compareAt} currency={currency} size="lg" />
       )}
-      <p className="-mt-4 text-xs text-muted-foreground">Inclusive of all taxes</p>
+      <p className="-mt-4 text-xs text-muted-foreground">{t("Inclusive of all taxes")}</p>
 
       {axes.map((axis) => (
         <fieldset key={axis.key} className="space-y-2">
@@ -117,22 +125,28 @@ export function ProductPurchase({ shopSlug, product, currency }: ProductPurchase
         )}
       >
         {soldOut ? (
-          "Out of stock"
+          t("Out of stock")
         ) : (
           <>
             <CheckIcon className="size-4" aria-hidden />
-            {variant.available < 10 ? `Only ${variant.available} left` : "In stock"}
+            {variant.available < 10
+              ? t("Only {count} left", { count: variant.available })
+              : t("In stock")}
           </>
         )}
       </p>
 
       <div className="flex flex-wrap items-center gap-3">
-        <div className="flex items-center rounded-lg border" role="group" aria-label="Quantity">
+        <div
+          className="flex items-center rounded-lg border"
+          role="group"
+          aria-label={t("Quantity")}
+        >
           <Button
             type="button"
             variant="ghost"
             size="icon"
-            aria-label="Fewer"
+            aria-label={t("Fewer")}
             disabled={quantity <= 1 || soldOut}
             onClick={() => setQuantity((q) => Math.max(1, q - 1))}
           >
@@ -145,7 +159,7 @@ export function ProductPurchase({ shopSlug, product, currency }: ProductPurchase
             type="button"
             variant="ghost"
             size="icon"
-            aria-label="More"
+            aria-label={t("More")}
             disabled={quantity >= maxQty || soldOut}
             onClick={() => setQuantity((q) => Math.min(maxQty, q + 1))}
           >
@@ -159,7 +173,7 @@ export function ProductPurchase({ shopSlug, product, currency }: ProductPurchase
           onClick={add}
         >
           {isPending ? <Spinner /> : <ShoppingBagIcon />}
-          Add to cart
+          {t("Add to cart")}
         </Button>
       </div>
     </div>

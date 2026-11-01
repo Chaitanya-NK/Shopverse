@@ -1,0 +1,28 @@
+# Runs Shopverse's background job worker every 5 minutes: retries of order
+# emails, WhatsApp/SMS updates and Stripe events, and anything left over.
+# (Jobs normally start straight after the request that queued them.) Uses the
+# same APP_URL and CRON_SECRET repository secrets as operations-cron.yml.
+name: Job worker
+
+on:
+  schedule:
+    - cron: "*/5 * * * *"
+  workflow_dispatch:
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Call /api/cron/jobs
+        env:
+          APP_URL: ${{ secrets.APP_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          if [ -z "$APP_URL" ] || [ -z "$CRON_SECRET" ]; then
+            echo "APP_URL or CRON_SECRET not set; skipping."
+            exit 0
+          fi
+          curl --fail-with-body --silent --show-error --max-time 90 \
+            -X POST -H "Authorization: Bearer $CRON_SECRET" \
+            "$APP_URL/api/cron/jobs"

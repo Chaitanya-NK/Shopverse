@@ -2,6 +2,7 @@ import { ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
 import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
+import { makeTranslate, type Translate } from "@/i18n/core";
 
 type SimplePaginationProps = {
   page: number;
@@ -10,7 +11,11 @@ type SimplePaginationProps = {
   /** Builds the URL for a page, keeping the current filters. */
   hrefFor: (page: number) => string;
   noun?: string;
+  /** Storefront pages pass their translator. */
+  t?: Translate;
 };
+
+const english = makeTranslate("en", null);
 
 /** Previous / next pagination with a "Page x of y" summary. */
 export function SimplePagination({
@@ -19,43 +24,44 @@ export function SimplePagination({
   total,
   hrefFor,
   noun = "results",
+  t = english,
 }: SimplePaginationProps) {
   if (pageCount <= 1) {
     return (
       <p className="text-sm text-muted-foreground">
-        {total} {noun}
+        {total} {t(noun)}
       </p>
     );
   }
   return (
-    <nav aria-label="Pagination" className="flex items-center justify-between gap-4">
+    <nav aria-label={t("Pagination")} className="flex items-center justify-between gap-4">
       <p className="text-sm text-muted-foreground">
-        Page {page} of {pageCount} · {total} {noun}
+        {t("Page {page} of {count}", { page, count: pageCount })} · {total} {t(noun)}
       </p>
       <div className="flex gap-2">
         {page > 1 ? (
           <Button asChild variant="outline" size="sm">
             <Link href={hrefFor(page - 1)} rel="prev">
               <ChevronLeftIcon />
-              Previous
+              {t("Previous")}
             </Link>
           </Button>
         ) : (
           <Button variant="outline" size="sm" disabled>
             <ChevronLeftIcon />
-            Previous
+            {t("Previous")}
           </Button>
         )}
         {page < pageCount ? (
           <Button asChild variant="outline" size="sm">
             <Link href={hrefFor(page + 1)} rel="next">
-              Next
+              {t("Next")}
               <ChevronRightIcon />
             </Link>
           </Button>
         ) : (
           <Button variant="outline" size="sm" disabled>
-            Next
+            {t("Next")}
             <ChevronRightIcon />
           </Button>
         )}

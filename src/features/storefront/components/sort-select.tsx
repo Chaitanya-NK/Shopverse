@@ -12,8 +12,10 @@ import {
 } from "@/components/ui/select";
 import { CATALOG_SORTS, type CatalogSort } from "@/features/storefront/schemas";
 import { catalogParams } from "@/features/storefront/search-params";
+import { useT } from "@/i18n/client";
 
 export function SortSelect() {
+  const t = useT();
   const [isPending, startTransition] = useTransition();
   const [{ sort }, setParams] = useQueryStates(catalogParams, { shallow: false, startTransition });
   return (
@@ -23,7 +25,7 @@ export function SortSelect() {
     >
       <SelectTrigger
         className="w-48"
-        aria-label="Sort products"
+        aria-label={t("Sort products")}
         data-pending={isPending || undefined}
       >
         <SelectValue />
@@ -31,7 +33,7 @@ export function SortSelect() {
       <SelectContent align="end">
         {(Object.keys(CATALOG_SORTS) as CatalogSort[]).map((s) => (
           <SelectItem key={s} value={s}>
-            {CATALOG_SORTS[s]}
+            {t(CATALOG_SORTS[s])}
           </SelectItem>
         ))}
       </SelectContent>

@@ -34,6 +34,7 @@ import { saveReview } from "@/features/reviews/actions";
 import { type ReviewFormInput, reviewFormSchema } from "@/features/reviews/schemas";
 import { applyActionError } from "@/lib/forms/apply-action-error";
 import { cn } from "@/lib/utils";
+import { useT } from "@/i18n/client";
 
 const LABELS = ["", "Poor", "Fair", "Good", "Very good", "Excellent"];
 
@@ -48,6 +49,7 @@ export function WriteReviewDialog({
   productTitle: string;
   existing: { rating: number; title: string | null; body: string | null } | null;
 }) {
+  const t = useT();
   const [open, setOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
   const [hover, setHover] = useState(0);
@@ -68,7 +70,7 @@ export function WriteReviewDialog({
         applyActionError(form, result.error);
         return;
       }
-      toast.success(existing ? "Review updated" : "Thanks for your review!");
+      toast.success(existing ? t("Review updated") : t("Thanks for your review!"));
       setOpen(false);
     }),
   );
@@ -76,11 +78,11 @@ export function WriteReviewDialog({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline">{existing ? "Edit your review" : "Write a review"}</Button>
+        <Button variant="outline">{existing ? t("Edit your review") : t("Write a review")}</Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>{existing ? "Edit your review" : "Review this product"}</DialogTitle>
+          <DialogTitle>{existing ? t("Edit your review") : t("Review this product")}</DialogTitle>
           <DialogDescription>{productTitle}</DialogDescription>
         </DialogHeader>
         <form onSubmit={onSubmit} noValidate className="space-y-4">
@@ -92,11 +94,11 @@ export function WriteReviewDialog({
               const shown = hover || value;
               return (
                 <FieldSet data-invalid={fieldState.invalid}>
-                  <FieldLegend variant="label">Your rating</FieldLegend>
+                  <FieldLegend variant="label">{t("Your rating")}</FieldLegend>
                   <div className="flex items-center gap-3">
                     <div
                       role="radiogroup"
-                      aria-label="Stars"
+                      aria-label={t("Stars")}
                       className="flex"
                       onMouseLeave={() => setHover(0)}
                     >
@@ -106,7 +108,7 @@ export function WriteReviewDialog({
                           type="button"
                           role="radio"
                           aria-checked={value === n}
-                          aria-label={`${n} star${n === 1 ? "" : "s"}`}
+                          aria-label={t.plural(n, "{count} star", "{count} stars")}
                           onMouseEnter={() => setHover(n)}
                           onClick={() => field.onChange(n)}
                           className="rounded p-0.5 outline-none focus-visible:ring-2 focus-visible:ring-ring"
@@ -122,7 +124,9 @@ export function WriteReviewDialog({
                         </button>
                       ))}
                     </div>
-                    <span className="text-sm text-muted-foreground">{LABELS[shown]}</span>
+                    <span className="text-sm text-muted-foreground">
+                      {LABELS[shown] ? t(LABELS[shown]) : ""}
+                    </span>
                   </div>
                   <FieldError errors={[fieldState.error]} />
                 </FieldSet>
@@ -135,7 +139,7 @@ export function WriteReviewDialog({
               name="title"
               render={({ field, fieldState }) => (
                 <Field data-invalid={fieldState.invalid}>
-                  <FieldLabel htmlFor="review-title">Headline (optional)</FieldLabel>
+                  <FieldLabel htmlFor="review-title">{t("Headline (optional)")}</FieldLabel>
                   <Input
                     id="review-title"
                     maxLength={120}
@@ -151,12 +155,12 @@ export function WriteReviewDialog({
               name="body"
               render={({ field, fieldState }) => (
                 <Field data-invalid={fieldState.invalid}>
-                  <FieldLabel htmlFor="review-body">Your review (optional)</FieldLabel>
+                  <FieldLabel htmlFor="review-body">{t("Your review (optional)")}</FieldLabel>
                   <Textarea
                     id="review-body"
                     rows={4}
                     maxLength={2000}
-                    placeholder="How's the fit, quality, delivery?"
+                    placeholder={t("How's the fit, quality, delivery?")}
                     {...field}
                     aria-invalid={fieldState.invalid}
                   />
@@ -169,12 +173,12 @@ export function WriteReviewDialog({
           <DialogFooter>
             <DialogClose asChild>
               <Button type="button" variant="outline">
-                Cancel
+                {t("Cancel")}
               </Button>
             </DialogClose>
             <Button type="submit" disabled={isPending}>
               {isPending && <Spinner />}
-              {existing ? "Save review" : "Post review"}
+              {existing ? t("Save review") : t("Post review")}
             </Button>
           </DialogFooter>
         </form>

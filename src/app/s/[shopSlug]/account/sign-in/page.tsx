@@ -7,8 +7,15 @@ import { RETURN_TO_PARAM, routes, safeReturnTo } from "@/config/routes";
 import { SignInFlow } from "@/features/shopper/components/sign-in-flow";
 import { getShopper } from "@/features/shopper/session";
 import { getStorefrontShop } from "@/features/storefront/queries";
+import { T } from "@/i18n/client";
+import { storefrontTitle } from "@/i18n/server";
 
-export const metadata: Metadata = { title: "Sign in", robots: { index: false } };
+export async function generateMetadata({
+  params,
+}: PageProps<"/s/[shopSlug]/account/sign-in">): Promise<Metadata> {
+  const { shopSlug } = await params;
+  return { title: await storefrontTitle(shopSlug, "Sign in"), robots: { index: false } };
+}
 
 type Props = PageProps<"/s/[shopSlug]/account/sign-in">;
 
@@ -38,7 +45,7 @@ async function SignIn({ params, searchParams }: Props) {
         <SignInFlow shopSlug={shop.slug} shopName={shop.name} returnTo={returnTo} />
       ) : (
         <p className="rounded-xl border bg-muted/40 p-4 text-sm">
-          This shop is a preview. Shopper accounts open when it goes live.
+          <T>This shop is a preview. Shopper accounts open when it goes live.</T>
         </p>
       )}
     </div>

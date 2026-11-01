@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
+import { useT } from "@/i18n/client";
 
 function FieldSet({ className, ...props }: React.ComponentProps<"fieldset">) {
   return (
@@ -182,9 +183,11 @@ function FieldError({
 }: React.ComponentProps<"div"> & {
   errors?: Array<{ message?: string } | undefined>;
 }) {
+  // Storefront pages translate messages (English elsewhere).
+  const t = useT();
   const content = useMemo(() => {
     if (children) {
-      return children;
+      return typeof children === "string" ? t(children) : children;
     }
 
     if (!errors?.length) {
@@ -194,15 +197,17 @@ function FieldError({
     const uniqueErrors = [...new Map(errors.map((error) => [error?.message, error])).values()];
 
     if (uniqueErrors?.length === 1) {
-      return uniqueErrors[0]?.message;
+      return uniqueErrors[0]?.message && t(uniqueErrors[0].message);
     }
 
     return (
       <ul className="ml-4 flex list-disc flex-col gap-1">
-        {uniqueErrors.map((error, index) => error?.message && <li key={index}>{error.message}</li>)}
+        {uniqueErrors.map(
+          (error, index) => error?.message && <li key={index}>{t(error.message)}</li>,
+        )}
       </ul>
     );
-  }, [children, errors]);
+  }, [children, errors, t]);
 
   if (!content) {
     return null;

@@ -14,6 +14,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Spinner } from "@/components/ui/spinner";
+import { useT } from "@/i18n/client";
 
 type ConfirmDialogProps = {
   title: string;
@@ -38,6 +39,7 @@ export function ConfirmDialog({
   onOpenChange,
   destructive = true,
 }: ConfirmDialogProps) {
+  const t = useT();
   const [uncontrolledOpen, setUncontrolledOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
   const open = controlledOpen ?? uncontrolledOpen;
@@ -52,7 +54,7 @@ export function ConfirmDialog({
           <AlertDialogDescription>{description}</AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel disabled={isPending}>Cancel</AlertDialogCancel>
+          <AlertDialogCancel disabled={isPending}>{t("Cancel")}</AlertDialogCancel>
           <AlertDialogAction
             variant={destructive ? "destructive" : "default"}
             disabled={isPending}

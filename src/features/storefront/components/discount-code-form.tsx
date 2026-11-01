@@ -9,6 +9,7 @@ import { Field, FieldError, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import { applyDiscountCode, removeDiscountCode } from "@/features/storefront/actions";
+import { useT } from "@/i18n/client";
 
 /** "Have a discount code?" on the cart and checkout summaries. */
 export function DiscountCodeForm({
@@ -24,6 +25,7 @@ export function DiscountCodeForm({
   /** Why a remembered code no longer applies (e.g. it expired). */
   problem: string | null;
 }) {
+  const t = useT();
   const [code, setCode] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -31,7 +33,7 @@ export function DiscountCodeForm({
   const remove = () =>
     startTransition(async () => {
       const result = await removeDiscountCode({ shopSlug });
-      if (!result.ok) toast.error(result.error.message);
+      if (!result.ok) toast.error(t(result.error.message));
     });
 
   if (appliedCode && !problem)
@@ -50,7 +52,7 @@ export function DiscountCodeForm({
           className="size-7"
           onClick={remove}
           disabled={isPending}
-          aria-label={`Remove code ${appliedCode}`}
+          aria-label={t("Remove code {code}", { code: appliedCode })}
         >
           {isPending ? <Spinner /> : <XIcon />}
         </Button>
@@ -64,23 +66,23 @@ export function DiscountCodeForm({
         e.preventDefault();
         const value = code.trim();
         if (!value) {
-          setError("Enter a code");
+          setError(t("Enter a code"));
           return;
         }
         startTransition(async () => {
           const result = await applyDiscountCode({ shopSlug, code: value });
           if (!result.ok) {
-            setError(result.error.fieldErrors?.code?.[0] ?? result.error.message);
+            setError(t(result.error.fieldErrors?.code?.[0] ?? result.error.message));
             return;
           }
           setError(null);
           setCode("");
-          toast.success(`Code applied: ${result.data.title}`);
+          toast.success(t("Code applied: {title}", { title: result.data.title }));
         });
       }}
     >
       <Field data-invalid={Boolean(error || problem)}>
-        <FieldLabel htmlFor="discount-code">Discount code</FieldLabel>
+        <FieldLabel htmlFor="discount-code">{t("Discount code")}</FieldLabel>
         <div className="flex gap-2">
           <Input
             id="discount-code"
@@ -91,20 +93,22 @@ export function DiscountCodeForm({
             }}
             autoCapitalize="characters"
             autoComplete="off"
-            placeholder={appliedCode ?? "Enter code"}
+            placeholder={appliedCode ?? t("Enter code")}
             className="font-mono uppercase"
             aria-invalid={Boolean(error || problem)}
           />
           <Button type="submit" variant="outline" disabled={isPending}>
             {isPending && <Spinner />}
-            Apply
+            {t("Apply")}
           </Button>
         </div>
-        {(error || problem) && <FieldError>{error ?? `${appliedCode}: ${problem}`}</FieldError>}
+        {(error || problem) && (
+          <FieldError>{error ?? `${appliedCode}: ${t(problem ?? "")}`}</FieldError>
+        )}
       </Field>
       {problem && appliedCode && (
         <Button type="button" variant="link" className="h-auto px-0 text-xs" onClick={remove}>
-          Remove {appliedCode}
+          {t("Remove {code}", { code: appliedCode })}
         </Button>
       )}
     </form>

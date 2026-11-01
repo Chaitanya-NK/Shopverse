@@ -47,10 +47,11 @@ import {
 import { MAX_LINE_QUANTITY } from "@/features/storefront/schemas";
 import { loadCatalogParams, serializeCatalogParams } from "@/features/storefront/search-params";
 import { formatMoney } from "@/lib/format";
+import { type Translate } from "@/i18n/core";
 import { cn } from "@/lib/utils";
 
-function formatDetail(value: unknown, unit: string | null): string {
-  if (typeof value === "boolean") return value ? "Yes" : "No";
+function formatDetail(value: unknown, unit: string | null, t: Translate): string {
+  if (typeof value === "boolean") return value ? t("Yes") : t("No");
   if (Array.isArray(value)) return value.join(", ");
   return `${String(value)}${unit ? ` ${unit}` : ""}`;
 }
@@ -74,7 +75,7 @@ export async function ProductMainSection({ section, ctx }: SectionProps) {
           className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
         >
           <ChevronLeftIcon className="size-4" aria-hidden />
-          {product.category?.name ?? "All products"}
+          {product.category?.name ?? ctx.t("All products")}
         </Link>
       )}
 
@@ -109,8 +110,8 @@ export async function ProductMainSection({ section, ctx }: SectionProps) {
               >
                 <StarRating value={product.rating.average} size="md" />
                 <span>
-                  {product.rating.average.toFixed(1)} · {product.rating.count} review
-                  {product.rating.count === 1 ? "" : "s"}
+                  {product.rating.average.toFixed(1)} ·{" "}
+                  {ctx.t.plural(product.rating.count, "{count} review", "{count} reviews")}
                 </span>
               </a>
             )}
@@ -121,13 +122,15 @@ export async function ProductMainSection({ section, ctx }: SectionProps) {
                 <li className="flex items-center gap-2">
                   <TruckIcon className="size-4 shrink-0" aria-hidden />
                   {shop.freeShippingOver !== null
-                    ? `Free delivery on orders over ${formatMoney(shop.freeShippingOver, shop.currency)}`
-                    : deliveryNote(shop)}
+                    ? ctx.t("Free delivery on orders over {amount}", {
+                        amount: formatMoney(shop.freeShippingOver, shop.currency),
+                      })
+                    : deliveryNote(shop, ctx.t)}
                 </li>
                 {shop.paymentMethods.includes("cod") && (
                   <li className="flex items-center gap-2">
                     <ShieldCheckIcon className="size-4 shrink-0" aria-hidden />
-                    Cash on delivery. Hand over the parcel only with your delivery code.
+                    {ctx.t("Cash on delivery. Hand over the parcel only with your delivery code.")}
                   </li>
                 )}
               </ul>
@@ -135,7 +138,7 @@ export async function ProductMainSection({ section, ctx }: SectionProps) {
 
             {s.showDescription !== false && product.description && (
               <section className="space-y-2">
-                <h2 className="font-medium">About this item</h2>
+                <h2 className="font-medium">{ctx.t("About this item")}</h2>
                 <p className="text-sm leading-relaxed whitespace-pre-line text-muted-foreground">
                   {product.description}
                 </p>
@@ -144,7 +147,7 @@ export async function ProductMainSection({ section, ctx }: SectionProps) {
 
             {s.showDetails !== false && product.details.length > 0 && (
               <section className="space-y-2">
-                <h2 className="font-medium">Details</h2>
+                <h2 className="font-medium">{ctx.t("Details")}</h2>
                 <dl className="divide-y rounded-xl border text-sm">
                   {product.details.map((d) => (
                     <div
@@ -152,7 +155,7 @@ export async function ProductMainSection({ section, ctx }: SectionProps) {
                       className="grid grid-cols-[minmax(0,2fr)_minmax(0,3fr)] gap-4 px-4 py-2.5"
                     >
                       <dt className="text-muted-foreground">{d.label}</dt>
-                      <dd>{formatDetail(d.value, d.unit)}</dd>
+                      <dd>{formatDetail(d.value, d.unit, ctx.t)}</dd>
                     </div>
                   ))}
                 </dl>
@@ -170,7 +173,7 @@ export async function ProductReviewsSection({ section, ctx }: SectionProps) {
   if (!product) return null;
   return (
     <SectionFrame id={section.id}>
-      <ProductReviews shop={ctx.shop} product={product} />
+      <ProductReviews shop={ctx.shop} product={product} t={ctx.t} />
     </SectionFrame>
   );
 }
@@ -182,8 +185,8 @@ export async function RelatedProductsSection({ section, ctx }: SectionProps) {
   const related = await getRelatedProducts(ctx.shop.id, product.id);
   if (related.length === 0) return null;
   return (
-    <SectionFrame id={section.id} label={str(s.heading)} className="border-t pt-10">
-      <SectionHeading title={str(s.heading)} />
+    <SectionFrame id={section.id} label={ctx.t(str(s.heading))} className="border-t pt-10">
+      <SectionHeading title={ctx.t(str(s.heading))} />
       <ProductGridLayout layout={str(s.layout)}>
         <ProductCards items={related.slice(0, num(s.count, 4))} ctx={ctx} />
       </ProductGridLayout>
@@ -220,7 +223,7 @@ export async function CollectionMainSection({ section, ctx }: SectionProps) {
           )}
           {s.showCount !== false && (
             <p className="text-sm text-muted-foreground">
-              {catalog.total} product{catalog.total === 1 ? "" : "s"}
+              {ctx.t.plural(catalog.total, "{count} product", "{count} products")}
             </p>
           )}
         </div>
@@ -235,6 +238,7 @@ export async function CollectionMainSection({ section, ctx }: SectionProps) {
           pageCount={catalog.pageCount}
           total={catalog.total}
           noun="products"
+          t={ctx.t}
           hrefFor={(page) => path + serializeCatalogParams({ ...filters, page })}
         />
       )}
@@ -248,7 +252,8 @@ export async function CartMainSection({ section, ctx }: SectionProps) {
   const { shop } = ctx;
   const [items, shopper] = await Promise.all([getCart(shop.id), getShopper(shop.id)]);
   const money = (n: number) => formatMoney(n, shop.currency);
-  const heading = str(s.heading) || "Your cart";
+  const { t } = ctx;
+  const heading = t(str(s.heading)) || t("Your cart");
 
   if (items.length === 0) {
     return (
@@ -259,12 +264,12 @@ export async function CartMainSection({ section, ctx }: SectionProps) {
             <EmptyMedia variant="icon">
               <ShoppingBagIcon />
             </EmptyMedia>
-            <EmptyTitle>Your cart is empty</EmptyTitle>
-            <EmptyDescription>Find something you like and add it here.</EmptyDescription>
+            <EmptyTitle>{t("Your cart is empty")}</EmptyTitle>
+            <EmptyDescription>{t("Find something you like and add it here.")}</EmptyDescription>
           </EmptyHeader>
           <EmptyContent>
             <Button asChild>
-              <Link href={routes.storefrontProducts(shop.slug)}>Start shopping</Link>
+              <Link href={routes.storefrontProducts(shop.slug)}>{t("Start shopping")}</Link>
             </Button>
           </EmptyContent>
         </Empty>
@@ -332,14 +337,16 @@ export async function CartMainSection({ section, ctx }: SectionProps) {
                         label={label}
                       />
                       <span className="text-xs text-muted-foreground tabular-nums">
-                        {money(item.price)} each
+                        {t("{amount} each", { amount: money(item.price) })}
                       </span>
                     </div>
                     {item.quantity > item.available && (
                       <p className="text-sm text-destructive">
                         {item.available === 0
-                          ? "Sold out. Please remove it."
-                          : `Only ${item.available} left. Please reduce the quantity.`}
+                          ? t("Sold out. Please remove it.")
+                          : t("Only {count} left. Please reduce the quantity.", {
+                              count: item.available,
+                            })}
                       </p>
                     )}
                   </div>
@@ -351,7 +358,7 @@ export async function CartMainSection({ section, ctx }: SectionProps) {
 
         <Card className="h-fit lg:sticky lg:top-24">
           <CardHeader>
-            <CardTitle>Order summary</CardTitle>
+            <CardTitle>{t("Order summary")}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <OrderSummaryLines quote={quote} currency={shop.currency} />
@@ -365,25 +372,25 @@ export async function CartMainSection({ section, ctx }: SectionProps) {
             )}
             {s.showFreeDelivery !== false && toFree !== null && toFree > 0 && (
               <p className="rounded-lg bg-muted p-3 text-sm">
-                Add {money(toFree)} more for free delivery.
+                {t("Add {amount} more for free delivery.", { amount: money(toFree) })}
               </p>
             )}
             {blocked ? (
               <Button className="w-full" size="lg" disabled>
-                Fix your cart to continue
+                {t("Fix your cart to continue")}
               </Button>
             ) : (
               <Button asChild className="w-full" size="lg">
-                <Link href={routes.storefrontCheckout(shop.slug)}>Checkout</Link>
+                <Link href={routes.storefrontCheckout(shop.slug)}>{t("Checkout")}</Link>
               </Button>
             )}
             <p className="text-center text-xs text-muted-foreground">
-              Prices include GST.{" "}
+              {t("Prices include GST.")}{" "}
               {shop.paymentMethods.includes("online")
                 ? shop.paymentMethods.includes("cod")
-                  ? "Pay online or cash on delivery."
-                  : "Pay online with UPI, card or net banking."
-                : "Pay cash on delivery."}
+                  ? t("Pay online or cash on delivery.")
+                  : t("Pay online with UPI, card or net banking.")
+                : t("Pay cash on delivery.")}
             </p>
           </CardContent>
         </Card>

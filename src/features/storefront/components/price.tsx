@@ -1,5 +1,8 @@
+"use client";
+
 import { formatMoney } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import { useT } from "@/i18n/client";
 
 type PriceProps = {
   price: number;
@@ -11,6 +14,7 @@ type PriceProps = {
 
 /** "₹499  ₹699  29% off", or a range for products with several prices. */
 export function Price({ price, maxPrice, compareAt, currency, size = "sm" }: PriceProps) {
+  const t = useT();
   const range = maxPrice !== undefined && maxPrice > price;
   const off =
     compareAt && compareAt > price ? Math.round(((compareAt - price) / compareAt) * 100) : null;
@@ -22,7 +26,9 @@ export function Price({ price, maxPrice, compareAt, currency, size = "sm" }: Pri
       )}
     >
       <span className="font-semibold tabular-nums">
-        {range ? `From ${formatMoney(price, currency)}` : formatMoney(price, currency)}
+        {range
+          ? t("From {amount}", { amount: formatMoney(price, currency) })
+          : formatMoney(price, currency)}
       </span>
       {off !== null && (
         <>
@@ -40,7 +46,7 @@ export function Price({ price, maxPrice, compareAt, currency, size = "sm" }: Pri
               size === "lg" ? "text-base" : "text-xs",
             )}
           >
-            {off}% off
+            {t("{percent}% off", { percent: off })}
           </span>
         </>
       )}

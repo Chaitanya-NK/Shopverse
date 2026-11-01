@@ -4,8 +4,14 @@ import { Suspense } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { routes } from "@/config/routes";
 import { TemplatePage } from "@/features/design/render/template";
+import { storefrontTitle } from "@/i18n/server";
 
-export const metadata: Metadata = { title: "Cart", robots: { index: false } };
+export async function generateMetadata({
+  params,
+}: PageProps<"/s/[shopSlug]/cart">): Promise<Metadata> {
+  const { shopSlug } = await params;
+  return { title: await storefrontTitle(shopSlug, "Cart"), robots: { index: false } };
+}
 
 type Props = PageProps<"/s/[shopSlug]/cart">;
 

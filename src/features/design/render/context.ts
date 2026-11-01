@@ -1,5 +1,6 @@
 import { type Section } from "@/features/design/schema";
 import { type StorefrontShop } from "@/features/storefront/schemas";
+import { type Translate } from "@/i18n/core";
 
 /** What every section on a storefront page can use. */
 export type RenderContext = {
@@ -14,6 +15,8 @@ export type RenderContext = {
   /** Set on product and collection pages. */
   productSlug?: string;
   collectionSlug?: string;
+  /** The shopper's language. Built-in text and unchanged default headings are translated. */
+  t: Translate;
   /** Position on the page: the first section loads its images eagerly. */
   index: number;
 };

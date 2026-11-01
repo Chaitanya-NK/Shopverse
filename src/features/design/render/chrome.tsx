@@ -18,8 +18,10 @@ import { isExternal, shopHref } from "@/features/design/links";
 import { list, str } from "@/features/design/render/frame";
 import { SOCIAL_NETWORKS, type Design } from "@/features/design/schema";
 import { InstallApp } from "@/features/storefront/components/install-app";
+import { LanguageSwitcher } from "@/features/storefront/components/language-switcher";
 import { STOREFRONT_POLICIES } from "@/features/storefront/policies";
 import { type StorefrontShop } from "@/features/storefront/schemas";
+import { type Translate } from "@/i18n/core";
 import { initials } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
@@ -55,7 +57,7 @@ function ShopMark({ shop, centered }: { shop: StorefrontShop; centered?: boolean
   );
 }
 
-function SearchBar({ action }: { action: string }) {
+function SearchBar({ action, t }: { action: string; t: Translate }) {
   return (
     <form action={action} method="get" role="search" className="min-w-0 flex-1">
       <InputGroup className="h-10 rounded-full bg-muted/50">
@@ -65,20 +67,20 @@ function SearchBar({ action }: { action: string }) {
         <InputGroupInput
           name="q"
           type="search"
-          placeholder="Search products"
-          aria-label="Search products"
+          placeholder={t("Search products")}
+          aria-label={t("Search products")}
         />
       </InputGroup>
     </form>
   );
 }
 
-function CartButton({ shopSlug, count }: { shopSlug: string; count: number }) {
+function CartButton({ shopSlug, count, t }: { shopSlug: string; count: number; t: Translate }) {
   return (
     <Button asChild variant="ghost" className="relative shrink-0 rounded-full" size="icon">
       <Link
         href={routes.storefrontCart(shopSlug)}
-        aria-label={`Cart, ${count} item${count === 1 ? "" : "s"}`}
+        aria-label={t.plural(count, "Cart, {count} item", "Cart, {count} items")}
       >
         <ShoppingBagIcon className="size-5" />
         {count > 0 && (
@@ -112,11 +114,13 @@ export function StorefrontHeader({
   design,
   cartCount,
   account,
+  t,
 }: {
   shop: StorefrontShop;
   design: Design;
   cartCount: number;
   account: React.ReactNode;
+  t: Translate;
 }) {
   const h = design.header;
   const links = menuLinks(shop.slug, h.menu);
@@ -129,7 +133,7 @@ export function StorefrontHeader({
     <div className="flex shrink-0 items-center gap-1">
       {search}
       {account}
-      <CartButton shopSlug={shop.slug} count={cartCount} />
+      <CartButton shopSlug={shop.slug} count={cartCount} t={t} />
     </div>
   );
   const container = "mx-auto w-full max-w-(--sv-width) px-4";
@@ -148,7 +152,7 @@ export function StorefrontHeader({
               <MobileMenu shopName={shop.name} links={links} />
               {h.search === "bar" && (
                 <div className="hidden w-full max-w-64 md:block">
-                  <SearchBar action={searchAction} />
+                  <SearchBar action={searchAction} t={t} />
                 </div>
               )}
             </div>
@@ -177,7 +181,11 @@ export function StorefrontHeader({
           <div className={cn(container, "flex h-16 items-center gap-2 sm:gap-4")}>
             <MobileMenu shopName={shop.name} links={links} />
             <ShopMark shop={shop} />
-            {h.search === "bar" ? <SearchBar action={searchAction} /> : <div className="flex-1" />}
+            {h.search === "bar" ? (
+              <SearchBar action={searchAction} t={t} />
+            ) : (
+              <div className="flex-1" />
+            )}
             {actions}
           </div>
           {links.length > 0 && (
@@ -190,10 +198,18 @@ export function StorefrontHeader({
 }
 
 /** The footer, in the layout the shop chose. */
-export function StorefrontFooter({ shop, design }: { shop: StorefrontShop; design: Design }) {
+export function StorefrontFooter({
+  shop,
+  design,
+  t,
+}: {
+  shop: StorefrontShop;
+  design: Design;
+  t: Translate;
+}) {
   const f = design.footer;
   const link = "text-muted-foreground hover:text-foreground hover:underline";
-  const about = str(f.about) || shop.tagline;
+  const about = t(str(f.about)) || shop.tagline;
   const menu = menuLinks(shop.slug, f.menu);
   const social = list(f.social).flatMap((s) => {
     const href = shopHref(shop.slug, str(s.link));
@@ -203,29 +219,38 @@ export function StorefrontFooter({ shop, design }: { shop: StorefrontShop; desig
       : [];
   });
   const help = [
-    { href: routes.storefrontContact(shop.slug), label: "Contact us" },
-    { href: routes.storefrontAccount(shop.slug), label: "Your orders" },
+    { href: routes.storefrontContact(shop.slug), label: t("Contact us") },
+    { href: routes.storefrontAccount(shop.slug), label: t("Your orders") },
     ...shop.policies
       .filter((p) => p === "shipping" || p === "returns")
-      .map((p) => ({ href: routes.storefrontPolicy(shop.slug, p), label: STOREFRONT_POLICIES[p] })),
+      .map((p) => ({
+        href: routes.storefrontPolicy(shop.slug, p),
+        label: t(STOREFRONT_POLICIES[p]),
+      })),
   ];
   const legal = shop.policies
     .filter((p) => p === "privacy" || p === "terms")
-    .map((p) => ({ href: routes.storefrontPolicy(shop.slug, p), label: STOREFRONT_POLICIES[p] }));
+    .map((p) => ({
+      href: routes.storefrontPolicy(shop.slug, p),
+      label: t(STOREFRONT_POLICIES[p]),
+    }));
   const container = "mx-auto w-full max-w-(--sv-width) px-4";
 
   const bottom = (
     <div className="border-t">
       <div className={cn(container, "flex flex-wrap items-center justify-between gap-3 py-4")}>
         <p className="flex items-center gap-2 text-xs text-muted-foreground">
-          © {shop.name} · Powered by <Logo className="text-xs" />
+          © {shop.name} · {t("Powered by")} <Logo className="text-xs" />
         </p>
-        {shop.live && (
-          <InstallApp
-            swUrl={routes.storefrontServiceWorker(shop.slug)}
-            scope={routes.storefront(shop.slug)}
-          />
-        )}
+        <div className="flex flex-wrap items-center gap-4">
+          <LanguageSwitcher shopSlug={shop.slug} />
+          {shop.live && (
+            <InstallApp
+              swUrl={routes.storefrontServiceWorker(shop.slug)}
+              scope={routes.storefront(shop.slug)}
+            />
+          )}
+        </div>
       </div>
     </div>
   );
@@ -257,7 +282,7 @@ export function StorefrontFooter({ shop, design }: { shop: StorefrontShop; desig
           <p className="sv-heading text-lg font-semibold">{shop.name}</p>
           {about && <p className="max-w-md text-muted-foreground">{about}</p>}
           {all.length > 0 && (
-            <nav aria-label="Footer">
+            <nav aria-label={t("Footer")}>
               <ul className="flex flex-wrap justify-center gap-x-5 gap-y-2">
                 {all.map((l) =>
                   l.external ? (
@@ -278,7 +303,7 @@ export function StorefrontFooter({ shop, design }: { shop: StorefrontShop; desig
             </nav>
           )}
           {socialList}
-          {str(f.note) && <p className="text-xs text-muted-foreground">{str(f.note)}</p>}
+          {str(f.note) && <p className="text-xs text-muted-foreground">{t(str(f.note))}</p>}
         </div>
         {bottom}
       </footer>
@@ -291,12 +316,12 @@ export function StorefrontFooter({ shop, design }: { shop: StorefrontShop; desig
         <div className="space-y-2">
           <p className="sv-heading font-semibold">{shop.name}</p>
           {about && <p className="text-muted-foreground">{about}</p>}
-          {str(f.note) && <p className="text-muted-foreground">{str(f.note)}</p>}
+          {str(f.note) && <p className="text-muted-foreground">{t(str(f.note))}</p>}
           {socialList && <div className="pt-2">{socialList}</div>}
         </div>
         {menu.length > 0 && (
-          <nav aria-label={str(f.menuHeading) || "Shop"} className="space-y-2">
-            <p className="font-medium">{str(f.menuHeading) || "Shop"}</p>
+          <nav aria-label={str(f.menuHeading) || t("Shop")} className="space-y-2">
+            <p className="font-medium">{str(f.menuHeading) || t("Shop")}</p>
             <ul className="space-y-1.5">
               {menu.map((m) => (
                 <li key={m.id}>
@@ -315,8 +340,8 @@ export function StorefrontFooter({ shop, design }: { shop: StorefrontShop; desig
           </nav>
         )}
         {f.showPolicies !== false && (
-          <nav aria-label="Help" className="space-y-2">
-            <p className="font-medium">Help</p>
+          <nav aria-label={t("Help")} className="space-y-2">
+            <p className="font-medium">{t("Help")}</p>
             <ul className="space-y-1.5">
               {[...help, ...legal].map((h) => (
                 <li key={h.href}>
@@ -332,7 +357,7 @@ export function StorefrontFooter({ shop, design }: { shop: StorefrontShop; desig
         )}
         {f.showContact !== false && (shop.supportEmail || shop.supportPhone) && (
           <div className="space-y-2">
-            <p className="font-medium">Get in touch</p>
+            <p className="font-medium">{t("Get in touch")}</p>
             <ul className="space-y-1.5">
               {shop.supportEmail && (
                 <li>

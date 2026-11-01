@@ -50,6 +50,7 @@ export const storefrontShopSchema = z
     branding: brandingSchema.optional(),
     domain: z.string().nullable().optional().default(null),
     message_channel: z.enum(["whatsapp", "sms"]).nullable().catch(null).optional().default(null),
+    language: z.enum(["en", "hi"]).catch("en").optional().default("en"),
   })
   .transform((s) => ({
     id: s.id,
@@ -87,6 +88,8 @@ export const storefrontShopSchema = z
     domain: s.domain,
     /** WhatsApp or SMS order updates offered at checkout. */
     messageChannel: s.message_channel,
+    /** The language shoppers see first. */
+    language: s.language,
   }));
 export type StorefrontShop = z.output<typeof storefrontShopSchema>;
 

@@ -1,16 +1,20 @@
+"use client";
+
 import { CheckIcon } from "lucide-react";
 
 import { ORDER_STAGE_LABELS, type OrderStage } from "@/features/shopper/schemas";
 import { cn } from "@/lib/utils";
+import { useT } from "@/i18n/client";
 
 const STEPS: OrderStage[] = ["confirmed", "packed", "shipped", "out_for_delivery", "delivered"];
 
 /** Where an order is on its way to the customer. Hidden for cancelled/returned orders. */
 export function OrderProgress({ stage }: { stage: OrderStage }) {
+  const t = useT();
   if (stage === "cancelled" || stage === "returned") return null;
   const current = stage === "placed" ? -1 : STEPS.indexOf(stage);
   return (
-    <ol className="grid grid-cols-5 gap-1" aria-label="Order progress">
+    <ol className="grid grid-cols-5 gap-1" aria-label={t("Order progress")}>
       {STEPS.map((step, i) => {
         const done = i <= current;
         return (
@@ -46,8 +50,8 @@ export function OrderProgress({ stage }: { stage: OrderStage }) {
                 i === current ? "font-medium text-foreground" : "text-muted-foreground",
               )}
             >
-              {ORDER_STAGE_LABELS[step]}
-              <span className="sr-only">{done ? " (done)" : ""}</span>
+              {t(ORDER_STAGE_LABELS[step])}
+              <span className="sr-only">{done ? ` (${t("done")})` : ""}</span>
             </span>
           </li>
         );

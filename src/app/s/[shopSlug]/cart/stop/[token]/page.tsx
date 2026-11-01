@@ -5,6 +5,7 @@ import { Suspense } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { StopRemindersButton } from "@/features/marketing/components/stop-reminders-button";
+import { T } from "@/i18n/client";
 
 export const metadata: Metadata = {
   title: "Cart reminders",
@@ -21,10 +22,10 @@ export default function StopRemindersPage({ params }: Props) {
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <BellOffIcon className="size-5" aria-hidden />
-          Stop cart reminders?
+          <T>Stop cart reminders?</T>
         </CardTitle>
         <CardDescription>
-          We won&apos;t email you about carts you leave in this shop. Order emails still come.
+          <T>{"We won't email you about carts you leave in this shop. Order emails still come."}</T>
         </CardDescription>
       </CardHeader>
       <CardContent>

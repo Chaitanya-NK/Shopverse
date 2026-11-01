@@ -1,7 +1,5 @@
 import "server-only";
 
-import { after } from "next/server";
-
 import {
   type BillingInterval,
   isUpgrade,
@@ -15,6 +13,7 @@ import { env } from "@/env";
 import { billingEmail, type BillingEmail } from "@/features/billing/emails";
 import { AppError, Errors, fromPostgrestError } from "@/lib/errors";
 import { logger } from "@/lib/logger";
+import { enqueueJob } from "@/lib/jobs/queue";
 import { sendMail } from "@/lib/mail";
 import {
   fromPaise,
@@ -332,17 +331,22 @@ export async function cancelSubscriptionAtPeriodEnd(providerSubscriptionId: stri
   if (error) throw fromPostgrestError(error);
 }
 
+/** Queue an email to the business's owners (sent, and retried, in the background). */
 async function emailBusiness(organizationId: string, email: BillingEmail) {
-  try {
-    const { data } = await createAdminClient().rpc("billing_contacts", {
-      p_organization_id: organizationId,
-    });
-    const contacts = data as { name: string; emails: string[] } | null;
-    if (!contacts) return;
-    for (const to of contacts.emails) await sendMail(billingEmail(to, contacts.name, email));
-  } catch (cause) {
-    logger.warn({ err: cause, organizationId, email: email.type }, "Billing email failed");
-  }
+  await enqueueJob("business.email", { organizationId, email }, { organizationId });
+}
+
+/** business.email job. */
+export async function runBusinessEmailJob(payload: Record<string, unknown>) {
+  const organizationId = String(payload.organizationId ?? "");
+  const email = payload.email as BillingEmail;
+  const { data, error } = await createAdminClient().rpc("billing_contacts", {
+    p_organization_id: organizationId,
+  });
+  if (error) throw error;
+  const contacts = data as { name: string; emails: string[] } | null;
+  if (!contacts) return;
+  for (const to of contacts.emails) await sendMail(billingEmail(to, contacts.name, email));
 }
 
 export type PlatformEvent = {
@@ -386,29 +390,25 @@ export async function handlePlatformEvent(event: PlatformEvent) {
   const status = STATUS[sub.status];
   if ((status === "pending" || status === "halted") && before.status === "active" && org) {
     const invoice = await latestInvoice(key, sub).catch(() => null);
-    after(() =>
-      emailBusiness(before.organization_id, {
-        type: "payment_failed",
-        planName,
-        updateUrl: invoice?.hosted_invoice_url ?? null,
-        graceEndsAt: new Date(
-          new Date(org.past_due_since ?? Date.now()).getTime() + 7 * 86_400_000,
-        ).toISOString(),
-      }),
-    );
+    await emailBusiness(before.organization_id, {
+      type: "payment_failed",
+      planName,
+      updateUrl: invoice?.hosted_invoice_url ?? null,
+      graceEndsAt: new Date(
+        new Date(org.past_due_since ?? Date.now()).getTime() + 7 * 86_400_000,
+      ).toISOString(),
+    });
   }
   if (
     ["cancelled", "completed", "expired"].includes(status ?? "") &&
     ["active", "authenticated", "pending", "halted"].includes(before.status) &&
     org
   )
-    after(() =>
-      emailBusiness(before.organization_id, {
-        type: "plan_ended",
-        planName,
-        billingUrl: appUrl(routes.orgBilling(org.slug)),
-      }),
-    );
+    await emailBusiness(before.organization_id, {
+      type: "plan_ended",
+      planName,
+      billingUrl: appUrl(routes.orgBilling(org.slug)),
+    });
   return "processed";
 }
 

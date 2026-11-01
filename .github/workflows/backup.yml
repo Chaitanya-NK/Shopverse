@@ -1,0 +1,62 @@
+# Nightly backup of Shopverse's data (and, optionally, its uploaded images),
+# encrypted and kept as a workflow artifact for 30 days. See docs/RUNBOOK.md.
+#
+# Repository secrets (Settings -> Secrets and variables -> Actions):
+#   BACKUP_DATABASE_URL  session pooler connection string, with the password
+#   BACKUP_PASSPHRASE    long random passphrase; store a copy outside GitHub
+#   BACKUP_SUPABASE_URL + BACKUP_SUPABASE_SECRET_KEY  (optional) also copy images
+# Without BACKUP_DATABASE_URL and BACKUP_PASSPHRASE this workflow does nothing.
+name: Backup
+
+on:
+  schedule:
+    - cron: "30 20 * * *" # 02:00 India time
+  workflow_dispatch:
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      DATABASE_URL: ${{ secrets.BACKUP_DATABASE_URL }}
+      BACKUP_PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.BACKUP_SUPABASE_URL }}
+      SUPABASE_SECRET_KEY: ${{ secrets.BACKUP_SUPABASE_SECRET_KEY }}
+    steps:
+      - name: Check configuration
+        id: config
+        run: |
+          if [ -z "$DATABASE_URL" ] || [ -z "$BACKUP_PASSPHRASE" ]; then
+            echo "BACKUP_DATABASE_URL or BACKUP_PASSPHRASE not set; skipping."
+            echo "run=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          fi
+      - uses: actions/checkout@v4
+        if: steps.config.outputs.run == 'true'
+      - name: Install PostgreSQL 17 client
+        if: steps.config.outputs.run == 'true'
+        run: |
+          sudo install -d /usr/share/postgresql-common/pgdg
+          sudo curl -fsSL -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc https://www.postgresql.org/media/keys/ACCC4CF8.asc
+          echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" | sudo tee /etc/apt/sources.list.d/pgdg.list
+          sudo apt-get update -qq && sudo apt-get install -y -qq postgresql-client-17
+          echo "/usr/lib/postgresql/17/bin" >> "$GITHUB_PATH"
+      - name: Back up the database
+        if: steps.config.outputs.run == 'true'
+        run: scripts/backup/backup-db.sh backups
+      - name: Back up uploaded images
+        if: steps.config.outputs.run == 'true' && env.SUPABASE_SECRET_KEY != ''
+        run: |
+          npm ci --ignore-scripts --no-audit --no-fund
+          node scripts/backup/backup-storage.mjs backups/storage
+          tar -C backups -cf - storage | openssl enc -aes-256-cbc -pbkdf2 -iter 200000 -salt \
+            -out "backups/storage-$(date -u +%Y%m%dT%H%M%SZ).tar.enc" -pass env:BACKUP_PASSPHRASE
+          rm -rf backups/storage
+      - uses: actions/upload-artifact@v4
+        if: steps.config.outputs.run == 'true'
+        with:
+          name: shopverse-backup-${{ github.run_id }}
+          path: backups/
+          retention-days: 30
+          if-no-files-found: error

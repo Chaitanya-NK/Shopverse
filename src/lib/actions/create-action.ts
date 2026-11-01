@@ -1,12 +1,14 @@
 import "server-only";
 
 import { unstable_rethrow } from "next/navigation";
+import { after } from "next/server";
 import { type z } from "zod";
 
 import { type ActionResult } from "@/lib/actions/result";
 import { getSessionUser, type SessionUser } from "@/lib/auth/session";
 import { type AppError, Errors, isAppError } from "@/lib/errors";
 import { logger } from "@/lib/logger";
+import { captureError } from "@/lib/observability/capture";
 import { createClient, type ServerSupabaseClient } from "@/lib/supabase/server";
 
 type PublicContext = { supabase: ServerSupabaseClient; user: SessionUser | null };
@@ -77,6 +79,12 @@ function toFailure(name: string, error: unknown): ActionResult<never> {
       { action: name, code: appError.code, err: appError.cause ?? error },
       "Server action failed",
     );
+    // Unexpected failures go to the error log (expected ones, like a wrong
+    // code or a taken name, don't).
+    if (appError.code === "INTERNAL")
+      after(() =>
+        captureError(appError.cause ?? error, { source: "action", context: { action: name } }),
+      );
   } else {
     logger.info({ action: name, code: appError.code }, "Server action rejected");
   }

@@ -53,6 +53,8 @@ export const routes = {
   },
   storefrontPreview: (shopSlug: string, to?: string) =>
     `/s/${shopSlug}/preview${to ? `?to=${encodeURIComponent(to)}` : ""}`,
+  storefrontLanguage: (shopSlug: string, to: string, back: string) =>
+    `/s/${shopSlug}/language?to=${to}&back=${encodeURIComponent(back)}`,
   storefrontPreviewExit: (shopSlug: string) => `/s/${shopSlug}/preview?exit=1`,
   storefrontCustomPage: (shopSlug: string, handle: string) => `/s/${shopSlug}/pages/${handle}`,
   storefrontProduct: (shopSlug: string, productSlug: string) => `/s/${shopSlug}/p/${productSlug}`,
@@ -124,6 +126,9 @@ export const routes = {
   adminBusinesses: "/admin/businesses",
   adminBusiness: (organizationId: string) => `/admin/businesses/${organizationId}`,
   adminInvoice: (invoiceId: string) => `/admin/invoices/${invoiceId}`,
+  adminErrors: "/admin/errors",
+  adminError: (fingerprint: string) => `/admin/errors/${fingerprint}`,
+  adminJobs: "/admin/jobs",
   /** Shopverse's own Stripe account. */
   platformWebhook: "/api/webhooks/stripe/platform",
   /** Where Stripe sends this business's webhooks. */

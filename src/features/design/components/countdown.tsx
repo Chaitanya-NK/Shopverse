@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useT } from "@/i18n/client";
 
 function parts(ms: number) {
   const s = Math.max(0, Math.floor(ms / 1000));
@@ -14,6 +15,7 @@ function parts(ms: number) {
 
 /** Ticks down to `endsAt`; the server already hides sections that have ended. */
 export function Countdown({ endsAt }: { endsAt: string }) {
+  const t = useT();
   const end = Date.parse(endsAt);
   const [now, setNow] = useState<number | null>(null);
   useEffect(() => {
@@ -26,7 +28,8 @@ export function Countdown({ endsAt }: { endsAt: string }) {
     };
   }, []);
   const left = parts(now === null ? 0 : end - now);
-  if (now !== null && end - now <= 0) return <p className="font-medium">This offer has ended.</p>;
+  if (now !== null && end - now <= 0)
+    return <p className="font-medium">{t("This offer has ended.")}</p>;
   return (
     <div className="flex justify-center gap-2 sm:gap-3" role="timer" aria-live="off">
       {left.map((p) => (
@@ -37,7 +40,7 @@ export function Countdown({ endsAt }: { endsAt: string }) {
           <p className="text-2xl font-semibold tabular-nums sm:text-3xl">
             {now === null ? "–" : String(p.value).padStart(2, "0")}
           </p>
-          <p className="text-xs opacity-80">{p.label}</p>
+          <p className="text-xs opacity-80">{t(p.label)}</p>
         </div>
       ))}
     </div>

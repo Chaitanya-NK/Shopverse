@@ -1,5 +1,8 @@
+"use client";
+
 import { Badge } from "@/components/ui/badge";
 import { RETURN_STATUS_LABELS, type ReturnStatus } from "@/features/returns/schemas";
+import { useT } from "@/i18n/client";
 
 const VARIANT: Record<ReturnStatus, "default" | "secondary" | "outline" | "destructive"> = {
   requested: "default",
@@ -12,5 +15,6 @@ const VARIANT: Record<ReturnStatus, "default" | "secondary" | "outline" | "destr
 };
 
 export function ReturnStatusBadge({ status }: { status: ReturnStatus }) {
-  return <Badge variant={VARIANT[status]}>{RETURN_STATUS_LABELS[status]}</Badge>;
+  const t = useT();
+  return <Badge variant={VARIANT[status]}>{t(RETURN_STATUS_LABELS[status])}</Badge>;
 }

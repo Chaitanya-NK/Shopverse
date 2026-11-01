@@ -1,3 +1,5 @@
+"use client";
+
 import Link from "next/link";
 
 import { routes } from "@/config/routes";
@@ -6,6 +8,7 @@ import { Price } from "@/features/storefront/components/price";
 import { ProductVisual } from "@/features/storefront/components/product-visual";
 import { type CatalogItem } from "@/features/storefront/schemas";
 import { cn } from "@/lib/utils";
+import { useT } from "@/i18n/client";
 
 export function ProductCard({
   shopSlug,
@@ -19,6 +22,7 @@ export function ProductCard({
   /** Rendered over the image, outside the link (e.g. a wishlist button). */
   action?: React.ReactNode;
 }) {
+  const t = useT();
   return (
     <div className="sv-card relative">
       {action}
@@ -40,7 +44,7 @@ export function ProductCard({
           />
           {!product.inStock && (
             <span className="absolute top-3 left-3 rounded-full bg-background/90 px-2.5 py-1 text-xs font-medium">
-              Sold out
+              {t("Sold out")}
             </span>
           )}
         </div>

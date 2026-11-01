@@ -13,6 +13,7 @@ import {
   toParagraphs,
 } from "@/features/storefront/policies";
 import { getPolicyText, getStorefrontShop } from "@/features/storefront/queries";
+import { getT, storefrontTitle } from "@/i18n/server";
 
 type Props = PageProps<"/s/[shopSlug]/pages/[page]">;
 
@@ -20,7 +21,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { shopSlug, page } = await params;
   if (isStorefrontPolicy(page))
     return {
-      title: STOREFRONT_POLICIES[page],
+      title: await storefrontTitle(shopSlug, STOREFRONT_POLICIES[page]),
       alternates: { canonical: routes.storefrontPolicy(shopSlug, page) },
     };
   const shop = await getStorefrontShop(shopSlug);
@@ -48,7 +49,7 @@ async function Page({ params, searchParams }: Props) {
   const { shopSlug, page } = await params;
   if (isStorefrontPolicy(page)) return <Policy shopSlug={shopSlug} page={page} />;
 
-  const { shop, design, shopper } = await loadPage(shopSlug);
+  const { shop, design, shopper, t } = await loadPage(shopSlug);
   const custom = design.pages.find((p) => p.handle === page);
   if (!custom) notFound();
   return (
@@ -62,6 +63,7 @@ async function Page({ params, searchParams }: Props) {
         sections={custom.sections}
         ctx={{
           shop,
+          t,
           saved: new Set(shopper?.wishlist),
           signedIn: Boolean(shopper),
           searchParams,
@@ -89,7 +91,9 @@ async function Policy({
     <article className="mx-auto max-w-3xl space-y-6">
       <header className="space-y-1">
         <p className="text-sm text-muted-foreground">{shop.name}</p>
-        <h1 className="text-3xl font-semibold tracking-tight">{STOREFRONT_POLICIES[page]}</h1>
+        <h1 className="text-3xl font-semibold tracking-tight">
+          {(await getT(shop.language))(STOREFRONT_POLICIES[page])}
+        </h1>
       </header>
       <div className="space-y-4 leading-relaxed text-muted-foreground">
         {toParagraphs(text).map((paragraph, i) => (

@@ -6,6 +6,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { type CheckoutPaymentMethod } from "@/features/storefront/schemas";
 import { formatMoney } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import { useT } from "@/i18n/client";
 
 /** Pay online or cash on delivery, as the shop allows. */
 export function PaymentMethodChoice({
@@ -23,20 +24,23 @@ export function PaymentMethodChoice({
   codLimit: number | null;
   currency: string;
 }) {
+  const t = useT();
   const codTooLarge = codLimit !== null && total > codLimit;
   const options = {
     online: {
       icon: SmartphoneIcon,
-      title: "Pay online",
-      hint: "Cards and other methods on Stripe’s secure payment page.",
+      title: t("Pay online"),
+      hint: t("Cards and other methods on Stripe’s secure payment page."),
       disabled: false,
     },
     cod: {
       icon: BanknoteIcon,
-      title: "Cash on delivery",
+      title: t("Cash on delivery"),
       hint: codTooLarge
-        ? `Available for orders up to ${formatMoney(codLimit!, currency)}.`
-        : `Pay ${formatMoney(total, currency)} in cash or UPI to the courier.`,
+        ? t("Available for orders up to {amount}.", { amount: formatMoney(codLimit!, currency) })
+        : t("Pay {amount} in cash or UPI to the courier.", {
+            amount: formatMoney(total, currency),
+          }),
       disabled: codTooLarge,
     },
   } as const;
@@ -46,7 +50,7 @@ export function PaymentMethodChoice({
       value={value}
       onValueChange={(v) => onChange(v as CheckoutPaymentMethod)}
       className="gap-2"
-      aria-label="Payment method"
+      aria-label={t("Payment method")}
     >
       {methods.map((method) => {
         const option = options[method];

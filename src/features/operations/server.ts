@@ -6,6 +6,7 @@ import { digestSchema, type LowStockItem } from "@/features/operations/digest";
 import { sendCartReminders } from "@/features/marketing/server";
 import { digestEmail, lowStockEmail } from "@/features/operations/emails";
 import { fromPostgrestError } from "@/lib/errors";
+import { enqueueJob } from "@/lib/jobs/queue";
 import { logger } from "@/lib/logger";
 import { sendMail } from "@/lib/mail";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -118,10 +119,15 @@ export async function runOperationsJobs(now = new Date()) {
 }
 
 /** Fire-and-forget after stock changes; failures only log (the scheduler retries). */
-export async function sendStockAlertsQuietly() {
+/**
+ * After stock goes down: queue a sweep of new low-stock alerts (one waiting
+ * sweep covers everyone). The scheduler is the safety net, so a failure here
+ * is only logged.
+ */
+export async function queueStockAlerts() {
   try {
-    await sendStockAlerts();
+    await enqueueJob("stock.alerts", {}, { dedupeKey: "stock-alerts", maxAttempts: 3 });
   } catch (cause) {
-    logger.warn({ err: cause }, "Sending stock alerts failed");
+    logger.warn({ err: cause }, "Queueing stock alerts failed");
   }
 }

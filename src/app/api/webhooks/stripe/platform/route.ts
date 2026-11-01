@@ -1,7 +1,8 @@
 import { z } from "zod";
 
 import { env } from "@/env";
-import { handlePlatformEvent, type PlatformEvent } from "@/features/billing/server";
+import { type PlatformEvent } from "@/features/billing/server";
+import { enqueueJob } from "@/lib/jobs/queue";
 import { logger } from "@/lib/logger";
 import { verifyWebhookSignature } from "@/lib/payments/stripe";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -52,11 +53,16 @@ export async function POST(request: Request) {
   if (!isNew) return json(200, { duplicate: true });
 
   try {
-    return json(200, { result: await handlePlatformEvent(event) });
+    await enqueueJob(
+      "platform.event",
+      { event },
+      { dedupeKey: `platform:${event.id}`, maxAttempts: 8 },
+    );
   } catch (cause) {
-    logger.error({ err: cause, event: event.type }, "Platform webhook failed");
+    logger.error({ err: cause, event: event.type }, "Queueing a platform event failed");
     // Let Stripe retry this event.
     await admin.rpc("forget_platform_webhook_event", { p_event_id: event.id });
     return json(500, { error: "retry" });
   }
+  return json(200, { queued: event.type });
 }

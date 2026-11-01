@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { ConfirmDialog } from "@/components/shared/confirm-dialog";
 import { Button } from "@/components/ui/button";
 import { cancelReturnRequest } from "@/features/returns/actions";
+import { useT } from "@/i18n/client";
 
 export function WithdrawReturnButton({
   shopSlug,
@@ -17,23 +18,24 @@ export function WithdrawReturnButton({
   returnId: string;
   number: string;
 }) {
+  const t = useT();
   return (
     <ConfirmDialog
-      title={`Withdraw ${number}?`}
-      description="The items stay with you. You can ask again while the return window is open."
-      confirmLabel="Withdraw request"
+      title={t("Withdraw {number}?", { number })}
+      description={t("The items stay with you. You can ask again while the return window is open.")}
+      confirmLabel={t("Withdraw request")}
       onConfirm={async () => {
         const result = await cancelReturnRequest({ shopSlug, orderToken, returnId });
         if (!result.ok) {
-          toast.error(result.error.message);
+          toast.error(t(result.error.message));
           return false;
         }
-        toast.success("Request withdrawn");
+        toast.success(t("Request withdrawn"));
         return true;
       }}
       trigger={
         <Button variant="ghost" size="sm">
-          Withdraw
+          {t("Withdraw")}
         </Button>
       }
     />

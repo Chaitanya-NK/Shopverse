@@ -1247,6 +1247,7 @@ export type Database = {
           invoice_details: Json | null;
           invoice_number: string | null;
           invoiced_at: string | null;
+          locale: string | null;
           message_opt_in: boolean;
           notes: string | null;
           number: string;
@@ -1284,6 +1285,7 @@ export type Database = {
           invoice_details?: Json | null;
           invoice_number?: string | null;
           invoiced_at?: string | null;
+          locale?: string | null;
           message_opt_in?: boolean;
           notes?: string | null;
           number: string;
@@ -1320,6 +1322,7 @@ export type Database = {
           invoice_details?: Json | null;
           invoice_number?: string | null;
           invoiced_at?: string | null;
+          locale?: string | null;
           message_opt_in?: boolean;
           notes?: string | null;
           number?: string;
@@ -3864,13 +3867,21 @@ export type Database = {
           isSetofReturn: false;
         };
       };
+      admin_error: { Args: { p_fingerprint: string }; Returns: Json };
+      admin_errors: { Args: { p_limit?: number; p_status?: string }; Returns: Json };
       admin_extend_trial: { Args: { p_days: number; p_organization_id: string }; Returns: string };
+      admin_jobs: { Args: Record<PropertyKey, never>; Returns: Json };
       admin_organization: { Args: { p_organization_id: string }; Returns: Json };
       admin_organizations: {
         Args: { p_filter?: string; p_limit?: number; p_offset?: number; p_search?: string };
         Returns: Json;
       };
       admin_overview: { Args: Record<PropertyKey, never>; Returns: Json };
+      admin_resolve_error: {
+        Args: { p_fingerprint: string; p_resolved?: boolean };
+        Returns: undefined;
+      };
+      admin_retry_job: { Args: { p_id: number }; Returns: undefined };
       admin_set_plan: {
         Args: {
           p_note: string;
@@ -3911,9 +3922,20 @@ export type Database = {
       };
       claim_cart_reminders: { Args: { p_now?: string }; Returns: Json };
       claim_due_digests: { Args: { p_now?: string }; Returns: Json };
+      claim_jobs: {
+        Args: { p_lease_seconds?: number; p_limit?: number; p_worker: string };
+        Returns: {
+          attempts: number;
+          id: number;
+          kind: string;
+          max_attempts: number;
+          payload: Json;
+        }[];
+      };
       claim_stock_alerts: { Args: Record<PropertyKey, never>; Returns: Json };
       clear_courier_booking: { Args: { p_shipment_id: string }; Returns: undefined };
       close_purchase_order: { Args: { p_purchase_order_id: string }; Returns: string };
+      complete_job: { Args: { p_id: number }; Returns: undefined };
       confirm_delivery: { Args: { p_otp: string; p_shipment_id: string }; Returns: Json };
       confirm_order: { Args: { p_order_id: string }; Returns: undefined };
       courier_shipment_update: {
@@ -3992,7 +4014,19 @@ export type Database = {
       discard_design_draft: { Args: { p_shop_id: string; p_version: number }; Returns: number };
       disconnect_messaging: { Args: { p_organization_id: string }; Returns: undefined };
       disconnect_payment_account: { Args: { p_organization_id: string }; Returns: undefined };
+      enqueue_job: {
+        Args: {
+          p_dedupe_key?: string;
+          p_delay_seconds?: number;
+          p_kind: string;
+          p_max_attempts?: number;
+          p_organization_id?: string;
+          p_payload?: Json;
+        };
+        Returns: number;
+      };
       expire_unpaid_orders: { Args: { p_organization_id?: string }; Returns: number };
+      fail_job: { Args: { p_error: string; p_id: number; p_permanent?: boolean }; Returns: string };
       fail_return_refund: { Args: { p_error: string; p_return_id: string }; Returns: undefined };
       forget_platform_webhook_event: { Args: { p_event_id: string }; Returns: undefined };
       forget_webhook_event: { Args: { p_event_id: string }; Returns: undefined };
@@ -4106,6 +4140,21 @@ export type Database = {
           p_package: Json;
           p_service: string;
           p_shipment_id: string;
+        };
+        Returns: undefined;
+      };
+      record_error: {
+        Args: {
+          p_context?: Json;
+          p_digest?: string;
+          p_fingerprint: string;
+          p_message: string;
+          p_method?: string;
+          p_path?: string;
+          p_request_id?: string;
+          p_source: string;
+          p_stack?: string;
+          p_user_id?: string;
         };
         Returns: undefined;
       };
@@ -4311,6 +4360,7 @@ export type Database = {
         Args: { p_now?: string; p_organization_id: string };
         Returns: Json;
       };
+      set_order_locale: { Args: { p_locale: string; p_order_id: string }; Returns: undefined };
       set_shop_domain: { Args: { p_domain: string; p_shop_id: string }; Returns: string };
       set_warehouse_shops: {
         Args: { p_shop_ids: string[]; p_warehouse_id: string };

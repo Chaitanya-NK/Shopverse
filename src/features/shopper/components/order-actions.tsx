@@ -22,6 +22,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { Textarea } from "@/components/ui/textarea";
 import { routes } from "@/config/routes";
 import { cancelMyOrder, reorder } from "@/features/shopper/actions";
+import { useT } from "@/i18n/client";
 
 /** What a signed-in shopper can do with their own order. */
 export function OrderActions({
@@ -39,6 +40,7 @@ export function OrderActions({
   canReturn?: boolean;
   size?: "default" | "sm";
 }) {
+  const t = useT();
   const router = useRouter();
   const [isReordering, startReorder] = useTransition();
 
@@ -46,13 +48,16 @@ export function OrderActions({
     startReorder(async () => {
       const result = await reorder({ shopSlug, orderToken });
       if (!result.ok) {
-        toast.error(result.error.message);
+        toast.error(t(result.error.message));
         return;
       }
       toast.success(
         result.data.unavailable > 0
-          ? `Added ${result.data.added} item${result.data.added === 1 ? "" : "s"}; ${result.data.unavailable} aren't available`
-          : "Added to your cart",
+          ? t("Added {added}; {unavailable} aren't available", {
+              added: t.plural(result.data.added, "{count} item", "{count} items"),
+              unavailable: result.data.unavailable,
+            })
+          : t("Added to your cart"),
       );
       router.push(routes.storefrontCart(shopSlug));
     });
@@ -61,13 +66,13 @@ export function OrderActions({
     <div className="flex flex-wrap gap-2">
       <Button variant="outline" size={size} onClick={buyAgain} disabled={isReordering}>
         {isReordering ? <Spinner /> : <RotateCcwIcon />}
-        Buy again
+        {t("Buy again")}
       </Button>
       {canReturn && (
         <Button asChild variant="outline" size={size}>
           <Link href={routes.storefrontReturn(shopSlug, orderToken)}>
             <Undo2Icon />
-            Return or exchange
+            {t("Return or exchange")}
           </Link>
         </Button>
       )}
@@ -94,6 +99,7 @@ function CancelOrderDialog({
   orderNumber: string;
   size: "default" | "sm";
 }) {
+  const t = useT();
   const [open, setOpen] = useState(false);
   const [reason, setReason] = useState("");
   const [isPending, startTransition] = useTransition();
@@ -102,10 +108,10 @@ function CancelOrderDialog({
     startTransition(async () => {
       const result = await cancelMyOrder({ shopSlug, orderToken, reason });
       if (!result.ok) {
-        toast.error(result.error.message);
+        toast.error(t(result.error.message));
         return;
       }
-      toast.success(`Order ${orderNumber} cancelled`);
+      toast.success(t("Order {number} cancelled", { number: orderNumber }));
       setOpen(false);
     });
 
@@ -114,34 +120,34 @@ function CancelOrderDialog({
       <DialogTrigger asChild>
         <Button variant="ghost" size={size} className="text-destructive hover:text-destructive">
           <XCircleIcon />
-          Cancel order
+          {t("Cancel order")}
         </Button>
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Cancel order {orderNumber}?</DialogTitle>
+          <DialogTitle>{t("Cancel order {number}?", { number: orderNumber })}</DialogTitle>
           <DialogDescription>
-            It hasn&apos;t been packed yet, so you can cancel it now. This can&apos;t be undone.
+            {t("It hasn't been packed yet, so you can cancel it now. This can't be undone.")}
           </DialogDescription>
         </DialogHeader>
         <Field>
-          <FieldLabel htmlFor="cancel-reason">Reason (optional)</FieldLabel>
+          <FieldLabel htmlFor="cancel-reason">{t("Reason (optional)")}</FieldLabel>
           <Textarea
             id="cancel-reason"
             value={reason}
             maxLength={300}
             onChange={(e) => setReason(e.target.value)}
-            placeholder="Ordered by mistake, found a better price…"
+            placeholder={t("Ordered by mistake, found a better price…")}
           />
-          <FieldDescription>Helps the shop improve.</FieldDescription>
+          <FieldDescription>{t("Helps the shop improve.")}</FieldDescription>
         </Field>
         <DialogFooter>
           <DialogClose asChild>
-            <Button variant="outline">Keep order</Button>
+            <Button variant="outline">{t("Keep order")}</Button>
           </DialogClose>
           <Button variant="destructive" onClick={cancel} disabled={isPending}>
             {isPending && <Spinner />}
-            Cancel order
+            {t("Cancel order")}
           </Button>
         </DialogFooter>
       </DialogContent>

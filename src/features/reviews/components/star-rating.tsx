@@ -1,6 +1,9 @@
+"use client";
+
 import { StarIcon } from "lucide-react";
 
 import { cn } from "@/lib/utils";
+import { useT } from "@/i18n/client";
 
 /** Read-only stars (rounded to the nearest half), with an accessible label. */
 export function StarRating({
@@ -12,12 +15,15 @@ export function StarRating({
   size?: "sm" | "md" | "lg";
   className?: string;
 }) {
+  const t = useT();
   const rounded = Math.round(value * 2) / 2;
   const iconSize = size === "lg" ? "size-5" : size === "md" ? "size-4" : "size-3.5";
   return (
     <span
       role="img"
-      aria-label={`${value.toLocaleString("en-IN", { maximumFractionDigits: 1 })} out of 5 stars`}
+      aria-label={t("{rating} out of 5 stars", {
+        rating: value.toLocaleString("en-IN", { maximumFractionDigits: 1 }),
+      })}
       className={cn("inline-flex items-center gap-0.5", className)}
     >
       {[1, 2, 3, 4, 5].map((n) => {

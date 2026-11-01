@@ -4,11 +4,14 @@ import { AUTH_PAGES, PROTECTED_PREFIXES, routes, safeReturnTo } from "@/config/r
 import { env } from "@/env";
 import { CUSTOM_DOMAIN_SHOP_HEADER } from "@/features/domains/constants";
 import { customDomainPath, isPlatformHost, requestHost } from "@/lib/domains/hosts";
+import { checkRateLimit, clientAddress } from "@/lib/rate-limit";
 import { shopSlugForHost } from "@/lib/domains/resolve";
 import { updateSession } from "@/lib/supabase/proxy";
 
 /**
  * Runs before every matched request:
+ *  - tags it with a request id (in logs, error reports and the response)
+ *  - applies rate limits per client address
  *  - refreshes the Supabase session cookie
  *  - optimistic redirects (signed-out users away from the app, signed-in users
  *    away from auth pages)
@@ -16,6 +19,46 @@ import { updateSession } from "@/lib/supabase/proxy";
  * Layer and in Postgres Row Level Security.
  */
 export async function proxy(request: NextRequest) {
+  const requestId = request.headers.get("x-request-id")?.slice(0, 100) || crypto.randomUUID();
+  request.headers.set("x-request-id", requestId);
+
+  const limited = await rateLimit(request);
+  if (limited) return limited;
+
+  const response = await route(request);
+  response.headers.set("x-request-id", requestId);
+  return response;
+}
+
+/** 429 when this client went over the limit for this kind of request. */
+async function rateLimit(request: NextRequest): Promise<NextResponse | null> {
+  const result = await checkRateLimit(
+    {
+      method: request.method,
+      path: request.nextUrl.pathname,
+      isAction: request.headers.has("next-action"),
+      address: clientAddress(request.headers),
+    },
+    { upstashUrl: env.UPSTASH_REDIS_REST_URL, upstashToken: env.UPSTASH_REDIS_REST_TOKEN },
+  );
+  if (!result || result.ok) return null;
+  const headers = {
+    "retry-after": String(result.resetSeconds),
+    "ratelimit-limit": String(result.limit),
+    "ratelimit-remaining": "0",
+    "ratelimit-reset": String(result.resetSeconds),
+    "cache-control": "no-store",
+  };
+  const message = "Too many requests. Please wait a minute and try again.";
+  return request.nextUrl.pathname.startsWith("/api/") || request.headers.has("next-action")
+    ? NextResponse.json({ error: message }, { status: 429, headers })
+    : new NextResponse(message, {
+        status: 429,
+        headers: { ...headers, "content-type": "text/plain; charset=utf-8" },
+      });
+}
+
+async function route(request: NextRequest) {
   const host = requestHost(request.headers);
   if (
     !isPlatformHost(

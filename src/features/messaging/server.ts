@@ -4,6 +4,9 @@ import { routes } from "@/config/routes";
 import { env } from "@/env";
 import { type MessageEvent, messageBody } from "@/features/messaging/templates";
 import { formatMoney } from "@/lib/format";
+import { isLocale, type Locale } from "@/i18n/core";
+import { translator } from "@/i18n/server";
+import { openJobSecret } from "@/lib/jobs/queue";
 import { logger } from "@/lib/logger";
 import { type Channel, twilio } from "@/lib/messaging/twilio";
 import { toE164 } from "@/lib/messaging/phone";
@@ -85,33 +88,35 @@ export async function sendMessage(input: {
 
 /**
  * An order update by WhatsApp or SMS, when the business has messaging on for
- * this event and the customer asked for updates on this order.
+ * this event and the customer asked for updates on this order. Returns null
+ * when nothing needed sending.
  */
 export async function sendOrderMessage(
   orderId: string,
   event: MessageEvent,
   extra: { trackingUrl?: string | null; otp?: string | null } = {},
 ) {
-  try {
-    const { data: order, error } = await createAdminClient()
-      .from("orders")
-      .select(
-        `organization_id, number, public_token, grand_total, currency, message_opt_in, shipping_address,
-         shop:shops!orders_organization_id_shop_id_fkey (name, slug),
+  const { data: order, error } = await createAdminClient()
+    .from("orders")
+    .select(
+      `organization_id, number, locale, public_token, grand_total, currency, message_opt_in, shipping_address,
+         shop:shops!orders_organization_id_shop_id_fkey (name, slug, settings),
          customer:customers (full_name, phone)`,
-      )
-      .eq("id", orderId)
-      .maybeSingle();
-    if (error) throw error;
-    if (!order?.message_opt_in || !order.shop) return;
-    const acc = await account(order.organization_id);
-    if (!acc?.enabled || !acc.events.includes(event)) return;
-    const address = (order.shipping_address ?? {}) as Record<string, unknown>;
-    const to = toE164(
-      order.customer?.phone ?? (typeof address.phone === "string" ? address.phone : null),
-    );
-    if (!to) return;
-    const body = messageBody(event, {
+    )
+    .eq("id", orderId)
+    .maybeSingle();
+  if (error) throw error;
+  if (!order?.message_opt_in || !order.shop) return;
+  const acc = await account(order.organization_id);
+  if (!acc?.enabled || !acc.events.includes(event)) return;
+  const address = (order.shipping_address ?? {}) as Record<string, unknown>;
+  const to = toE164(
+    order.customer?.phone ?? (typeof address.phone === "string" ? address.phone : null),
+  );
+  if (!to) return;
+  const body = messageBody(
+    event,
+    {
       shopName: order.shop.name,
       customerName: order.customer?.full_name ?? null,
       orderNumber: order.number,
@@ -119,17 +124,36 @@ export async function sendOrderMessage(
       orderUrl: url(routes.storefrontOrder(order.shop.slug, order.public_token)),
       trackingUrl: extra.trackingUrl,
       otp: extra.otp,
-    });
-    if (!body) return;
-    await sendMessage({
-      organizationId: order.organization_id,
-      orderId,
-      event,
-      to,
-      body,
-      account: acc,
-    });
-  } catch (cause) {
-    logger.warn({ err: cause, orderId, event }, "Order message failed");
-  }
+    },
+    translator(orderLocale(order.locale, order.shop.settings)),
+  );
+  if (!body) return;
+  return await sendMessage({
+    organizationId: order.organization_id,
+    orderId,
+    event,
+    to,
+    body,
+    account: acc,
+  });
+}
+
+/** order.message job: send, and fail (to retry) when the provider refused. */
+export async function runOrderMessageJob(payload: Record<string, unknown>) {
+  const orderId = String(payload.orderId ?? "");
+  const event = payload.type as MessageEvent;
+  const sealed = typeof payload.otp === "string" ? payload.otp : null;
+  const result = await sendOrderMessage(orderId, event, {
+    trackingUrl: typeof payload.trackingUrl === "string" ? payload.trackingUrl : null,
+    otp: sealed ? openJobSecret(sealed) : null,
+  });
+  if (result && !result.ok && result.error !== "Messaging isn't set up")
+    throw new Error(result.error ?? "Sending failed");
+}
+
+/** The order's language, else the shop's default. */
+function orderLocale(locale: string | null, settings: unknown): Locale {
+  if (isLocale(locale)) return locale;
+  const language = (settings as Record<string, unknown> | null)?.language;
+  return isLocale(language) ? language : "en";
 }

@@ -33,6 +33,7 @@ import {
 } from "@/features/storefront/schemas";
 import { applyActionError } from "@/lib/forms/apply-action-error";
 import { formatMoney } from "@/lib/format";
+import { useT } from "@/i18n/client";
 
 const NEW = "new";
 const newAddressSchema = addressSchema.omit({ label: true, isDefault: true });
@@ -87,6 +88,7 @@ export function SignedInCheckout({
   phone: string | null;
   addresses: SavedAddress[];
 }) {
+  const t = useT();
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   // One id per visit to checkout: a retry or double click can't order twice.
@@ -138,9 +140,11 @@ export function SignedInCheckout({
         const outcome = await pay(result.data.token);
         // On success the browser is on its way to Stripe's payment page.
         if (outcome.status === "redirecting") return;
-        toast.error(`${outcome.message} Your order is saved; you can pay from its page.`);
+        toast.error(
+          `${t(outcome.message)} ${t("Your order is saved; you can pay from its page.")}`,
+        );
       } else {
-        toast.success(`Order ${result.data.number} placed`);
+        toast.success(t("Order {number} placed", { number: result.data.number }));
       }
       router.replace(routes.storefrontOrder(shopSlug, result.data.token));
     }),
@@ -150,9 +154,9 @@ export function SignedInCheckout({
     <form onSubmit={onSubmit} noValidate className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle>Deliver to</CardTitle>
+          <CardTitle>{t("Deliver to")}</CardTitle>
           <CardDescription>
-            Order updates go to <span className="font-medium text-foreground">{email}</span>.
+            {t("Order updates go to")} <span className="font-medium text-foreground">{email}</span>.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-5">
@@ -161,7 +165,7 @@ export function SignedInCheckout({
             control={form.control}
             render={({ field, fieldState }) => (
               <Field data-invalid={fieldState.invalid}>
-                <FieldLabel className="sr-only">Delivery address</FieldLabel>
+                <FieldLabel className="sr-only">{t("Delivery address")}</FieldLabel>
                 <RadioGroup value={field.value} onValueChange={field.onChange} className="gap-2">
                   {addresses.map((a) => (
                     <label
@@ -187,7 +191,7 @@ export function SignedInCheckout({
                     <RadioGroupItem id="addr-new" value={NEW} />
                     <PlusIcon className="size-4" aria-hidden />
                     <span className="font-medium">
-                      {addresses.length ? "Deliver to a new address" : "Add your address"}
+                      {addresses.length ? t("Deliver to a new address") : t("Add your address")}
                     </span>
                   </label>
                 </RadioGroup>
@@ -210,7 +214,7 @@ export function SignedInCheckout({
                       onCheckedChange={(v) => field.onChange(v === true)}
                     />
                     <FieldLabel htmlFor="co-save" className="font-normal">
-                      Save this address for next time
+                      {t("Save this address for next time")}
                     </FieldLabel>
                   </Field>
                 )}
@@ -223,11 +227,11 @@ export function SignedInCheckout({
             control={form.control}
             render={({ field, fieldState }) => (
               <Field data-invalid={fieldState.invalid}>
-                <FieldLabel htmlFor="co-note">Delivery instructions (optional)</FieldLabel>
+                <FieldLabel htmlFor="co-note">{t("Delivery instructions (optional)")}</FieldLabel>
                 <Input
                   {...field}
                   id="co-note"
-                  placeholder="Leave with the security guard"
+                  placeholder={t("Leave with the security guard")}
                   aria-invalid={fieldState.invalid}
                 />
                 {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
@@ -239,7 +243,7 @@ export function SignedInCheckout({
 
       <Card>
         <CardHeader>
-          <CardTitle>Payment</CardTitle>
+          <CardTitle>{t("Payment")}</CardTitle>
         </CardHeader>
         <CardContent>
           <Controller
@@ -277,7 +281,7 @@ export function SignedInCheckout({
       <FormRootError form={form} />
       <Button type="submit" size="lg" className="w-full" disabled={isPending}>
         {isPending && <Spinner />}
-        {paymentMethod === "online" ? "Pay" : "Place order"} · {formatMoney(total, currency)}
+        {paymentMethod === "online" ? t("Pay") : t("Place order")} · {formatMoney(total, currency)}
       </Button>
     </form>
   );
