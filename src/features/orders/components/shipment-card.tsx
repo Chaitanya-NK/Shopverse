@@ -13,6 +13,7 @@ import { ShipmentActions } from "@/features/orders/components/shipment-actions";
 import { ShipmentStatusBadge } from "@/features/orders/components/status-badges";
 import { type ShipmentDetail } from "@/features/orders/queries";
 import { shipmentEventText } from "@/features/orders/schemas";
+import { CourierPanel } from "@/features/shipping/components/courier-panel";
 
 const timeFormat = new Intl.DateTimeFormat("en-IN", {
   day: "numeric",
@@ -32,9 +33,20 @@ type ShipmentCardProps = {
   shipment: ShipmentDetail;
   order: { number: string; shopName: string; recipientPhone: string };
   canManage: boolean;
+  /** The business has a courier switched on (Alerts & shipping). */
+  courierEnabled?: boolean;
+  /** Estimated parcel weight from the products' weights. */
+  defaultWeightGrams?: number;
 };
 
-export function ShipmentCard({ organizationSlug, shipment, order, canManage }: ShipmentCardProps) {
+export function ShipmentCard({
+  organizationSlug,
+  shipment,
+  order,
+  canManage,
+  courierEnabled = false,
+  defaultWeightGrams = 500,
+}: ShipmentCardProps) {
   return (
     <Card className="gap-4">
       <CardHeader>
@@ -96,7 +108,16 @@ export function ShipmentCard({ organizationSlug, shipment, order, canManage }: S
           ))}
         </ul>
 
-        {canManage && (
+        <CourierPanel
+          organizationSlug={organizationSlug}
+          shipment={shipment}
+          courierEnabled={courierEnabled}
+          canManage={canManage}
+          defaultWeightGrams={defaultWeightGrams}
+        />
+
+        {/* Booked parcels move with the courier's scans; staff can still cancel before pickup. */}
+        {canManage && !(shipment.courier && shipment.status !== "packed") && (
           <ShipmentActions
             organizationSlug={organizationSlug}
             shipment={{

@@ -4,7 +4,7 @@ Multi-shop commerce SaaS for businesses that sell **anything**: clothing, electr
 
 **Stack:** Next.js 16 (App Router, Cache Components, Server Actions) · React 19 · TypeScript (strict) · Supabase (Postgres, Auth, RLS, Storage) · shadcn/ui + Tailwind CSS 4 · Zod 4 · React Hook Form · Vitest
 
-## Status: Phase 11 (catalogue power tools)
+## Status: Phase 12 (operations)
 
 | Area         | What's in place                                                                                                                                                                                                                                                                                                                               |
 | ------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -43,7 +43,11 @@ Multi-shop commerce SaaS for businesses that sell **anything**: clothing, electr
 | Credit notes | Numbered GST credit notes against the invoice for every return, printable by staff and shoppers, netted off the monthly GST report                                                                                                                                                                                                            |
 | Catalogue    | CSV import (preview first; new products and updates matched by handle and SKU, blank cells keep values) and export; photos per variant; collections with their own pages and homepage rows; typo-tolerant search and SKU lookup                                                                                                               |
 | Reviews      | Star ratings and reviews from customers who received the product (verified-buyer badge), ratings on product cards and in search results, public replies and hiding by staff; related products                                                                                                                                                 |
-| Quality      | Strict TypeScript, ESLint and Prettier, 224 unit tests, fourteen SQL test suites (RLS, stock, order flow, storefront and checkout, team and billing, shopper accounts, photos, invoices, payments, discounts, analytics, returns, platform billing, catalogue tools), CI, commit hooks                                                        |
+| Purchasing   | Suppliers, purchase orders (draft, place and email to the supplier, print), receiving in parts straight into stock with serials or batches, latest cost recorded, reorder suggestions from low stock                                                                                                                                          |
+| Alerts       | Low-stock emails as soon as an item reaches its reorder point, and a daily digest (yesterday's sales, orders to pack, returns, low stock, deliveries due) at the hour you choose                                                                                                                                                              |
+| Shipping     | Courier booking from the order (rates by PIN-code zone and weight, AWB, cash to collect), tracking scans move the parcel and complete delivery; 4×6 shipping labels and packing slips; a built-in test courier                                                                                                                                |
+| Labels       | Barcode labels on A4 sheets or a label roll (EAN-13 or Code 128), from any products or straight from a received purchase order                                                                                                                                                                                                                |
+| Quality      | Strict TypeScript, ESLint and Prettier, 249 unit tests, fifteen SQL test suites (RLS, stock, order flow, storefront and checkout, team and billing, shopper accounts, photos, invoices, payments, discounts, analytics, returns, platform billing, catalogue tools, operations), CI, commit hooks                                             |
 
 ## Quick start in GitHub Codespaces
 
@@ -179,6 +183,16 @@ Run `npx supabase db push` (migration 023, which turns on the `pg_trgm` extensio
 - On a product's photos, **Shows option** links a photo to a variant, so choosing that option shows its photos first.
 - Shoppers who received a product can rate and review it from the product page. **Reviews** lets owners, admins, managers and support staff reply in public or hide a review.
 
+### Operations (Phase 12)
+
+Run `npx supabase db push` (migration 025). Then:
+
+- **Purchasing** holds suppliers and purchase orders. Draft one (or start from the low-stock suggestions), place it (optionally emailing the supplier), and **Receive delivery** as goods arrive: quantities go straight into the warehouse's stock, with IMEIs or a batch code where the product needs them. **Barcode labels** on a received order prints labels for exactly what came in.
+- **Alerts & shipping** (under Organisation) turns on low-stock emails and the daily digest, picks who gets them, and switches on a courier. Set reorder points per item in **Inventory**.
+- **Scheduler.** Low-stock emails also go out right after stock changes. For the daily digest (and as a safety net), set `CRON_SECRET` and call `POST /api/cron/operations` with `Authorization: Bearer <CRON_SECRET>` every 15 minutes. `.github/workflows/operations-cron.yml` does this once you add the `APP_URL` and `CRON_SECRET` repository secrets.
+- **Courier.** The built-in **Shopverse Test Courier** behaves like an Indian courier aggregator (PIN-code zones, weight slabs, COD fee, AWB numbers) but nothing is picked up: choose it, give each warehouse a PIN code and state, then **Book courier** on a packed parcel and press **Next scan** to move it to delivered. Real couriers (Shiprocket, Delhivery and so on) need their own accounts and plug into `src/lib/couriers`.
+- Every parcel has a **Packing slip** and a 4 × 6 inch **Shipping label** to print.
+
 ## Scripts
 
 | Command                                     | Purpose                                                          |
@@ -235,6 +249,6 @@ See **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)** for the design decisions an
 - **Phase 10 (done) — Shopverse billing & platform admin:** plan subscriptions (monthly or yearly, now on Stripe Billing), upgrades and downgrades, GST invoices to businesses, failed-payment grace period, a platform admin console (businesses, usage, plans)
 - **Phase 11 (done) — Catalogue power tools:** CSV bulk import and export, photos per variant, collections, verified-buyer reviews and ratings, related products, typo-tolerant search
 - **Stripe (done):** shop payments, refunds and Shopverse plans moved from Razorpay to Stripe (test mode needs no documents)
-- **Phase 12 — Operations:** suppliers and purchase orders, low-stock email alerts and a daily digest, courier integration (rates, AWB, labels, tracking updates), packing slips and shipping labels, barcode labels
+- **Phase 12 (done) — Operations:** suppliers and purchase orders, low-stock email alerts and a daily digest, courier integration (rates, AWB, labels, tracking updates, with a built-in test courier), packing slips and shipping labels, barcode labels
 - **Phase 13 — Brand & reach:** per-shop logo, colours and banners, custom domains, WhatsApp and SMS order updates, abandoned-cart reminders, installable app (PWA)
 - **Phase 14 — Hardening:** background job queue for emails and webhooks, edge rate limiting, error tracking and tracing, backup and recovery runbook, accessibility audit, Hindi interface

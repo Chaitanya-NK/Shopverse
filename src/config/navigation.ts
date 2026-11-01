@@ -1,7 +1,9 @@
 import {
   BadgePercentIcon,
   BarChart3Icon,
+  BellIcon,
   BoxesIcon,
+  ClipboardListIcon,
   CreditCardIcon,
   FolderTreeIcon,
   LandmarkIcon,
@@ -42,6 +44,7 @@ export function getOrgNavigation(orgSlug: string): NavGroup[] {
         { title: "Products", icon: PackageIcon, href: routes.orgProducts(orgSlug) },
         { title: "Collections", icon: LayersIcon, href: routes.orgCollections(orgSlug) },
         { title: "Inventory", icon: BoxesIcon, href: routes.orgInventory(orgSlug) },
+        { title: "Purchasing", icon: ClipboardListIcon, href: routes.orgPurchasing(orgSlug) },
         { title: "Orders", icon: ShoppingCartIcon, href: routes.orgOrders(orgSlug) },
         { title: "Deliveries", icon: TruckIcon, href: routes.orgDeliveries(orgSlug) },
         { title: "Returns", icon: Undo2Icon, href: routes.orgReturns(orgSlug) },
@@ -63,6 +66,7 @@ export function getOrgNavigation(orgSlug: string): NavGroup[] {
       items: [
         { title: "Team & security", icon: ShieldCheckIcon, href: routes.orgTeam(orgSlug) },
         { title: "Payments", icon: LandmarkIcon, href: routes.orgPayments(orgSlug) },
+        { title: "Alerts & shipping", icon: BellIcon, href: routes.orgOperationsSettings(orgSlug) },
         { title: "Billing", icon: CreditCardIcon, href: routes.orgBilling(orgSlug) },
       ],
     },

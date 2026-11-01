@@ -27,6 +27,9 @@ export const env = createEnv({
       .refine((v) => Buffer.from(v, "base64").length === 32, "Must be 32 bytes, base64-encoded")
       .optional(),
     // Override only for local testing against a stand-in.
+    // Protects /api/cron/operations (low-stock alerts, daily digest). Call it
+    // every 15 minutes or so with "Authorization: Bearer <CRON_SECRET>".
+    CRON_SECRET: z.string().min(16, "Use at least 16 characters").optional(),
     STRIPE_API_URL: z.url().default("https://api.stripe.com"),
     // Shopverse's own Stripe account, for plan subscriptions (not the
     // businesses' accounts). Without the key, plans are changed by request.

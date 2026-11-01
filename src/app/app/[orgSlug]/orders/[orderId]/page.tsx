@@ -28,6 +28,7 @@ import { listOrderPayments } from "@/features/payments/queries";
 import { OrderActions } from "@/features/orders/components/order-actions";
 import { OrderNotes } from "@/features/orders/components/order-notes";
 import { ShipmentCard } from "@/features/orders/components/shipment-card";
+import { getOperationsSettings, getVariantWeights } from "@/features/shipping/queries";
 import {
   FulfillmentBadge,
   OrderStatusBadge,
@@ -109,6 +110,19 @@ async function OrderContent({ params }: Pick<Props, "params">) {
     listOrderPayments(orderId),
   ]);
   if (!order) notFound();
+  const [operations, weights] = await Promise.all([
+    getOperationsSettings(organization.id),
+    order.shipments.length > 0 ? getVariantWeights(order.lines) : Promise.resolve(new Map()),
+  ]);
+  /** Parcel weight from the products' weights (300 g for any without one). */
+  const parcelGrams = (items: { orderItemId: string; quantity: number }[]) =>
+    Math.max(
+      100,
+      items.reduce((n, i) => {
+        const line = order.lines.find((l) => l.id === i.orderItemId);
+        return n + (weights.get(line?.variantId ?? "") ?? 300) * i.quantity;
+      }, 0),
+    );
   const awaitingPayment = order.status === "pending" && order.paymentDueAt !== null;
 
   const canManage = can(role, "orders.manage");
@@ -285,6 +299,8 @@ async function OrderContent({ params }: Pick<Props, "params">) {
                   organizationSlug={orgSlug}
                   shipment={shipment}
                   canManage={canManage}
+                  courierEnabled={operations.courier !== null}
+                  defaultWeightGrams={parcelGrams(shipment.items)}
                   order={{
                     number: order.number,
                     shopName: order.shopName,

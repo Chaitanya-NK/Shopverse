@@ -57,6 +57,18 @@ export const routes = {
   orgCollection: (orgSlug: string, collectionId: string) =>
     `/app/${orgSlug}/collections/${collectionId}`,
   orgReviews: (orgSlug: string) => `/app/${orgSlug}/reviews`,
+  orgPurchasing: (orgSlug: string) => `/app/${orgSlug}/purchasing`,
+  orgNewPurchaseOrder: (orgSlug: string) => `/app/${orgSlug}/purchasing/new`,
+  orgPurchaseOrder: (orgSlug: string, id: string) => `/app/${orgSlug}/purchasing/${id}`,
+  orgEditPurchaseOrder: (orgSlug: string, id: string) => `/app/${orgSlug}/purchasing/${id}/edit`,
+  orgPrintPurchaseOrder: (orgSlug: string, id: string) => `/app/${orgSlug}/purchasing/${id}/print`,
+  orgSuppliers: (orgSlug: string) => `/app/${orgSlug}/purchasing/suppliers`,
+  orgOperationsSettings: (orgSlug: string) => `/app/${orgSlug}/settings/operations`,
+  orgShipmentLabel: (orgSlug: string, shipmentId: string) =>
+    `/app/${orgSlug}/shipments/${shipmentId}/label`,
+  orgPackingSlip: (orgSlug: string, shipmentId: string) =>
+    `/app/${orgSlug}/shipments/${shipmentId}/packing-slip`,
+  orgBarcodeLabels: (orgSlug: string) => `/app/${orgSlug}/products/labels`,
   orgProductImport: (orgSlug: string) => `/app/${orgSlug}/products/import`,
   orgProductExport: (orgSlug: string, template = false) =>
     `/app/${orgSlug}/products/export${template ? "?template=1" : ""}`,

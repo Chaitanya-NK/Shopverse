@@ -770,6 +770,51 @@ export type Database = {
           },
         ];
       };
+      operations_settings: {
+        Row: {
+          courier: string | null;
+          daily_digest: boolean;
+          digest_hour: number;
+          last_digest_on: string | null;
+          low_stock_alerts: boolean;
+          organization_id: string;
+          recipient_roles: Database["public"]["Enums"]["org_role"][];
+          updated_at: string;
+          updated_by: string | null;
+        };
+        ComputedFields: never;
+        Insert: {
+          courier?: string | null;
+          daily_digest?: boolean;
+          digest_hour?: number;
+          last_digest_on?: string | null;
+          low_stock_alerts?: boolean;
+          organization_id: string;
+          recipient_roles?: Database["public"]["Enums"]["org_role"][];
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Update: {
+          courier?: string | null;
+          daily_digest?: boolean;
+          digest_hour?: number;
+          last_digest_on?: string | null;
+          low_stock_alerts?: boolean;
+          organization_id?: string;
+          recipient_roles?: Database["public"]["Enums"]["org_role"][];
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "operations_settings_organization_id_fkey";
+            columns: ["organization_id"];
+            isOneToOne: true;
+            referencedRelation: "organizations";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       order_allocations: {
         Row: {
           created_at: string;
@@ -1760,6 +1805,168 @@ export type Database = {
         };
         Relationships: [];
       };
+      purchase_order_items: {
+        Row: {
+          id: string;
+          organization_id: string;
+          position: number;
+          purchase_order_id: string;
+          quantity: number;
+          received_quantity: number;
+          tax_rate: number;
+          unit_cost: number;
+          variant_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          id?: string;
+          organization_id: string;
+          position?: number;
+          purchase_order_id: string;
+          quantity: number;
+          received_quantity?: number;
+          tax_rate?: number;
+          unit_cost: number;
+          variant_id: string;
+        };
+        Update: {
+          id?: string;
+          organization_id?: string;
+          position?: number;
+          purchase_order_id?: string;
+          quantity?: number;
+          received_quantity?: number;
+          tax_rate?: number;
+          unit_cost?: number;
+          variant_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "purchase_order_items_organization_id_purchase_order_id_fkey";
+            columns: ["organization_id", "purchase_order_id"];
+            isOneToOne: false;
+            referencedRelation: "purchase_order_overview";
+            referencedColumns: ["organization_id", "id"];
+          },
+          {
+            foreignKeyName: "purchase_order_items_organization_id_purchase_order_id_fkey";
+            columns: ["organization_id", "purchase_order_id"];
+            isOneToOne: false;
+            referencedRelation: "purchase_orders";
+            referencedColumns: ["organization_id", "id"];
+          },
+          {
+            foreignKeyName: "purchase_order_items_organization_id_variant_id_fkey";
+            columns: ["organization_id", "variant_id"];
+            isOneToOne: false;
+            referencedRelation: "product_variants";
+            referencedColumns: ["organization_id", "id"];
+          },
+          {
+            foreignKeyName: "purchase_order_items_organization_id_variant_id_fkey";
+            columns: ["organization_id", "variant_id"];
+            isOneToOne: false;
+            referencedRelation: "variant_search";
+            referencedColumns: ["organization_id", "id"];
+          },
+        ];
+      };
+      purchase_orders: {
+        Row: {
+          cancelled_at: string | null;
+          closed_at: string | null;
+          created_at: string;
+          created_by: string | null;
+          expected_at: string | null;
+          id: string;
+          notes: string | null;
+          number: string;
+          ordered_at: string | null;
+          organization_id: string;
+          received_at: string | null;
+          status: Database["public"]["Enums"]["purchase_order_status"];
+          subtotal: number;
+          supplier_id: string;
+          supplier_reference: string | null;
+          tax_total: number;
+          total: number;
+          updated_at: string;
+          warehouse_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          cancelled_at?: string | null;
+          closed_at?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          expected_at?: string | null;
+          id?: string;
+          notes?: string | null;
+          number: string;
+          ordered_at?: string | null;
+          organization_id: string;
+          received_at?: string | null;
+          status?: Database["public"]["Enums"]["purchase_order_status"];
+          subtotal?: number;
+          supplier_id: string;
+          supplier_reference?: string | null;
+          tax_total?: number;
+          total?: number;
+          updated_at?: string;
+          warehouse_id: string;
+        };
+        Update: {
+          cancelled_at?: string | null;
+          closed_at?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          expected_at?: string | null;
+          id?: string;
+          notes?: string | null;
+          number?: string;
+          ordered_at?: string | null;
+          organization_id?: string;
+          received_at?: string | null;
+          status?: Database["public"]["Enums"]["purchase_order_status"];
+          subtotal?: number;
+          supplier_id?: string;
+          supplier_reference?: string | null;
+          tax_total?: number;
+          total?: number;
+          updated_at?: string;
+          warehouse_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "purchase_orders_organization_id_fkey";
+            columns: ["organization_id"];
+            isOneToOne: false;
+            referencedRelation: "organizations";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "purchase_orders_organization_id_supplier_id_fkey";
+            columns: ["organization_id", "supplier_id"];
+            isOneToOne: false;
+            referencedRelation: "suppliers";
+            referencedColumns: ["organization_id", "id"];
+          },
+          {
+            foreignKeyName: "purchase_orders_organization_id_warehouse_id_fkey";
+            columns: ["organization_id", "warehouse_id"];
+            isOneToOne: false;
+            referencedRelation: "warehouse_overview";
+            referencedColumns: ["organization_id", "id"];
+          },
+          {
+            foreignKeyName: "purchase_orders_organization_id_warehouse_id_fkey";
+            columns: ["organization_id", "warehouse_id"];
+            isOneToOne: false;
+            referencedRelation: "warehouses";
+            referencedColumns: ["organization_id", "id"];
+          },
+        ];
+      };
       return_items: {
         Row: {
           discount_amount: number | null;
@@ -2051,6 +2258,7 @@ export type Database = {
         Row: {
           created_at: string;
           description: string | null;
+          external_id: string | null;
           id: number;
           location: string | null;
           occurred_at: string;
@@ -2062,6 +2270,7 @@ export type Database = {
         Insert: {
           created_at?: string;
           description?: string | null;
+          external_id?: string | null;
           id?: never;
           location?: string | null;
           occurred_at?: string;
@@ -2072,6 +2281,7 @@ export type Database = {
         Update: {
           created_at?: string;
           description?: string | null;
+          external_id?: string | null;
           id?: never;
           location?: string | null;
           occurred_at?: string;
@@ -2164,8 +2374,12 @@ export type Database = {
       };
       shipments: {
         Row: {
+          booked_at: string | null;
           cancelled_at: string | null;
           carrier: string | null;
+          cod_amount: number | null;
+          courier: string | null;
+          courier_service: string | null;
           created_at: string;
           delivered_at: string | null;
           delivery_attempts: number;
@@ -2177,8 +2391,10 @@ export type Database = {
           organization_id: string;
           otp_attempts: number;
           otp_expires_at: string | null;
+          package: Json | null;
           returned_at: string | null;
           shipped_at: string | null;
+          shipping_cost: number | null;
           status: Database["public"]["Enums"]["shipment_status"];
           tracking_number: string | null;
           tracking_token: string;
@@ -2187,8 +2403,12 @@ export type Database = {
         };
         ComputedFields: never;
         Insert: {
+          booked_at?: string | null;
           cancelled_at?: string | null;
           carrier?: string | null;
+          cod_amount?: number | null;
+          courier?: string | null;
+          courier_service?: string | null;
           created_at?: string;
           delivered_at?: string | null;
           delivery_attempts?: number;
@@ -2200,8 +2420,10 @@ export type Database = {
           organization_id: string;
           otp_attempts?: number;
           otp_expires_at?: string | null;
+          package?: Json | null;
           returned_at?: string | null;
           shipped_at?: string | null;
+          shipping_cost?: number | null;
           status?: Database["public"]["Enums"]["shipment_status"];
           tracking_number?: string | null;
           tracking_token?: string;
@@ -2209,8 +2431,12 @@ export type Database = {
           warehouse_id: string;
         };
         Update: {
+          booked_at?: string | null;
           cancelled_at?: string | null;
           carrier?: string | null;
+          cod_amount?: number | null;
+          courier?: string | null;
+          courier_service?: string | null;
           created_at?: string;
           delivered_at?: string | null;
           delivery_attempts?: number;
@@ -2222,8 +2448,10 @@ export type Database = {
           organization_id?: string;
           otp_attempts?: number;
           otp_expires_at?: string | null;
+          package?: Json | null;
           returned_at?: string | null;
           shipped_at?: string | null;
+          shipping_cost?: number | null;
           status?: Database["public"]["Enums"]["shipment_status"];
           tracking_number?: string | null;
           tracking_token?: string;
@@ -2412,6 +2640,79 @@ export type Database = {
           },
         ];
       };
+      stock_alerts: {
+        Row: {
+          available: number;
+          created_at: string;
+          id: string;
+          notified_at: string | null;
+          organization_id: string;
+          reorder_point: number;
+          resolved_at: string | null;
+          variant_id: string;
+          warehouse_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          available: number;
+          created_at?: string;
+          id?: string;
+          notified_at?: string | null;
+          organization_id: string;
+          reorder_point: number;
+          resolved_at?: string | null;
+          variant_id: string;
+          warehouse_id: string;
+        };
+        Update: {
+          available?: number;
+          created_at?: string;
+          id?: string;
+          notified_at?: string | null;
+          organization_id?: string;
+          reorder_point?: number;
+          resolved_at?: string | null;
+          variant_id?: string;
+          warehouse_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "stock_alerts_organization_id_fkey";
+            columns: ["organization_id"];
+            isOneToOne: false;
+            referencedRelation: "organizations";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "stock_alerts_variant_id_fkey";
+            columns: ["variant_id"];
+            isOneToOne: false;
+            referencedRelation: "product_variants";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "stock_alerts_variant_id_fkey";
+            columns: ["variant_id"];
+            isOneToOne: false;
+            referencedRelation: "variant_search";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "stock_alerts_warehouse_id_fkey";
+            columns: ["warehouse_id"];
+            isOneToOne: false;
+            referencedRelation: "warehouse_overview";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "stock_alerts_warehouse_id_fkey";
+            columns: ["warehouse_id"];
+            isOneToOne: false;
+            referencedRelation: "warehouses";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       stock_movements: {
         Row: {
           balance_after: number;
@@ -2581,6 +2882,66 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "subscriptions_organization_id_fkey";
+            columns: ["organization_id"];
+            isOneToOne: false;
+            referencedRelation: "organizations";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      suppliers: {
+        Row: {
+          address: NonNullable<Json>;
+          contact_name: string | null;
+          created_at: string;
+          email: string | null;
+          gstin: string | null;
+          id: string;
+          is_active: boolean;
+          lead_time_days: number | null;
+          name: string;
+          notes: string | null;
+          organization_id: string;
+          payment_terms: string | null;
+          phone: string | null;
+          updated_at: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          address?: NonNullable<Json>;
+          contact_name?: string | null;
+          created_at?: string;
+          email?: string | null;
+          gstin?: string | null;
+          id?: string;
+          is_active?: boolean;
+          lead_time_days?: number | null;
+          name: string;
+          notes?: string | null;
+          organization_id: string;
+          payment_terms?: string | null;
+          phone?: string | null;
+          updated_at?: string;
+        };
+        Update: {
+          address?: NonNullable<Json>;
+          contact_name?: string | null;
+          created_at?: string;
+          email?: string | null;
+          gstin?: string | null;
+          id?: string;
+          is_active?: boolean;
+          lead_time_days?: number | null;
+          name?: string;
+          notes?: string | null;
+          organization_id?: string;
+          payment_terms?: string | null;
+          phone?: string | null;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "suppliers_organization_id_fkey";
             columns: ["organization_id"];
             isOneToOne: false;
             referencedRelation: "organizations";
@@ -2930,6 +3291,58 @@ export type Database = {
           },
         ];
       };
+      purchase_order_overview: {
+        Row: {
+          created_at: string;
+          expected_at: string | null;
+          id: string;
+          line_count: number | null;
+          number: string;
+          ordered_at: string | null;
+          ordered_quantity: number | null;
+          organization_id: string;
+          received_at: string | null;
+          received_quantity: number | null;
+          status: Database["public"]["Enums"]["purchase_order_status"];
+          supplier_id: string;
+          supplier_name: string;
+          supplier_reference: string | null;
+          total: number;
+          warehouse_id: string;
+          warehouse_name: string;
+        };
+        ComputedFields: never;
+        Relationships: [
+          {
+            foreignKeyName: "purchase_orders_organization_id_fkey";
+            columns: ["organization_id"];
+            isOneToOne: false;
+            referencedRelation: "organizations";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "purchase_orders_organization_id_supplier_id_fkey";
+            columns: ["organization_id", "supplier_id"];
+            isOneToOne: false;
+            referencedRelation: "suppliers";
+            referencedColumns: ["organization_id", "id"];
+          },
+          {
+            foreignKeyName: "purchase_orders_organization_id_warehouse_id_fkey";
+            columns: ["organization_id", "warehouse_id"];
+            isOneToOne: false;
+            referencedRelation: "warehouse_overview";
+            referencedColumns: ["organization_id", "id"];
+          },
+          {
+            foreignKeyName: "purchase_orders_organization_id_warehouse_id_fkey";
+            columns: ["organization_id", "warehouse_id"];
+            isOneToOne: false;
+            referencedRelation: "warehouses";
+            referencedColumns: ["organization_id", "id"];
+          },
+        ];
+      };
       return_overview: {
         Row: {
           created_at: string;
@@ -3248,8 +3661,24 @@ export type Database = {
         };
         Returns: undefined;
       };
+      claim_due_digests: { Args: { p_now?: string }; Returns: Json };
+      claim_stock_alerts: { Args: Record<PropertyKey, never>; Returns: Json };
+      clear_courier_booking: { Args: { p_shipment_id: string }; Returns: undefined };
+      close_purchase_order: { Args: { p_purchase_order_id: string }; Returns: string };
       confirm_delivery: { Args: { p_otp: string; p_shipment_id: string }; Returns: Json };
       confirm_order: { Args: { p_order_id: string }; Returns: undefined };
+      courier_shipment_update: {
+        Args: {
+          p_awb: string;
+          p_courier: string;
+          p_description?: string;
+          p_event_id: string;
+          p_location?: string;
+          p_occurred_at?: string;
+          p_status: Database["public"]["Enums"]["shipment_status"];
+        };
+        Returns: Json;
+      };
       create_exchange_order: { Args: { p_return_id: string }; Returns: string };
       create_order: {
         Args: {
@@ -3318,6 +3747,7 @@ export type Database = {
       forget_webhook_event: { Args: { p_event_id: string }; Returns: undefined };
       get_billing_overview: { Args: { p_organization_id: string }; Returns: Json };
       get_invitation: { Args: { p_token: string }; Returns: Json };
+      get_operations_settings: { Args: { p_organization_id: string }; Returns: Json };
       get_overview_stats: {
         Args: { p_organization_id: string; p_shop_id?: string };
         Returns: Json;
@@ -3357,10 +3787,13 @@ export type Database = {
         Args: { p_reply?: string; p_review_id: string; p_status: string };
         Returns: undefined;
       };
+      operations_contacts: { Args: { p_organization_id: string }; Returns: Json };
+      operations_digest: { Args: { p_now?: string; p_organization_id: string }; Returns: Json };
       order_invoice: { Args: { p_order_id: string }; Returns: Json };
       order_return_options: { Args: { p_order_id: string }; Returns: Json };
       payment_account_credentials: { Args: { p_organization_id: string }; Returns: Json };
       payments_to_refund: { Args: { p_order_id: string }; Returns: Json };
+      place_purchase_order: { Args: { p_purchase_order_id: string }; Returns: undefined };
       platform_invoice: { Args: { p_invoice_id: string }; Returns: Json };
       platform_provider_plan: {
         Args: {
@@ -3369,6 +3802,10 @@ export type Database = {
           p_plan: Database["public"]["Enums"]["plan_tier"];
         };
         Returns: string;
+      };
+      receive_purchase_order: {
+        Args: { p_lines: Json; p_purchase_order_id: string };
+        Returns: Json;
       };
       receive_return: { Args: { p_items?: Json; p_return_id: string }; Returns: undefined };
       receive_stock: {
@@ -3398,6 +3835,20 @@ export type Database = {
           isOneToOne: true;
           isSetofReturn: false;
         };
+      };
+      record_courier_booking: {
+        Args: {
+          p_awb: string;
+          p_carrier_name: string;
+          p_cod_amount: number;
+          p_cost: number;
+          p_courier: string;
+          p_estimated: string;
+          p_package: Json;
+          p_service: string;
+          p_shipment_id: string;
+        };
+        Returns: undefined;
       };
       record_manual_refund: {
         Args: { p_method: string; p_reference: string; p_return_id: string };
@@ -3452,6 +3903,8 @@ export type Database = {
         Args: { p_event: string; p_event_id: string; p_organization_id: string };
         Returns: boolean;
       };
+      release_digest: { Args: { p_organization_id: string }; Returns: undefined };
+      release_stock_alerts: { Args: { p_alert_ids: string[] }; Returns: undefined };
       remove_member: { Args: { p_member_id: string }; Returns: undefined };
       remove_stock: {
         Args: {
@@ -3488,6 +3941,10 @@ export type Database = {
         Args: { p_image_ids: string[]; p_product_id: string };
         Returns: undefined;
       };
+      reorder_suggestions: {
+        Args: { p_organization_id: string; p_warehouse_id?: string };
+        Returns: Json;
+      };
       return_credit_note: { Args: { p_return_id: string }; Returns: Json };
       returns_report: {
         Args: { p_from: string; p_organization_id: string; p_shop_id?: string; p_to: string };
@@ -3504,6 +3961,17 @@ export type Database = {
       };
       save_billing_profile: {
         Args: { p_organization_id: string; p_profile: Json };
+        Returns: undefined;
+      };
+      save_operations_settings: {
+        Args: {
+          p_courier: string;
+          p_daily_digest: boolean;
+          p_digest_hour: number;
+          p_low_stock_alerts: boolean;
+          p_organization_id: string;
+          p_recipient_roles: Database["public"]["Enums"]["org_role"][];
+        };
         Returns: undefined;
       };
       save_payment_account: {
@@ -3527,10 +3995,28 @@ export type Database = {
         };
         Returns: string;
       };
+      save_purchase_order: {
+        Args: {
+          p_expected_at?: string;
+          p_items: Json;
+          p_notes?: string;
+          p_organization_id: string;
+          p_purchase_order_id: string;
+          p_supplier_id: string;
+          p_supplier_reference?: string;
+          p_warehouse_id: string;
+        };
+        Returns: string;
+      };
+      service_operations_digest: {
+        Args: { p_now?: string; p_organization_id: string };
+        Returns: Json;
+      };
       set_warehouse_shops: {
         Args: { p_shop_ids: string[]; p_warehouse_id: string };
         Returns: undefined;
       };
+      shipment_document: { Args: { p_shipment_id: string }; Returns: Json };
       shopper_cancel_order: {
         Args: { p_order_token: string; p_reason?: string; p_shop_id: string; p_token: string };
         Returns: undefined;
@@ -3736,6 +4222,8 @@ export type Database = {
         "pending" | "authorized" | "paid" | "partially_refunded" | "refunded" | "failed";
       plan_tier: "trial" | "starter" | "growth" | "scale";
       product_status: "draft" | "active" | "archived";
+      purchase_order_status:
+        "draft" | "ordered" | "partially_received" | "received" | "closed" | "cancelled";
       return_status:
         | "requested"
         | "approved"
@@ -3878,6 +4366,14 @@ export const Constants = {
       payment_status: ["pending", "authorized", "paid", "partially_refunded", "refunded", "failed"],
       plan_tier: ["trial", "starter", "growth", "scale"],
       product_status: ["draft", "active", "archived"],
+      purchase_order_status: [
+        "draft",
+        "ordered",
+        "partially_received",
+        "received",
+        "closed",
+        "cancelled",
+      ],
       return_status: [
         "requested",
         "approved",

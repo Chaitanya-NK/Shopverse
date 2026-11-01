@@ -1,5 +1,7 @@
 "use server";
 
+import { after } from "next/server";
+
 import { refresh } from "next/cache";
 import { headers } from "next/headers";
 
@@ -42,6 +44,7 @@ import {
 } from "@/features/storefront/schemas";
 import { notifyOrder } from "@/features/notifications/order-notifier";
 import { refundDuePayments } from "@/features/payments/server";
+import { sendStockAlertsQuietly } from "@/features/operations/server";
 import { createAction } from "@/lib/actions/create-action";
 import { type AppError, Errors, fromPostgrestError } from "@/lib/errors";
 import { sendMail } from "@/lib/mail";
@@ -417,6 +420,8 @@ export const placeSignedInOrder = createAction({
     await clearCart(shop.slug);
     // Online orders are confirmed (and emailed) once the payment arrives.
     if (!order.awaiting_payment) notifyOrder(order.order_id, { type: "confirmed" });
+    // Stock is now reserved: tell the team about anything that ran low.
+    after(sendStockAlertsQuietly);
     return {
       token: order.public_token,
       number: order.order_number,

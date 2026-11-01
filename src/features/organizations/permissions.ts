@@ -26,6 +26,11 @@ const CAPABILITIES = {
   "returns.manage": ["owner", "admin", "manager", "staff"],
   "returns.refund": ["owner", "admin", "manager"],
   "reviews.manage": ["owner", "admin", "manager", "support"],
+  // Suppliers and purchase orders; anyone who handles stock can receive deliveries.
+  "purchasing.manage": ["owner", "admin", "manager"],
+  "purchasing.receive": ["owner", "admin", "manager", "staff"],
+  // Alerts, the daily digest and the courier.
+  "operations.settings": ["owner", "admin"],
 } as const satisfies Record<string, readonly OrgRole[]>;
 
 export type Capability = keyof typeof CAPABILITIES;

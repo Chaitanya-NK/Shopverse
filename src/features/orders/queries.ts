@@ -151,6 +151,11 @@ export type ShipmentDetail = {
   carrier: string | null;
   trackingNumber: string | null;
   trackingToken: string;
+  /** Booked with a courier integration (null: shipped by hand). */
+  courier: string | null;
+  courierService: string | null;
+  shippingCost: number | null;
+  codAmount: number | null;
   estimatedDelivery: string | null;
   shippedAt: string | null;
   deliveredAt: string | null;
@@ -251,7 +256,7 @@ export const getOrder = cache(
       supabase
         .from("shipments")
         .select(
-          "id, number, status, warehouse_id, carrier, tracking_number, tracking_token, estimated_delivery, shipped_at, delivered_at, otp_expires_at, otp_attempts, delivery_attempts, created_at, warehouse:warehouses!shipments_organization_id_warehouse_id_fkey (name)",
+          "id, number, status, warehouse_id, carrier, tracking_number, tracking_token, courier, courier_service, shipping_cost, cod_amount, estimated_delivery, shipped_at, delivered_at, otp_expires_at, otp_attempts, delivery_attempts, created_at, warehouse:warehouses!shipments_organization_id_warehouse_id_fkey (name)",
         )
         .eq("order_id", orderId)
         .order("created_at"),
@@ -346,6 +351,10 @@ export const getOrder = cache(
         carrier: s.carrier,
         trackingNumber: s.tracking_number,
         trackingToken: s.tracking_token,
+        courier: s.courier,
+        courierService: s.courier_service,
+        shippingCost: s.shipping_cost === null ? null : Number(s.shipping_cost),
+        codAmount: s.cod_amount === null ? null : Number(s.cod_amount),
         estimatedDelivery: s.estimated_delivery,
         shippedAt: s.shipped_at,
         deliveredAt: s.delivered_at,

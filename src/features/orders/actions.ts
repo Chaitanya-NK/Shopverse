@@ -1,6 +1,7 @@
 "use server";
 
 import { refresh } from "next/cache";
+import { after } from "next/server";
 
 import {
   cancelOrderSchema,
@@ -14,6 +15,7 @@ import {
 } from "@/features/orders/schemas";
 import { type Tracking } from "@/features/inventory/schemas";
 import { notifyOrder, notifyShipment } from "@/features/notifications/order-notifier";
+import { sendStockAlertsQuietly } from "@/features/operations/server";
 import { refundDuePayments } from "@/features/payments/server";
 import { authorizeOrganization } from "@/features/organizations/server";
 import { createAction } from "@/lib/actions/create-action";
@@ -67,6 +69,7 @@ export const createOrder = createAction({
 
     // Phone and counter orders with an email get the same confirmation.
     if (input.confirm) notifyOrder(data, { type: "confirmed" });
+    after(sendStockAlertsQuietly);
     refresh();
     return { id: data };
   },
@@ -86,6 +89,7 @@ export const confirmOrder = createAction({
     const { error } = await supabase.rpc("confirm_order", { p_order_id: input.orderId });
     if (error) throw fromPostgrestError(error);
     notifyOrder(input.orderId, { type: "confirmed" });
+    after(sendStockAlertsQuietly);
     refresh();
     return { ok: true };
   },

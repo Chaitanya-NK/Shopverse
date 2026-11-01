@@ -1,5 +1,7 @@
 "use server";
 
+import { after } from "next/server";
+
 import { cookies } from "next/headers";
 
 import { env } from "@/env";
@@ -15,6 +17,7 @@ import {
   toIndianE164,
 } from "@/features/storefront/schemas";
 import { notifyOrder } from "@/features/notifications/order-notifier";
+import { sendStockAlertsQuietly } from "@/features/operations/server";
 import { createAction } from "@/lib/actions/create-action";
 import { Errors, fromPostgrestError } from "@/lib/errors";
 import { sendMail } from "@/lib/mail";
@@ -183,6 +186,8 @@ export const confirmCheckout = createAction({
 
     // Online orders are confirmed (and emailed) once the payment arrives.
     if (!result.awaiting_payment) notifyOrder(result.order_id!, { type: "confirmed" });
+    // Stock is now reserved: tell the team about anything that ran low.
+    after(sendStockAlertsQuietly);
 
     return {
       token: result.public_token!,

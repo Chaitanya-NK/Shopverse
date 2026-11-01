@@ -4,6 +4,7 @@ import {
   FileSpreadsheetIcon,
   PackageIcon,
   PlusIcon,
+  TagIcon,
   UploadIcon,
 } from "lucide-react";
 import type { Metadata } from "next";
@@ -96,7 +97,7 @@ async function ProductsContent({ params, searchParams }: Props) {
                 <DropdownMenuTrigger asChild>
                   <Button variant="outline">
                     <FileSpreadsheetIcon />
-                    CSV
+                    More
                     <ChevronDownIcon />
                   </Button>
                 </DropdownMenuTrigger>
@@ -112,6 +113,12 @@ async function ProductsContent({ params, searchParams }: Props) {
                       <DownloadIcon />
                       Export all products
                     </a>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href={routes.orgBarcodeLabels(orgSlug)}>
+                      <TagIcon />
+                      Print barcode labels
+                    </Link>
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
