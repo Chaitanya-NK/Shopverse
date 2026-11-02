@@ -284,7 +284,7 @@ function CodeStep({
 }) {
   const t = useT();
   const router = useRouter();
-  const { pay } = useOnlineCheckout();
+  const { pay } = useOnlineCheckout(shopSlug);
   const [code, setCode] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [cooldown, setCooldown] = useState(RESEND_SECONDS);
@@ -318,16 +318,11 @@ function CodeStep({
       }
       const orderPage = routes.storefrontOrder(shopSlug, result.data.token);
       if (result.data.awaitingPayment) {
-        // The order is placed and stock held; now take the payment.
-        const outcome = await pay(result.data.token);
-        // On success the browser is on its way to Stripe's payment page.
-        if (outcome.status === "redirecting") return;
-        toast.error(
-          `${t(outcome.message)} ${t("Your order is saved; you can pay from its page.")}`,
-        );
-      } else {
-        toast.success(t("Order {number} placed", { number: result.data.number }));
+        // The order is placed and stock held; now the payment page.
+        pay(result.data.token);
+        return;
       }
+      toast.success(t("Order {number} placed", { number: result.data.number }));
       router.replace(orderPage);
     });
 

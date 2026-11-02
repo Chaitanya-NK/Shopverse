@@ -37,6 +37,7 @@ export function PaymentSettingsForm({
       organizationSlug,
       secretKey: "",
       webhookSecret: "",
+      publishableKey: (connected && settings.publishable_key) || "",
       enabled: connected ? settings.enabled : true,
     },
   });
@@ -98,6 +99,29 @@ export function PaymentSettingsForm({
           "In Stripe: Developers → API keys. Use the test key (sk_test_…) to try things out; no business verification is needed.",
           connected,
         )}
+        <Controller
+          name="publishableKey"
+          control={form.control}
+          render={({ field, fieldState }) => (
+            <Field data-invalid={fieldState.invalid}>
+              <FieldLabel htmlFor="pay-publishableKey">Publishable key</FieldLabel>
+              <Input
+                {...field}
+                value={field.value ?? ""}
+                id="pay-publishableKey"
+                autoComplete="off"
+                spellCheck={false}
+                placeholder="pk_test_…"
+                aria-invalid={fieldState.invalid}
+              />
+              <FieldDescription>
+                Same page in Stripe (pk_test_… or pk_live_…). With it, shoppers pay on your
+                shop&apos;s own payment page; without it, on Stripe&apos;s.
+              </FieldDescription>
+              {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+            </Field>
+          )}
+        />
         {secret(
           "webhookSecret",
           "Webhook signing secret",

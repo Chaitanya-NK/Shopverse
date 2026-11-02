@@ -152,7 +152,12 @@ async function CustomerOrder({ params, searchParams }: Props) {
               </span>
               . {t("Pay now to confirm the order; otherwise it's cancelled automatically.")}
             </p>
-            <PayNowButton orderToken={token} amount={order.grand_total} currency={order.currency} />
+            <PayNowButton
+              shopSlug={shop.slug}
+              orderToken={token}
+              amount={order.grand_total}
+              currency={order.currency}
+            />
           </CardContent>
         </Card>
       )}

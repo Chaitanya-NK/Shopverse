@@ -115,7 +115,7 @@ export function SignedInCheckout({
     },
   });
   const paymentMethod = useWatch({ control: form.control, name: "paymentMethod" });
-  const { pay } = useOnlineCheckout();
+  const { pay } = useOnlineCheckout(shopSlug);
   const addressId = useWatch({ control: form.control, name: "addressId" });
 
   const onSubmit = form.handleSubmit((values) =>
@@ -137,15 +137,11 @@ export function SignedInCheckout({
         return;
       }
       if (result.data.awaitingPayment) {
-        const outcome = await pay(result.data.token);
-        // On success the browser is on its way to Stripe's payment page.
-        if (outcome.status === "redirecting") return;
-        toast.error(
-          `${t(outcome.message)} ${t("Your order is saved; you can pay from its page.")}`,
-        );
-      } else {
-        toast.success(t("Order {number} placed", { number: result.data.number }));
+        // The order is placed and stock held; now the payment page.
+        pay(result.data.token);
+        return;
       }
+      toast.success(t("Order {number} placed", { number: result.data.number }));
       router.replace(routes.storefrontOrder(shopSlug, result.data.token));
     }),
   );

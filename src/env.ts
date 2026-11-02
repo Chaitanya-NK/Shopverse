@@ -46,6 +46,10 @@ export const env = createEnv({
     // Override only for local testing against a stand-in.
     TWILIO_API_URL: z.url().default("https://api.twilio.com"),
     STRIPE_API_URL: z.url().default("https://api.stripe.com"),
+    // Stripe.js for the payment fields on Shopverse's own pages. It must match
+    // the API version the server uses (see lib/payments/stripe.ts); override
+    // only for local testing against a stand-in.
+    STRIPE_JS_URL: z.url().default("https://js.stripe.com/basil/stripe.js"),
     // Shopverse's own Stripe account, for plan subscriptions (not the
     // businesses' accounts). Without the key, plans are changed by request.
     PLATFORM_STRIPE_SECRET_KEY: z
@@ -53,6 +57,12 @@ export const env = createEnv({
       .regex(/^(sk|rk)_(test|live)_[A-Za-z0-9]{10,247}$/, "Must be a Stripe secret key")
       .optional(),
     PLATFORM_STRIPE_WEBHOOK_SECRET: z.string().startsWith("whsec_").optional(),
+    // Its publishable key: plans are then paid on Shopverse's own page (without
+    // it, on Stripe's).
+    PLATFORM_STRIPE_PUBLISHABLE_KEY: z
+      .string()
+      .regex(/^pk_(test|live)_[A-Za-z0-9]{10,247}$/, "Must be a Stripe publishable key")
+      .optional(),
     // Printed on Shopverse's invoices to businesses. With a GSTIN, plan prices
     // get GST added and invoices are tax invoices.
     PLATFORM_LEGAL_NAME: z.string().min(2).default("Shopverse"),

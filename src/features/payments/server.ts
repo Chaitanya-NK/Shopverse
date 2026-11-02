@@ -16,12 +16,15 @@ import {
   toPaise,
 } from "@/lib/payments/stripe";
 import { decryptSecret } from "@/lib/payments/secrets";
+import { paymentStart, type PaymentStart } from "@/lib/payments/start-server";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 type Credentials = {
   accountId: string;
   secretKey: string;
   webhookSecret: string | null;
+  /** pk_…: payments on the shop's own page. Without it, Stripe's hosted page. */
+  publishableKey: string | null;
   enabled: boolean;
 };
 
@@ -36,12 +39,14 @@ export async function getCredentials(organizationId: string): Promise<Credential
     key_id: string;
     key_secret_enc: string;
     webhook_secret_enc: string | null;
+    publishable_key?: string | null;
     enabled: boolean;
   };
   return {
     accountId: row.key_id,
     secretKey: decryptSecret(row.key_secret_enc),
     webhookSecret: row.webhook_secret_enc ? decryptSecret(row.webhook_secret_enc) : null,
+    publishableKey: row.publishable_key ?? null,
     enabled: row.enabled,
   };
 }
@@ -52,9 +57,11 @@ const absolute = (path: string) => new URL(path, env.NEXT_PUBLIC_APP_URL).toStri
 
 /**
  * Start Stripe Checkout for an order awaiting payment (a new session per
- * attempt). Returns the hosted page to send the shopper to.
+ * attempt). With the business's publishable key the shopper pays on the
+ * shop's own payment page (Stripe's fields inside it); without, on Stripe's.
+ * Either way Stripe sends them back to the order page, which confirms it.
  */
-export async function startPayment(orderToken: string): Promise<{ url: string }> {
+export async function startPayment(orderToken: string): Promise<PaymentStart> {
   const admin = createAdminClient();
   const { data, error } = await admin.rpc("begin_online_payment", { p_order_token: orderToken });
   if (error) throw fromPostgrestError(error);
@@ -90,6 +97,8 @@ export async function startPayment(orderToken: string): Promise<{ url: string }>
   const orderPage = absolute(routes.storefrontOrder(shop.data.shop!.slug, orderToken));
 
   const amount = Number(order.amount);
+  const ownPage = Boolean(credentials.publishableKey);
+  const returnTo = `${orderPage}?checkout={CHECKOUT_SESSION_ID}`;
   const session = await stripe.createCheckoutSession(credentials.secretKey, {
     mode: "payment",
     line_items: [
@@ -111,10 +120,11 @@ export async function startPayment(orderToken: string): Promise<{ url: string }>
     },
     // Stock is held until the order's due time; a late payment is refunded.
     expires_at: Math.floor(Date.now() / 1000) + MIN_SESSION_SECONDS,
-    success_url: `${orderPage}?checkout={CHECKOUT_SESSION_ID}`,
-    cancel_url: `${orderPage}?checkout=cancelled`,
+    ...(ownPage
+      ? { ui_mode: "custom", return_url: returnTo }
+      : { success_url: returnTo, cancel_url: `${orderPage}?checkout=cancelled` }),
   });
-  if (!session.url) throw new AppError("UNAVAILABLE", "Stripe didn't return a payment page.");
+  const start = paymentStart(session, credentials.publishableKey);
 
   const { error: recordError } = await admin.rpc("record_payment_attempt", {
     p_order_id: order.order_id,
@@ -123,7 +133,7 @@ export async function startPayment(orderToken: string): Promise<{ url: string }>
     p_currency: order.currency,
   });
   if (recordError) throw fromPostgrestError(recordError);
-  return { url: session.url };
+  return start;
 }
 
 type CaptureResult =

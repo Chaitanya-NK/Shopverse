@@ -24,6 +24,7 @@ import {
   type StripeSubscription,
   subscriptionPeriod,
 } from "@/lib/payments/stripe";
+import { paymentStart } from "@/lib/payments/start-server";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 /** Shopverse's own Stripe key (null: plans are changed by request). */
@@ -99,6 +100,9 @@ export async function startSubscription(
   const pp = await providerPlan(plan, interval);
   const billingPage = appUrl(routes.orgBilling(organization.slug));
   const metadata = { organization_id: organization.id, plan, interval };
+  // With Shopverse's publishable key the owner pays on our own page.
+  const publishableKey = env.PLATFORM_STRIPE_PUBLISHABLE_KEY;
+  const returnTo = `${billingPage}?checkout={CHECKOUT_SESSION_ID}`;
   const session = await stripe.createCheckoutSession(key, {
     mode: "subscription",
     line_items: [{ price: pp.id, quantity: 1 }],
@@ -106,10 +110,11 @@ export async function startSubscription(
     client_reference_id: organization.id,
     metadata,
     subscription_data: { metadata },
-    success_url: `${billingPage}?checkout={CHECKOUT_SESSION_ID}`,
-    cancel_url: `${billingPage}?checkout=cancelled`,
+    ...(publishableKey
+      ? { ui_mode: "custom", return_url: returnTo }
+      : { success_url: returnTo, cancel_url: `${billingPage}?checkout=cancelled` }),
   });
-  if (!session.url) throw new AppError("UNAVAILABLE", "Stripe didn't return a payment page.");
+  const start = paymentStart(session, publishableKey);
   const { error } = await createAdminClient().rpc("begin_subscription", {
     p_organization_id: organization.id,
     p_user_id: userId,
@@ -118,10 +123,10 @@ export async function startSubscription(
     p_base_amount: pp.price,
     p_amount: pp.charge,
     p_provider_subscription_id: session.id,
-    p_short_url: session.url,
+    p_short_url: start.kind === "redirect" ? start.url : "",
   });
   if (error) throw fromPostgrestError(error);
-  return { url: session.url };
+  return start;
 }
 
 /** Stripe's statuses -> the ones Shopverse keeps (shared with the plan logic in SQL). */

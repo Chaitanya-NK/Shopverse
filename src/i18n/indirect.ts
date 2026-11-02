@@ -61,6 +61,9 @@ export const INDIRECT_TEXT: string[] = [
   "PIN code",
   // Footer small print (the default design's).
   "Cash on delivery across India.",
+  // Errors from the server shown on the payment page.
+  "The time to pay ran out, so this order was cancelled. Please order again.",
+  "Online payment isn't available right now.",
   // Pagination nouns.
   "products",
   "orders",

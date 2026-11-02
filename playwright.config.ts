@@ -7,6 +7,8 @@ import { defineConfig, devices } from "@playwright/test";
  */
 const port = Number(process.env.E2E_PORT ?? 3100);
 export const baseURL = process.env.E2E_BASE_URL ?? `http://localhost:${port}`;
+const stripePort = Number(process.env.STRIPE_STUB_PORT ?? 12111);
+const stripeStub = `http://127.0.0.1:${stripePort}`;
 
 export default defineConfig({
   testDir: "./e2e",
@@ -39,11 +41,29 @@ export default defineConfig({
   ],
   webServer: process.env.E2E_BASE_URL
     ? undefined
-    : {
-        command: `npm run start -- -p ${port}`,
-        url: `${baseURL}/sign-in`,
-        reuseExistingServer: !process.env.CI,
-        timeout: 120_000,
-        stdout: "pipe",
-      },
+    : [
+        {
+          // A stand-in for Stripe (shop payments and plans): see e2e/support/stripe-stub.mjs.
+          command: `node e2e/support/stripe-stub.mjs`,
+          url: `${stripeStub}/health`,
+          reuseExistingServer: !process.env.CI,
+          env: { STRIPE_STUB_PORT: String(stripePort) },
+        },
+        {
+          command: `npm run start -- -p ${port}`,
+          url: `${baseURL}/sign-in`,
+          reuseExistingServer: !process.env.CI,
+          timeout: 120_000,
+          stdout: "pipe",
+          env: {
+            STRIPE_API_URL: stripeStub,
+            STRIPE_JS_URL: `${stripeStub}/js/basil/stripe.js`,
+            PLATFORM_STRIPE_SECRET_KEY: "sk_test_E2ePlatformKey0001",
+            PLATFORM_STRIPE_PUBLISHABLE_KEY: "pk_test_E2ePlatformKey0001",
+            // Fixed test key for the businesses' saved Stripe keys.
+            PAYMENTS_ENCRYPTION_KEY:
+              process.env.PAYMENTS_ENCRYPTION_KEY ?? "ZTJlLXRlc3Qta2V5LWZvci1wbGF5d3JpZ2h0LW9ubHk=",
+          },
+        },
+      ],
 });

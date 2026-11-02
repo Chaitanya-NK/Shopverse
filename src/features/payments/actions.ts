@@ -64,6 +64,14 @@ export const savePaymentSettings = createAction({
     if (!secretKey) throw Errors.validation({ secretKey: ["Enter the secret key"] });
     const account = await stripe.retrieveAccount(secretKey);
     const mode = keyMode(secretKey);
+    if (input.publishableKey && !input.publishableKey.startsWith(`pk_${mode}_`))
+      throw Errors.validation({
+        publishableKey: [
+          mode === "live"
+            ? "Use the live publishable key (pk_live_…) with a live secret key"
+            : "Use the test publishable key (pk_test_…) with a test secret key",
+        ],
+      });
 
     const { error } = await supabase.rpc("save_payment_account", {
       p_organization_id: org.id,
@@ -72,6 +80,7 @@ export const savePaymentSettings = createAction({
       p_key_secret_enc: input.secretKey ? encryptSecret(input.secretKey) : undefined,
       p_webhook_secret_enc: input.webhookSecret ? encryptSecret(input.webhookSecret) : undefined,
       p_enabled: input.enabled,
+      p_publishable_key: input.publishableKey,
     });
     if (error) throw fromPostgrestError(error);
     refresh();

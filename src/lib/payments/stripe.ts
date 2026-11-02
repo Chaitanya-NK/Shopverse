@@ -16,6 +16,7 @@ export const STRIPE_API_VERSION = "2025-03-31.basil";
 /** A secret or restricted key: sk_test_…, sk_live_…, rk_test_…, rk_live_… */
 export const STRIPE_SECRET_KEY = /^(sk|rk)_(test|live)_[A-Za-z0-9]{10,247}$/;
 export const STRIPE_WEBHOOK_SECRET = /^whsec_[A-Za-z0-9+/=]{10,200}$/;
+export const STRIPE_PUBLISHABLE_KEY = /^pk_(test|live)_[A-Za-z0-9]{10,247}$/;
 export const keyMode = (secretKey: string): "test" | "live" =>
   /^(sk|rk)_live_/.test(secretKey) ? "live" : "test";
 
@@ -29,6 +30,8 @@ export type StripeCheckoutSession = {
   id: string;
   object: "checkout.session";
   url: string | null;
+  /** For ui_mode "custom": what Stripe.js needs to show the payment fields. */
+  client_secret?: string | null;
   mode: "payment" | "subscription" | "setup";
   status: "open" | "complete" | "expired";
   payment_status: "paid" | "unpaid" | "no_payment_required";

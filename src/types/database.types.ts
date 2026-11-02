@@ -4328,6 +4328,7 @@ export type Database = {
           p_key_secret_enc?: string;
           p_mode: string;
           p_organization_id: string;
+          p_publishable_key?: string;
           p_webhook_secret_enc?: string;
         };
         Returns: undefined;

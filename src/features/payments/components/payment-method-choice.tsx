@@ -30,7 +30,7 @@ export function PaymentMethodChoice({
     online: {
       icon: SmartphoneIcon,
       title: t("Pay online"),
-      hint: t("Cards and other methods on Stripe’s secure payment page."),
+      hint: t("Cards, UPI and more, paid securely through Stripe."),
       disabled: false,
     },
     cod: {

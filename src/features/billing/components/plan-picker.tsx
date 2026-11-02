@@ -28,7 +28,8 @@ import {
   PLANS,
   YEARLY_MONTHS,
 } from "@/config/plans";
-import { changePlan, startPlanCheckout } from "@/features/billing/actions";
+import { routes } from "@/config/routes";
+import { changePlan } from "@/features/billing/actions";
 import { UpgradeButton } from "@/features/billing/components/upgrade-button";
 import { type PlanLimits } from "@/features/billing/queries";
 import { formatMoney, formatNumber } from "@/lib/format";
@@ -121,17 +122,9 @@ function PlanCard({
   const blocked = over.length > 0 && !(current && upgrade);
   const l = limits[id];
 
+  // The payment page (Shopverse's own, or Stripe's if it isn't set up).
   const subscribe = () =>
-    startTransition(async () => {
-      const started = await startPlanCheckout({ organizationSlug, plan: id, interval });
-      if (!started.ok) {
-        toast.error(started.error.message);
-        return;
-      }
-      // Stripe's payment page; it sends the owner back to Billing.
-      window.location.assign(started.data.url);
-      await new Promise(() => {});
-    });
+    startTransition(() => router.push(routes.orgBillingSubscribe(organizationSlug, id, interval)));
 
   const change = async () => {
     const result = await changePlan({ organizationSlug, plan: id, interval });

@@ -57,7 +57,7 @@ Multi-shop commerce SaaS for businesses that sell **anything**: clothing, electr
 | Reliability     | Rate limits per address in the proxy (sign-in and checkout, private links, actions, pages; shared through Upstash Redis when configured), errors grouped and stored in `/admin/errors` with request ids, optional Sentry and OpenTelemetry tracing, nightly encrypted backups with a tested restore and a [runbook](docs/RUNBOOK.md)                                                                                                                                                                                   |
 | Languages       | Storefront in English or Hindi (हिन्दी): pages, cart, checkout, account, order emails and WhatsApp messages; each shop picks its default and shoppers can switch; staff pages stay in English                                                                                                                                                                                                                                                                                                                          |
 | Accessibility   | axe-core audit (WCAG 2.2 AA) of every main storefront, shopper-account, staff and admin page in light and dark mode, plus keyboard checks, run in CI; skip link, labelled controls                                                                                                                                                                                                                                                                                                                                     |
-| Quality         | Strict TypeScript, ESLint and Prettier, 296 unit tests, 14 end-to-end tests (Playwright), nineteen SQL test suites (RLS, stock, order flow, storefront and checkout, team and billing, shopper accounts, photos, invoices, payments, discounts, analytics, returns, platform billing, catalogue tools, operations, brand and reach, storefront design, hardening, customer matching), CI, commit hooks                                                                                                                 |
+| Quality         | Strict TypeScript, ESLint and Prettier, 302 unit tests, 16 end-to-end tests (Playwright), nineteen SQL test suites (RLS, stock, order flow, storefront and checkout, team and billing, shopper accounts, photos, invoices, payments, discounts, analytics, returns, platform billing, catalogue tools, operations, brand and reach, storefront design, hardening, customer matching), CI, commit hooks                                                                                                                 |
 
 ## Quick start in GitHub Codespaces
 
@@ -149,9 +149,9 @@ Payments run on **Stripe** in test mode: sign up at [stripe.com](https://stripe.
 
 1. **Server key.** Add `PAYMENTS_ENCRYPTION_KEY` to `.env.local` (`openssl rand -base64 32`). Each business's Stripe keys are encrypted with it before they're stored, so keep it secret and don't change it later.
 2. **Migrations.** Run `npx supabase db push`.
-3. **Connect Stripe.** In **Payments**, paste your Stripe **test secret key** (`sk_test_…`, from Stripe → Developers → API keys). It's checked with Stripe before it's saved.
+3. **Connect Stripe.** In **Payments**, paste your Stripe **test secret key** (`sk_test_…`, from Stripe → Developers → API keys). It's checked with Stripe before it's saved. Also paste the **publishable key** (`pk_test_…`, same page): shoppers then pay on your shop's own payment page, with Stripe's secure card and UPI fields styled like your shop. Without it they're sent to Stripe's payment page.
 4. **Shops.** Each shop's settings has **Ways to pay** (online, cash on delivery).
-5. **Webhook (optional for testing).** Shoppers go to Stripe's payment page and come back to their order, which is confirmed from Stripe's own record of the payment, so testing works without a webhook. The webhook also confirms payments when a shopper closes the tab. Stripe needs to reach your app: in a Codespace, use the [Stripe CLI](https://docs.stripe.com/stripe-cli) (`stripe listen --forward-to localhost:3000/api/webhooks/stripe/<organization id>`, using the URL shown on the Payments page) and paste the `whsec_…` it prints. When deployed, add an endpoint for that URL in Stripe → Developers → Webhooks with the events listed on the Payments page.
+5. **Webhook (optional for testing).** Shoppers pay (on your page or Stripe's) and come back to their order, which is confirmed from Stripe's own record of the payment, so testing works without a webhook. The webhook also confirms payments when a shopper closes the tab. Stripe needs to reach your app: in a Codespace, use the [Stripe CLI](https://docs.stripe.com/stripe-cli) (`stripe listen --forward-to localhost:3000/api/webhooks/stripe/<organization id>`, using the URL shown on the Payments page) and paste the `whsec_…` it prints. When deployed, add an endpoint for that URL in Stripe → Developers → Webhooks with the events listed on the Payments page.
 
 `NEXT_PUBLIC_APP_URL` must be the address you open the app at (your Codespace URL, for example), because Stripe sends shoppers back there. Online orders hold stock for 30 minutes. Unpaid ones are cancelled the next time someone tries to pay, or every 5 minutes if `pg_cron` is enabled (Supabase → Database → Extensions) before you push. Cancelling a paid order refunds it automatically.
 
@@ -171,8 +171,8 @@ Run `npx supabase db push` (migration 021). Each shop's settings now has **Retur
 
 Run `npx supabase db push`. Plans are billed through **Shopverse's own** Stripe account with Stripe Billing (it can be the same test account you use for a shop):
 
-1. Set `PLATFORM_STRIPE_SECRET_KEY` (`sk_test_…`). Stripe prices are created automatically the first time each plan is chosen.
-2. For renewals, failed payments and cancellations to show up, add a webhook to `<your app>/api/webhooks/stripe/platform` with the events `checkout.session.completed`, `customer.subscription.updated`, `customer.subscription.deleted`, `invoice.paid` and `invoice.payment_failed`, and set its signing secret as `PLATFORM_STRIPE_WEBHOOK_SECRET` (or `stripe listen --forward-to localhost:3000/api/webhooks/stripe/platform`). The first checkout works without it.
+1. Set `PLATFORM_STRIPE_SECRET_KEY` (`sk_test_…`). Stripe prices are created automatically the first time each plan is chosen. Also set `PLATFORM_STRIPE_PUBLISHABLE_KEY` (`pk_test_…`) so owners pay for plans on Shopverse's own page; without it they go to Stripe's.
+2. For renewals, failed payments and cancellations to show up, add a webhook to `<your app>/api/webhooks/stripe/platform` with the events `checkout.session.completed`, `customer.subscription.created`, `customer.subscription.updated`, `customer.subscription.deleted`, `invoice.paid` and `invoice.payment_failed`, and set its signing secret as `PLATFORM_STRIPE_WEBHOOK_SECRET` (or `stripe listen --forward-to localhost:3000/api/webhooks/stripe/platform`). The first checkout works without it.
 3. Set Shopverse's invoice details: `PLATFORM_LEGAL_NAME`, `PLATFORM_GSTIN` and address. With a GSTIN, 18% GST is added to plan prices and every charge gets a tax invoice (CGST + SGST or IGST by the business's state).
 
 Without the keys, Billing shows plans and asks owners to email a request, as before. To open the admin console at `/admin`, make yourself a platform admin in the Supabase SQL editor:
@@ -235,6 +235,15 @@ Run `npm install` (new packages) and `npx supabase db push` (migration 028). The
 - **Backups.** Follow [docs/RUNBOOK.md](docs/RUNBOOK.md): add the backup secrets for `.github/workflows/backup.yml`, then practise a restore once.
 - **Hindi.** **Shops → a shop → Settings → Storefront language** sets the default; shoppers switch in the footer. Text you write yourself (product names, sections) is shown as you wrote it.
 - **Accessibility.** `npm run audit:a11y` runs the accessibility tests on their own; they're part of the end-to-end suite ([e2e/README.md](e2e/README.md)), which runs in CI.
+
+### Payments on your own pages
+
+Run `npx supabase db push` (migration 030). Shoppers and plan buyers now pay on Shopverse's pages, with Stripe's secure fields inside them, once the publishable keys are set:
+
+- **Shops:** each business adds its **publishable key** (`pk_test_…` or `pk_live_…`, the same mode as its secret key) under **Payments**. The payment page is `/s/<shop>/orders/<order>/pay`.
+- **Plans:** set `PLATFORM_STRIPE_PUBLISHABLE_KEY`. The page is `/app/<business>/billing/subscribe`.
+- Card details go from Stripe's fields straight to Stripe; Shopverse never sees them. Which methods show (cards, UPI…) is set in Stripe → Settings → Payment methods.
+- Without a publishable key, everything works as before on Stripe's page.
 
 ## Scripts
 

@@ -76,7 +76,8 @@ export const startPlanCheckout = createAction({
       user.id,
       input.plan,
       input.interval,
-      billing.profile.email,
+      // Stripe's payment fields need an email; the owner's own if billing has none.
+      billing.profile.email ?? user.email,
     );
   },
 });

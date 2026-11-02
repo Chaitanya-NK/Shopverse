@@ -767,4 +767,20 @@ export const hi: Record<string, string> = {
   "{percent}% off": "{percent}% छूट",
   "{rating} out of 5 stars": "5 में से {rating} स्टार",
   "{shop} highlights": "{shop} की ख़ास बातें",
+  "Back to your order": "अपने ऑर्डर पर वापस जाएँ",
+  "We're holding your items until {time}. Pay before then to confirm the order.":
+    "हम आपका सामान {time} तक रोककर रख रहे हैं। ऑर्डर पक्का करने के लिए उससे पहले पेमेंट करें।",
+  "Pay {amount}": "{amount} का पेमेंट करें",
+  "We couldn't start the payment": "हम पेमेंट शुरू नहीं कर सके",
+  "Payments are processed securely by Stripe. We never see your card details.":
+    "पेमेंट Stripe के ज़रिए सुरक्षित रूप से होते हैं। आपके कार्ड की जानकारी हम कभी नहीं देखते।",
+  "Online payment isn't available right now. Please contact the shop.":
+    "अभी ऑनलाइन पेमेंट उपलब्ध नहीं है। कृपया दुकान से संपर्क करें।",
+  "The payment didn't go through. Please try again.":
+    "पेमेंट नहीं हो सका। कृपया फिर से कोशिश करें।",
+  "The time to pay ran out, so this order was cancelled. Please order again.":
+    "पेमेंट का समय खत्म हो गया, इसलिए यह ऑर्डर रद्द कर दिया गया। कृपया फिर से ऑर्डर करें।",
+  "Online payment isn't available right now.": "अभी ऑनलाइन पेमेंट उपलब्ध नहीं है।",
+  "Cards, UPI and more, paid securely through Stripe.":
+    "कार्ड, UPI और भी बहुत कुछ, Stripe के ज़रिए सुरक्षित पेमेंट।",
 };

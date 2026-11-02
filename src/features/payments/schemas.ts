@@ -5,6 +5,7 @@ import { slugSchema } from "@/features/organizations/schemas";
 /** Secret or restricted key: sk_test_…, sk_live_…, rk_test_…, rk_live_… */
 const SECRET_KEY = /^(sk|rk)_(test|live)_[A-Za-z0-9]{10,247}$/;
 const WEBHOOK_SECRET = /^whsec_[A-Za-z0-9+/=]{10,200}$/;
+const PUBLISHABLE_KEY = /^pk_(test|live)_[A-Za-z0-9]{10,247}$/;
 
 export const paymentSettingsSchema = z.object({
   organizationSlug: slugSchema,
@@ -28,6 +29,16 @@ export const paymentSettingsSchema = z.object({
     )
     .optional()
     .default(""),
+  /** Not secret: shown and saved as typed. Blank removes it (Stripe's own page is used). */
+  publishableKey: z
+    .string()
+    .trim()
+    .refine(
+      (v) => v === "" || PUBLISHABLE_KEY.test(v),
+      "Paste the publishable key from Stripe (it starts with pk_test_ or pk_live_)",
+    )
+    .optional()
+    .default(""),
   enabled: z.boolean().optional().default(true),
 });
 export type PaymentSettingsInput = z.input<typeof paymentSettingsSchema>;
@@ -41,6 +52,7 @@ export const paymentSettingsViewSchema = z.union([
     mode: z.enum(["test", "live"]),
     enabled: z.boolean(),
     webhook_configured: z.boolean(),
+    publishable_key: z.string().nullable().optional(),
     updated_at: z.string(),
   }),
 ]);

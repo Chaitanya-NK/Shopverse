@@ -25,7 +25,8 @@ npx playwright install chromium          # once
 npm run test:e2e                         # or: npm run audit:a11y
 ```
 
-Playwright starts the app on port 3100 itself. The tests create a business
+Playwright starts the app on port 3100 itself, along with a small Stripe
+stand-in (`e2e/support/stripe-stub.mjs`, port 12111) that the app is pointed at. The tests create a business
 called "E2E Threads" (`e2e-threads`) and reuse it on later runs; `npx supabase
 db reset` starts over. Set `E2E_DATABASE_URL` and `MAILPIT_URL` if your stack
 uses other ports.

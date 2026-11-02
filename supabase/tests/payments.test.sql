@@ -117,9 +117,32 @@ select pg_temp.assert(
   (select j ->> 'mode' = 'test' and (j ->> 'webhook_configured')::boolean and not j ? 'key_secret_enc'
    from (select public.get_payment_settings((select org from ids)) j) x),
   'owners see the account but never the secrets');
+-- Publishable key (for the shop's own payment page).
+select public.save_payment_account((select org from ids), 'acct_1TestAbcdef', 'test', null, null, true,
+  'pk_test_Abcdefghij1234');
+select pg_temp.assert(
+  (select public.get_payment_settings((select org from ids)) ->> 'publishable_key') = 'pk_test_Abcdefghij1234',
+  'the publishable key is saved and shown');
+select public.save_payment_account((select org from ids), 'acct_1TestAbcdef', 'test', null, null, true);
+select pg_temp.assert(
+  (select public.get_payment_settings((select org from ids)) ->> 'publishable_key') = 'pk_test_Abcdefghij1234',
+  'leaving it out keeps it');
+select pg_temp.expect_error(format($q$select public.save_payment_account(%L, 'acct_1TestAbcdef', 'test', null, null, true, 'pk_live_Abcdefghij1234')$q$,
+  (select org from ids)), '23514', 'a live publishable key with a test secret key is refused');
+select pg_temp.expect_error(format($q$select public.save_payment_account(%L, 'acct_1TestAbcdef', 'test', null, null, true, 'sk_test_Abcdefghij1234')$q$,
+  (select org from ids)), '23514', 'only publishable keys');
 select public.save_payment_account((select org from ids), 'acct_1TestAbcdef', 'live', null, null, true);
 select pg_temp.assert(
   (select public.get_payment_settings((select org from ids)) ->> 'mode') = 'live', 'mode follows the key');
+select pg_temp.assert(
+  (select public.get_payment_settings((select org from ids)) -> 'publishable_key') = 'null'::jsonb,
+  'switching to live drops the test publishable key');
+select public.save_payment_account((select org from ids), 'acct_1TestAbcdef', 'live', null, null, true,
+  'pk_live_Abcdefghij1234');
+select public.save_payment_account((select org from ids), 'acct_1TestAbcdef', 'live', null, null, true, '');
+select pg_temp.assert(
+  (select public.get_payment_settings((select org from ids)) -> 'publishable_key') = 'null'::jsonb,
+  'an empty value removes it');
 select pg_temp.expect_error(format($q$select public.payment_account_credentials(%L)$q$, (select org from ids)), '42501',
   'only the server reads credentials');
 select pg_temp.assert(exists (select 1 from public.audit_logs where action = 'payments.updated'), 'audited');

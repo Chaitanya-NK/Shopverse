@@ -62,6 +62,7 @@ export const routes = {
   storefrontCheckout: (shopSlug: string) => `/s/${shopSlug}/checkout`,
   storefrontOrder: (shopSlug: string, token: string) => `/s/${shopSlug}/orders/${token}`,
   storefrontInvoice: (shopSlug: string, token: string) => `/s/${shopSlug}/orders/${token}/invoice`,
+  storefrontPay: (shopSlug: string, token: string) => `/s/${shopSlug}/orders/${token}/pay`,
   storefrontReturn: (shopSlug: string, token: string) => `/s/${shopSlug}/orders/${token}/return`,
   storefrontCreditNote: (shopSlug: string, token: string, returnId: string) =>
     `/s/${shopSlug}/orders/${token}/returns/${returnId}/credit-note`,
@@ -118,6 +119,8 @@ export const routes = {
   orgTeam: (orgSlug: string) => `/app/${orgSlug}/team`,
   orgAudit: (orgSlug: string) => `/app/${orgSlug}/team/audit`,
   orgBilling: (orgSlug: string) => `/app/${orgSlug}/billing`,
+  orgBillingSubscribe: (orgSlug: string, plan: string, interval: string) =>
+    `/app/${orgSlug}/billing/subscribe?plan=${plan}&interval=${interval}`,
   orgPayments: (orgSlug: string) => `/app/${orgSlug}/payments`,
   orgPlatformInvoice: (orgSlug: string, invoiceId: string) =>
     `/app/${orgSlug}/billing/invoices/${invoiceId}`,

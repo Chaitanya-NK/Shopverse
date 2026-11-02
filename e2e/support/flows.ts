@@ -24,8 +24,17 @@ export const asha = (tag: string): Shopper => ({
   phone: "98000 00001",
 });
 
-/** Fill the guest checkout, confirm with the emailed code; returns the order. */
-export async function checkOut(page: Page, who: Shopper, t: T = same) {
+/**
+ * Fill the guest checkout and confirm with the emailed code; returns the
+ * order. Cash on delivery lands on the order page, online payment on the
+ * payment page.
+ */
+export async function checkOut(
+  page: Page,
+  who: Shopper,
+  t: T = same,
+  method: "cod" | "online" = "cod",
+) {
   await page.goto(shop("/checkout"));
   await page.getByLabel(t("Full name")).fill(who.name);
   await page.getByLabel(t("Email")).fill(who.email);
@@ -35,13 +44,26 @@ export async function checkOut(page: Page, who: Shopper, t: T = same) {
   await page.getByRole("combobox", { name: t("State") }).click();
   await page.getByRole("option", { name: "Maharashtra" }).click();
   await page.getByLabel(t("PIN code")).fill("411001");
+  // The choice only shows when the shop takes online payments too.
+  const choice = page.getByRole("radio", {
+    name: new RegExp(`^${t(method === "cod" ? "Cash on delivery" : "Pay online")}`),
+  });
+  if (await choice.count()) await choice.check();
   const since = now();
-  await page.getByRole("button", { name: t("Email me a code to place the order") }).click();
+  await page
+    .getByRole("button", {
+      name: t(
+        method === "cod" ? "Email me a code to place the order" : "Email me a code, then pay",
+      ),
+    })
+    .click();
   await expect(page.getByText(t("Check your email")).filter({ visible: true })).toBeVisible();
   const code = await waitForCode(who.email, /order code|ऑर्डर कोड/, since);
   await page.keyboard.type(code);
-  await page.waitForURL(/\/orders\/[0-9a-f]{32}$/);
-  const token = page.url().split("/").at(-1)!;
+  await page.waitForURL(
+    method === "cod" ? /\/orders\/[0-9a-f]{32}$/ : /\/orders\/[0-9a-f]{32}\/pay$/,
+  );
+  const token = page.url().match(/\/orders\/([0-9a-f]{32})/)![1]!;
   const [id, number] = sql(
     `select id || '|' || number from orders where public_token = ${lit(token)}`,
   ).split("|");
