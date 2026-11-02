@@ -34,7 +34,9 @@ export type StripeCheckout = {
 type ElementsOptions = { appearance: StripeAppearance; fonts: StripeFont[] };
 type StripeInstance = {
   initCheckout?(options: Record<string, unknown>): StripeCheckout | Promise<StripeCheckout>;
-  initCheckoutElementsSdk?(options: Record<string, unknown>): StripeCheckout;
+  initCheckoutElementsSdk?(
+    options: Record<string, unknown>,
+  ): StripeCheckout | Promise<StripeCheckout>;
 };
 type StripeFactory = (publishableKey: string, options?: Record<string, unknown>) => StripeInstance;
 
@@ -69,16 +71,33 @@ export function loadStripeJs(url: string): Promise<StripeFactory> {
   return promise;
 }
 
-/** Start Stripe's checkout for a session's client secret. */
+/**
+ * Start Stripe's checkout for a session's client secret. Stripe.js versions
+ * differ in the option's name: basil (the one we load) takes
+ * `fetchClientSecret`, even under its newer alias `initCheckoutElementsSdk`;
+ * clover and later take `clientSecret`. Use the classic `initCheckout` with
+ * `fetchClientSecret` when it exists, and if Stripe.js says that option isn't
+ * accepted, try the other.
+ */
 export async function initCheckout(
   stripe: StripeInstance,
   clientSecret: string,
   elementsOptions: ElementsOptions,
 ): Promise<StripeCheckout> {
-  if (stripe.initCheckoutElementsSdk)
-    return stripe.initCheckoutElementsSdk({ clientSecret, elementsOptions });
-  if (!stripe.initCheckout) throw new Error("This version of Stripe.js can't take payments here");
-  return stripe.initCheckout({ fetchClientSecret: async () => clientSecret, elementsOptions });
+  const init = stripe.initCheckout ?? stripe.initCheckoutElementsSdk;
+  if (!init) throw new Error("This version of Stripe.js can't take payments here");
+  const call = (options: Record<string, unknown>) =>
+    Promise.resolve(init.call(stripe, { ...options, elementsOptions }));
+  const preferFetch = Boolean(stripe.initCheckout);
+  const first = preferFetch ? { fetchClientSecret: async () => clientSecret } : { clientSecret };
+  const second = preferFetch ? { clientSecret } : { fetchClientSecret: async () => clientSecret };
+  try {
+    return await call(first);
+  } catch (error) {
+    if (!/is not an accepted parameter/i.test(String((error as Error)?.message ?? error)))
+      throw error;
+    return call(second);
+  }
 }
 
 /** Confirm the payment; on success the browser goes to the return URL. */

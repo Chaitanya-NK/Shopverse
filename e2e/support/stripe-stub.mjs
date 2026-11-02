@@ -117,44 +117,47 @@ const STRIPE_JS = `
 // Fake Stripe.js (e2e stub): the same calls the app uses, without Stripe.
 (function () {
   window.Stripe = function (publishableKey) {
-    return {
-      initCheckout: async function (options) {
-        var clientSecret = await options.fetchClientSecret();
-        // Like Stripe, a session can only be set up once per page.
-        window.__stripeStubInits = window.__stripeStubInits || {};
-        if (window.__stripeStubInits[clientSecret])
-          throw new Error("initCheckout was already called for this Checkout Session");
-        window.__stripeStubInits[clientSecret] = true;
-        window.__stripeStub = { publishableKey: publishableKey, elementsOptions: options.elementsOptions };
-        return {
-          createPaymentElement: function () {
-            return {
-              mount: function (el) {
-                el.innerHTML =
-                  '<div data-stripe-stub style="display:grid;gap:8px">' +
-                  '<label>Card number <input name="card" value="4242 4242 4242 4242" autocomplete="off"></label>' +
-                  '<label><input type="checkbox" name="decline"> Decline this payment (test)</label></div>';
-              },
-              destroy: function () {},
-            };
-          },
-          confirm: async function () {
-            var decline = document.querySelector('[data-stripe-stub] [name="decline"]');
-            if (decline && decline.checked)
-              return { type: "error", error: { message: "Your card was declined." } };
-            var res = await fetch("${BASE}/js/confirm", {
-              method: "POST",
-              headers: { "content-type": "text/plain" },
-              body: JSON.stringify({ clientSecret: clientSecret, publishableKey: publishableKey }),
-            });
-            var body = await res.json();
-            if (body.error) return { type: "error", error: { message: body.error } };
-            window.location.assign(body.redirect);
-            return { type: "success" };
-          },
-        };
-      },
-    };
+    // Like Stripe.js basil: initCheckout takes fetchClientSecret (not
+    // clientSecret), and initCheckoutElementsSdk is the same function.
+    async function initCheckout(options) {
+      if ("clientSecret" in options)
+        throw new Error("Invalid initCheckout() parameter: options.clientSecret is not an accepted parameter.");
+      var clientSecret = await options.fetchClientSecret();
+      // Like Stripe, a session can only be set up once per page.
+      window.__stripeStubInits = window.__stripeStubInits || {};
+      if (window.__stripeStubInits[clientSecret])
+        throw new Error("initCheckout was already called for this Checkout Session");
+      window.__stripeStubInits[clientSecret] = true;
+      window.__stripeStub = { publishableKey: publishableKey, elementsOptions: options.elementsOptions };
+      return {
+        createPaymentElement: function () {
+          return {
+            mount: function (el) {
+              el.innerHTML =
+                '<div data-stripe-stub style="display:grid;gap:8px">' +
+                '<label>Card number <input name="card" value="4242 4242 4242 4242" autocomplete="off"></label>' +
+                '<label><input type="checkbox" name="decline"> Decline this payment (test)</label></div>';
+            },
+            destroy: function () {},
+          };
+        },
+        confirm: async function () {
+          var decline = document.querySelector('[data-stripe-stub] [name="decline"]');
+          if (decline && decline.checked)
+            return { type: "error", error: { message: "Your card was declined." } };
+          var res = await fetch("${BASE}/js/confirm", {
+            method: "POST",
+            headers: { "content-type": "text/plain" },
+            body: JSON.stringify({ clientSecret: clientSecret, publishableKey: publishableKey }),
+          });
+          var body = await res.json();
+          if (body.error) return { type: "error", error: { message: body.error } };
+          window.location.assign(body.redirect);
+          return { type: "success" };
+        },
+      };
+    }
+    return { initCheckout: initCheckout, initCheckoutElementsSdk: initCheckout };
   };
 })();
 `;

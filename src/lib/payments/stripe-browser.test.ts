@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { googleFontFor, luminance } from "./stripe-browser";
+import { googleFontFor, initCheckout, luminance } from "./stripe-browser";
 
 describe("Stripe field styling", () => {
   it("serves the page's font to Stripe's frame from Google Fonts", () => {
@@ -26,5 +26,64 @@ describe("Stripe field styling", () => {
     expect(luminance([0, 0, 0])).toBe(0);
     expect(luminance([10, 10, 10])).toBeLessThan(0.2);
     expect(luminance([250, 250, 250])).toBeGreaterThan(0.2);
+  });
+});
+
+describe("initCheckout across Stripe.js versions", () => {
+  const options = { appearance: {}, fonts: [] };
+  const checkout = { createPaymentElement: () => ({ mount() {} }) };
+  /** A Stripe.js init function that accepts only one of the two option names. */
+  const initAccepting =
+    (name: "clientSecret" | "fetchClientSecret", seen: unknown[]) =>
+    async (opts: Record<string, unknown>) => {
+      seen.push(opts);
+      const other = name === "clientSecret" ? "fetchClientSecret" : "clientSecret";
+      if (other in opts)
+        throw new Error(
+          `Invalid initCheckout() parameter: options.${other} is not an accepted parameter.`,
+        );
+      if (name === "fetchClientSecret")
+        expect(await (opts.fetchClientSecret as () => Promise<string>)()).toBe("cs_1_secret");
+      else expect(opts.clientSecret).toBe("cs_1_secret");
+      return checkout;
+    };
+
+  it("basil: initCheckout with fetchClientSecret, even when the newer name exists", async () => {
+    const seen: unknown[] = [];
+    const init = initAccepting("fetchClientSecret", seen);
+    await expect(
+      initCheckout({ initCheckout: init, initCheckoutElementsSdk: init }, "cs_1_secret", options),
+    ).resolves.toBe(checkout);
+    expect(seen).toHaveLength(1);
+  });
+
+  it("clover and later: initCheckoutElementsSdk with clientSecret", async () => {
+    const seen: unknown[] = [];
+    const init = initAccepting("clientSecret", seen);
+    await expect(
+      initCheckout({ initCheckoutElementsSdk: init as never }, "cs_1_secret", options),
+    ).resolves.toBe(checkout);
+    expect(seen).toHaveLength(1);
+  });
+
+  it("tries the other option name when Stripe.js rejects the first", async () => {
+    const seen: unknown[] = [];
+    await expect(
+      initCheckout(
+        { initCheckoutElementsSdk: initAccepting("fetchClientSecret", seen) as never },
+        "cs_1_secret",
+        options,
+      ),
+    ).resolves.toBe(checkout);
+    expect(seen).toHaveLength(2);
+  });
+
+  it("passes other errors on", async () => {
+    const init = async () => {
+      throw new Error("No such checkout session");
+    };
+    await expect(initCheckout({ initCheckout: init }, "cs_1_secret", options)).rejects.toThrow(
+      "No such checkout session",
+    );
   });
 });
