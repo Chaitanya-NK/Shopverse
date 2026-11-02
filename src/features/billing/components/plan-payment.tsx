@@ -71,6 +71,7 @@ export function PlanPayment({
       start={start}
       labels={{
         pay: payLabel,
+        payAmount: (amount) => `Pay ${amount} and subscribe`,
         secure:
           "Payments are processed securely by Stripe. Shopverse never sees your card details.",
         unavailable: "Online payment isn't available right now. Please try again later.",

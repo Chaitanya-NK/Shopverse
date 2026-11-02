@@ -26,14 +26,40 @@ type PaymentElement = {
   destroy?(): void;
   on?(event: string, handler: (event: { complete?: boolean }) => void): void;
 };
+/** The parts of Stripe's checkout session we read. */
+type CheckoutSession = { total?: { total?: { amount?: string } } };
 export type StripeCheckout = {
   createPaymentElement(options?: Record<string, unknown>): PaymentElement;
   confirm?(options?: ConfirmOptions): Promise<ConfirmResult>;
+  /** basil */
+  session?(): CheckoutSession;
+  on?(event: "change", handler: (session: CheckoutSession) => void): void;
+  /** clover and later */
   loadActions?(): Promise<
-    | { type: "success"; actions: { confirm(options?: ConfirmOptions): Promise<ConfirmResult> } }
+    | {
+        type: "success";
+        actions: {
+          confirm(options?: ConfirmOptions): Promise<ConfirmResult>;
+          getSession?(): CheckoutSession;
+        };
+      }
     | { type: "error"; error: { message?: string } }
   >;
 };
+
+/**
+ * The amount to pay as Stripe formats it ("₹1,180.00"). Stripe requires the
+ * page to show this value from the checkout itself before confirming.
+ */
+export async function checkoutTotal(checkout: StripeCheckout): Promise<string | null> {
+  if (checkout.session) return checkout.session()?.total?.total?.amount ?? null;
+  if (checkout.loadActions) {
+    const loaded = await checkout.loadActions();
+    if (loaded.type === "success")
+      return loaded.actions.getSession?.()?.total?.total?.amount ?? null;
+  }
+  return null;
+}
 type ElementsOptions = { appearance: StripeAppearance; fonts: StripeFont[] };
 type StripeInstance = {
   initCheckout?(options: Record<string, unknown>): StripeCheckout | Promise<StripeCheckout>;

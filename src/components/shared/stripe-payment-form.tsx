@@ -11,6 +11,7 @@ import { reportClientError } from "@/lib/observability/report";
 import type { PaymentStart } from "@/lib/payments/start";
 import {
   appearanceFrom,
+  checkoutTotal,
   confirmCheckout,
   initCheckout,
   loadStripeJs,
@@ -60,7 +61,10 @@ function stripeMessage(error: unknown): string | null {
 }
 
 export type PaymentFormLabels = {
+  /** Until Stripe's own total is known. */
   pay: string;
+  /** With Stripe's formatted total, e.g. "Pay ₹1,180.00". */
+  payAmount: (amount: string) => string;
   secure: string;
   unavailable: string;
   failed: string;
@@ -85,6 +89,7 @@ export function StripePaymentForm({
   const checkoutRef = useRef<StripeCheckout | null>(null);
   const [state, setState] = useState<"loading" | "ready" | "paying" | "broken">("loading");
   const [message, setMessage] = useState<string | null>(null);
+  const [total, setTotal] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -97,7 +102,16 @@ export function StripePaymentForm({
           prepared.mountedOn = fieldsRef.current;
         }
         checkoutRef.current = prepared.checkout;
-        setState("ready");
+        // Stripe wants its own total shown on the page; keep it current.
+        prepared.checkout.on?.("change", (session) => {
+          const amount = session?.total?.total?.amount;
+          if (amount) setTotal(amount);
+        });
+        return checkoutTotal(prepared.checkout).then((amount) => {
+          if (cancelled) return;
+          setTotal(amount);
+          setState("ready");
+        });
       })
       .catch((error: unknown) => {
         if (cancelled) return;
@@ -126,8 +140,11 @@ export function StripePaymentForm({
         setMessage(result.error.message || labels.failed);
         setState("ready");
       }
-    } catch {
-      setMessage(labels.failed);
+    } catch (error) {
+      console.error("Stripe payment failed:", error);
+      reportClientError(error, "rejection");
+      const reason = stripeMessage(error);
+      setMessage(reason ? `${labels.failed} (${reason})` : labels.failed);
       setState("ready");
     }
   };
@@ -155,7 +172,7 @@ export function StripePaymentForm({
         aria-disabled={state !== "ready"}
       >
         {state === "paying" || state === "loading" ? <Spinner /> : <LockIcon />}
-        {labels.pay}
+        {total ? labels.payAmount(total) : labels.pay}
       </Button>
       <p className="flex items-center justify-center gap-1.5 text-xs text-muted-foreground">
         <LockIcon className="size-3" aria-hidden />

@@ -129,7 +129,22 @@ const STRIPE_JS = `
         throw new Error("initCheckout was already called for this Checkout Session");
       window.__stripeStubInits[clientSecret] = true;
       window.__stripeStub = { publishableKey: publishableKey, elementsOptions: options.elementsOptions };
+      var info = await (await fetch("${BASE}/js/session?client_secret=" + encodeURIComponent(clientSecret))).json();
+      // Like Stripe: the page must read (and show) Stripe's own total before confirming.
+      var totalRead = false;
+      var total = {};
+      Object.defineProperty(total, "amount", {
+        enumerable: true,
+        get: function () {
+          totalRead = true;
+          return info.amount;
+        },
+      });
       return {
+        session: function () {
+          return { total: { total: total } };
+        },
+        on: function () {},
         createPaymentElement: function () {
           return {
             mount: function (el) {
@@ -142,6 +157,10 @@ const STRIPE_JS = `
           };
         },
         confirm: async function (confirmOptions) {
+          if (!totalRead)
+            throw new Error(
+              "IntegrationError: You must read total.total.amount from the checkout object and display it in your UI before confirming.",
+            );
           // Like a Stripe India account: no payer name and address, no payment.
           var payer = confirmOptions && confirmOptions.billingAddress;
           window.__stripeStub.billingAddress = payer || null;
@@ -186,6 +205,14 @@ createServer(async (req, res) => {
     if (path === "/js/basil/stripe.js") {
       res.writeHead(200, { "content-type": "text/javascript", ...cors });
       return res.end(STRIPE_JS);
+    }
+    if (path === "/js/session") {
+      const session = [...sessions.values()].find(
+        (s) => s.client_secret === url.searchParams.get("client_secret"),
+      );
+      if (!session) return json(res, 404, { error: "No such session" });
+      const amount = `₹${(session.amount_total / 100).toLocaleString("en-IN", { minimumFractionDigits: 2 })}`;
+      return json(res, 200, { amount });
     }
     if (path === "/js/confirm" && req.method === "POST") {
       const { clientSecret, publishableKey } = JSON.parse(await read(req));

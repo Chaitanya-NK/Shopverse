@@ -76,7 +76,8 @@ test.describe("online payments", () => {
     await expectAccessible(shopper);
 
     // A declined card shows Stripe's message and keeps the shopper here.
-    const pay = shopper.getByRole("button", { name: /^Pay ₹/ });
+    // The button shows Stripe's own total, which Stripe requires before paying.
+    const pay = shopper.getByRole("button", { name: "Pay ₹548.00" });
     await shopper.getByLabel("Decline this payment (test)").check();
     await pay.click();
     await expect(

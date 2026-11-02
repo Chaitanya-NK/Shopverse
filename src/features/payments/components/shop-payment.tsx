@@ -74,6 +74,7 @@ export function ShopPayment({
       start={start}
       labels={{
         pay: payLabel,
+        payAmount: (amount) => t("Pay {amount}", { amount }),
         secure: t("Payments are processed securely by Stripe. We never see your card details."),
         unavailable: t("Online payment isn't available right now. Please contact the shop."),
         failed: t("The payment didn't go through. Please try again."),
