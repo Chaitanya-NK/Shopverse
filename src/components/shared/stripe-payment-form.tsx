@@ -40,7 +40,14 @@ function prepare(
       const Stripe = await loadStripeJs(start.stripeJsUrl);
       const stripe = Stripe(start.publishableKey, { locale: "auto" });
       const checkout = await initCheckout(stripe, start.clientSecret, appearanceFrom(form));
-      return { checkout, element: checkout.createPaymentElement(), mountedOn: null };
+      // We send the payer's name and address with the payment, so Stripe's
+      // fields mustn't ask for them too (Stripe refuses to have both).
+      const element = checkout.createPaymentElement(
+        start.billingAddress
+          ? { fields: { billingDetails: { name: "never", address: "never" } } }
+          : undefined,
+      );
+      return { checkout, element, mountedOn: null };
     })();
     // A failure may be temporary: let a later try start again.
     entry.catch(() => prepared.delete(start.clientSecret));

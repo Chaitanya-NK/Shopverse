@@ -145,7 +145,9 @@ const STRIPE_JS = `
           return { total: { total: total } };
         },
         on: function () {},
-        createPaymentElement: function () {
+        createPaymentElement: function (elementOptions) {
+          var details = (elementOptions && elementOptions.fields && elementOptions.fields.billingDetails) || {};
+          window.__stripeStub.billingDetails = details;
           return {
             mount: function (el) {
               el.innerHTML =
@@ -164,6 +166,16 @@ const STRIPE_JS = `
           // Like a Stripe India account: no payer name and address, no payment.
           var payer = confirmOptions && confirmOptions.billingAddress;
           window.__stripeStub.billingAddress = payer || null;
+          // Like Stripe: details passed here mustn't also be collected by the fields.
+          var details = window.__stripeStub.billingDetails || {};
+          if (payer && payer.name && details.name !== "never")
+            throw new Error(
+              "You passed billingAddress.name to confirm(), but Payment Element may also be collecting this field. To avoid double collecting billing details, pass fields.billingDetails.name=never when creating the Payment Element.",
+            );
+          if (payer && payer.address && details.address !== "never")
+            throw new Error(
+              "You passed billingAddress.address to confirm(), but Payment Element may also be collecting this field. To avoid double collecting billing details, pass fields.billingDetails.address=never when creating the Payment Element.",
+            );
           if (!payer || !payer.name || !payer.address || !payer.address.country)
             return {
               type: "error",

@@ -65,6 +65,12 @@ export const startPlanCheckout = createAction({
     const org = await owner(supabase, user.id, input.organizationSlug);
     const billing = await getBillingOverview(org.id);
     if (!billing.profile.legalName) throw Errors.validation({}, "Add your billing details first.");
+    // Stripe India needs the payer's full address with the payment.
+    if (!billing.profile.line1 || !billing.profile.city || !billing.profile.postalCode)
+      throw Errors.validation(
+        {},
+        "Add your business address (street, city and PIN code) in billing details first.",
+      );
     if (billing.subscription) throw Errors.conflict("You already have a plan. Change it instead.");
     const over = billing.overages[input.plan];
     if (over.length > 0)

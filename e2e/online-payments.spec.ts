@@ -73,6 +73,14 @@ test.describe("online payments", () => {
     expect(options.publishableKey).toBe("pk_test_E2eShopKey00000001");
     expect(options.elementsOptions.appearance.variables.colorPrimary).toMatch(/^#[0-9a-f]{6}$/);
     expect(options.elementsOptions.appearance.variables.borderRadius).toMatch(/px$/);
+    // We supply the name and address, so Stripe's fields don't ask for them.
+    expect(
+      await shopper.evaluate(
+        () =>
+          (window as unknown as { __stripeStub: { billingDetails: unknown } }).__stripeStub
+            .billingDetails,
+      ),
+    ).toEqual({ name: "never", address: "never" });
     await expectAccessible(shopper);
 
     // A declined card shows Stripe's message and keeps the shopper here.
@@ -115,7 +123,8 @@ test.describe("online payments", () => {
 
   test("an owner pays for a plan on Shopverse's own page", async ({ page }) => {
     sql(`update organizations set billing_profile = '{"legal_name":"E2E Threads Pvt Ltd",
-         "email":"billing@e2e-threads.test","state":"Karnataka"}' where id = ${org}`);
+         "email":"billing@e2e-threads.test","line1":"12 Residency Rd","city":"Bengaluru",
+         "postal_code":"560025","state":"Karnataka"}' where id = ${org}`);
     await page.goto(app("/billing"));
     await page.getByRole("button", { name: "Choose Growth" }).first().click();
     await page.waitForURL(/\/billing\/subscribe\?plan=growth&interval=/);

@@ -28,7 +28,10 @@ export type BillingAddress = {
   };
 };
 
-/** A Stripe billing address from what we know, or null without a name. */
+/**
+ * A Stripe billing address from what we know, or null unless there's a name,
+ * street, city and PIN code (Stripe's fields then ask for them instead).
+ */
 export function billingAddress(input: {
   name?: string | null;
   line1?: string | null;
@@ -39,8 +42,8 @@ export function billingAddress(input: {
   country?: string | null;
 }): BillingAddress | null {
   const name = input.name?.trim();
-  if (!name) return null;
   const clean = (v?: string | null) => v?.trim() || undefined;
+  if (!name || !clean(input.line1) || !clean(input.city) || !clean(input.postalCode)) return null;
   return {
     name,
     address: {

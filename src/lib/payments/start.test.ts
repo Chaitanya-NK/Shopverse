@@ -26,7 +26,12 @@ describe("billingAddress", () => {
     });
   });
 
-  it("needs a name", () => {
-    expect(billingAddress({ name: "  ", city: "Pune" })).toBeNull();
+  it("needs a name, street, city and PIN code", () => {
+    const full = { name: "Asha", line1: "12 MG Road", city: "Pune", postalCode: "411001" };
+    expect(billingAddress(full)).not.toBeNull();
+    expect(billingAddress({ ...full, name: "  " })).toBeNull();
+    expect(billingAddress({ ...full, line1: "" })).toBeNull();
+    expect(billingAddress({ ...full, city: null })).toBeNull();
+    expect(billingAddress({ ...full, postalCode: undefined })).toBeNull();
   });
 });
