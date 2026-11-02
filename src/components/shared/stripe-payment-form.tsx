@@ -120,7 +120,7 @@ export function StripePaymentForm({
     setState("paying");
     setMessage(null);
     try {
-      const result = await confirmCheckout(checkout);
+      const result = await confirmCheckout(checkout, start.billingAddress);
       // Success leaves the page for the return URL; stay busy until then.
       if (result.type === "error") {
         setMessage(result.error.message || labels.failed);

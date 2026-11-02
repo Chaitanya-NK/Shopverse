@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { googleFontFor, initCheckout, luminance } from "./stripe-browser";
+import { confirmCheckout, googleFontFor, initCheckout, luminance } from "./stripe-browser";
 
 describe("Stripe field styling", () => {
   it("serves the page's font to Stripe's frame from Google Fonts", () => {
@@ -85,5 +85,36 @@ describe("initCheckout across Stripe.js versions", () => {
     await expect(initCheckout({ initCheckout: init }, "cs_1_secret", options)).rejects.toThrow(
       "No such checkout session",
     );
+  });
+});
+
+describe("confirmCheckout", () => {
+  const payer = { name: "Asha Rao", address: { city: "Pune", country: "IN" } };
+
+  it("sends the payer's name and address with the payment", async () => {
+    const calls: unknown[] = [];
+    const checkout = {
+      createPaymentElement: () => ({ mount() {} }),
+      confirm: async (options?: unknown) => {
+        calls.push(options);
+        return { type: "success" as const };
+      },
+    };
+    await expect(confirmCheckout(checkout, payer)).resolves.toEqual({ type: "success" });
+    expect(calls).toEqual([{ billingAddress: payer }]);
+  });
+
+  it("confirms without it when Stripe.js doesn't take the option", async () => {
+    const calls: unknown[] = [];
+    const checkout = {
+      createPaymentElement: () => ({ mount() {} }),
+      confirm: async (options?: unknown) => {
+        calls.push(options);
+        if (options) throw new Error("options.billingAddress is not an accepted parameter.");
+        return { type: "success" as const };
+      },
+    };
+    await expect(confirmCheckout(checkout, payer)).resolves.toEqual({ type: "success" });
+    expect(calls).toEqual([{ billingAddress: payer }, undefined]);
   });
 });

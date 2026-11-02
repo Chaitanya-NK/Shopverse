@@ -10,6 +10,8 @@
  * script keeps working.
  */
 
+import type { BillingAddress } from "@/lib/payments/start";
+
 export type StripeAppearance = {
   theme?: "stripe" | "night" | "flat";
   variables?: Record<string, string>;
@@ -18,6 +20,7 @@ export type StripeAppearance = {
 export type StripeFont = { cssSrc: string };
 
 type ConfirmResult = { type: "success" } | { type: "error"; error: { message?: string } };
+type ConfirmOptions = { billingAddress?: BillingAddress };
 type PaymentElement = {
   mount(target: HTMLElement): void;
   destroy?(): void;
@@ -25,9 +28,9 @@ type PaymentElement = {
 };
 export type StripeCheckout = {
   createPaymentElement(options?: Record<string, unknown>): PaymentElement;
-  confirm?(): Promise<ConfirmResult>;
+  confirm?(options?: ConfirmOptions): Promise<ConfirmResult>;
   loadActions?(): Promise<
-    | { type: "success"; actions: { confirm(): Promise<ConfirmResult> } }
+    | { type: "success"; actions: { confirm(options?: ConfirmOptions): Promise<ConfirmResult> } }
     | { type: "error"; error: { message?: string } }
   >;
 };
@@ -100,12 +103,30 @@ export async function initCheckout(
   }
 }
 
-/** Confirm the payment; on success the browser goes to the return URL. */
-export async function confirmCheckout(checkout: StripeCheckout): Promise<ConfirmResult> {
-  if (checkout.confirm) return checkout.confirm();
-  const loaded = await checkout.loadActions!();
-  if (loaded.type === "error") return loaded;
-  return loaded.actions.confirm();
+/**
+ * Confirm the payment; on success the browser goes to the return URL. The
+ * payer's name and address go with it (Stripe India needs them, e.g. for
+ * cards issued abroad). If a Stripe.js version doesn't take the option, it's
+ * confirmed without.
+ */
+export async function confirmCheckout(
+  checkout: StripeCheckout,
+  billingAddress: BillingAddress | null = null,
+): Promise<ConfirmResult> {
+  let confirm: (options?: ConfirmOptions) => Promise<ConfirmResult>;
+  if (checkout.confirm) confirm = checkout.confirm.bind(checkout);
+  else {
+    const loaded = await checkout.loadActions!();
+    if (loaded.type === "error") return loaded;
+    confirm = loaded.actions.confirm.bind(loaded.actions);
+  }
+  if (!billingAddress) return confirm();
+  try {
+    return await confirm({ billingAddress });
+  } catch (error) {
+    if (!/not an accepted parameter/i.test(String((error as Error)?.message ?? error))) throw error;
+    return confirm();
+  }
 }
 
 // ---------------------------------------------------------------------------

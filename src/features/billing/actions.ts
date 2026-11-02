@@ -18,6 +18,7 @@ import {
 } from "@/features/billing/server";
 import { authorizeOrganization } from "@/features/organizations/server";
 import { createAction } from "@/lib/actions/create-action";
+import { billingAddress } from "@/lib/payments/start";
 import { Errors, fromPostgrestError } from "@/lib/errors";
 import { type ServerSupabaseClient } from "@/lib/supabase/server";
 
@@ -77,7 +78,14 @@ export const startPlanCheckout = createAction({
       input.plan,
       input.interval,
       // Stripe's payment fields need an email; the owner's own if billing has none.
-      billing.profile.email ?? user.email,
+      billing.profile.email || user.email,
+      billingAddress({
+        name: billing.profile.legalName,
+        line1: billing.profile.line1,
+        city: billing.profile.city,
+        state: billing.profile.state,
+        postalCode: billing.profile.postalCode,
+      }),
     );
   },
 });

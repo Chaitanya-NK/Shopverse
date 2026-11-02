@@ -141,14 +141,25 @@ const STRIPE_JS = `
             destroy: function () {},
           };
         },
-        confirm: async function () {
+        confirm: async function (confirmOptions) {
+          // Like a Stripe India account: no payer name and address, no payment.
+          var payer = confirmOptions && confirmOptions.billingAddress;
+          window.__stripeStub.billingAddress = payer || null;
+          if (!payer || !payer.name || !payer.address || !payer.address.country)
+            return {
+              type: "error",
+              error: {
+                message:
+                  "As per Indian regulations, transactions require a customer name and address. Please provide your name and address.",
+              },
+            };
           var decline = document.querySelector('[data-stripe-stub] [name="decline"]');
           if (decline && decline.checked)
             return { type: "error", error: { message: "Your card was declined." } };
           var res = await fetch("${BASE}/js/confirm", {
             method: "POST",
             headers: { "content-type": "text/plain" },
-            body: JSON.stringify({ clientSecret: clientSecret, publishableKey: publishableKey }),
+            body: JSON.stringify({ clientSecret: clientSecret, publishableKey: publishableKey, billingAddress: payer }),
           });
           var body = await res.json();
           if (body.error) return { type: "error", error: { message: body.error } };

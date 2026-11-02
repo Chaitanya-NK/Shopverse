@@ -16,6 +16,7 @@ import {
   toPaise,
 } from "@/lib/payments/stripe";
 import { decryptSecret } from "@/lib/payments/secrets";
+import { billingAddress } from "@/lib/payments/start";
 import { paymentStart, type PaymentStart } from "@/lib/payments/start-server";
 import { createAdminClient } from "@/lib/supabase/admin";
 
@@ -86,7 +87,11 @@ export async function startPayment(orderToken: string): Promise<PaymentStart> {
 
   const [credentials, shop] = await Promise.all([
     getCredentials(order.organization_id),
-    admin.from("orders").select("shop:shops (slug)").eq("id", order.order_id).single(),
+    admin
+      .from("orders")
+      .select("shipping_address, shop:shops (slug)")
+      .eq("id", order.order_id)
+      .single(),
   ]);
   if (!credentials?.enabled)
     throw new AppError(
@@ -124,7 +129,21 @@ export async function startPayment(orderToken: string): Promise<PaymentStart> {
       ? { ui_mode: "custom", return_url: returnTo }
       : { success_url: returnTo, cancel_url: `${orderPage}?checkout=cancelled` }),
   });
-  const start = paymentStart(session, credentials.publishableKey);
+  // The delivery address doubles as the billing address Stripe asks for.
+  const shipTo = (shop.data.shipping_address ?? {}) as Record<string, string | undefined>;
+  const start = paymentStart(
+    session,
+    credentials.publishableKey,
+    billingAddress({
+      name: shipTo.name ?? order.customer.name,
+      line1: shipTo.line1,
+      line2: shipTo.line2,
+      city: shipTo.city,
+      state: shipTo.state,
+      postalCode: shipTo.postal_code,
+      country: shipTo.country,
+    }),
+  );
 
   const { error: recordError } = await admin.rpc("record_payment_attempt", {
     p_order_id: order.order_id,

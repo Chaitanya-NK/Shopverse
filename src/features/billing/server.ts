@@ -24,6 +24,7 @@ import {
   type StripeSubscription,
   subscriptionPeriod,
 } from "@/lib/payments/stripe";
+import type { BillingAddress } from "@/lib/payments/start";
 import { paymentStart } from "@/lib/payments/start-server";
 import { createAdminClient } from "@/lib/supabase/admin";
 
@@ -95,6 +96,7 @@ export async function startSubscription(
   plan: PaidPlanId,
   interval: BillingInterval,
   email: string | null,
+  payer: BillingAddress | null = null,
 ) {
   const key = requirePlatformKey();
   const pp = await providerPlan(plan, interval);
@@ -114,7 +116,7 @@ export async function startSubscription(
       ? { ui_mode: "custom", return_url: returnTo }
       : { success_url: returnTo, cancel_url: `${billingPage}?checkout=cancelled` }),
   });
-  const start = paymentStart(session, publishableKey);
+  const start = paymentStart(session, publishableKey, payer);
   const { error } = await createAdminClient().rpc("begin_subscription", {
     p_organization_id: organization.id,
     p_user_id: userId,

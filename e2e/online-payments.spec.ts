@@ -87,7 +87,19 @@ test.describe("online payments", () => {
     // Paying sends them back to the order, which confirms it with "Stripe".
     await shopper.getByLabel("Decline this payment (test)").uncheck();
     const since = now();
+    const confirmed = shopper.waitForRequest((r) => r.url().endsWith("/js/confirm"));
     await pay.click();
+    // The delivery name and address went to Stripe as the billing address.
+    expect(JSON.parse((await confirmed).postData() ?? "{}").billingAddress).toEqual({
+      name: who.name,
+      address: {
+        line1: "12 MG Road, Camp",
+        city: "Pune",
+        state: "Maharashtra",
+        postal_code: "411001",
+        country: "IN",
+      },
+    });
     await toast(shopper, "Payment received. Your order is confirmed.");
     await expect(shopper).toHaveURL(new RegExp(`/orders/${order.token}$`));
     expect(sql(`select status || ' ' || payment_status from orders where id = '${order.id}'`)).toBe(

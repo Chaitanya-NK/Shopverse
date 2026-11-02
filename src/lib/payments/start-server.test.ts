@@ -16,6 +16,7 @@ describe("paymentStart", () => {
       clientSecret: "cs_test_1_secret_x",
       publishableKey: "pk_test_abc",
       stripeJsUrl: "https://js.stripe.com/basil/stripe.js",
+      billingAddress: null,
     });
   });
 
