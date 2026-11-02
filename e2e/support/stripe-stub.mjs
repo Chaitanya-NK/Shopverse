@@ -120,6 +120,11 @@ const STRIPE_JS = `
     return {
       initCheckout: async function (options) {
         var clientSecret = await options.fetchClientSecret();
+        // Like Stripe, a session can only be set up once per page.
+        window.__stripeStubInits = window.__stripeStubInits || {};
+        if (window.__stripeStubInits[clientSecret])
+          throw new Error("initCheckout was already called for this Checkout Session");
+        window.__stripeStubInits[clientSecret] = true;
         window.__stripeStub = { publishableKey: publishableKey, elementsOptions: options.elementsOptions };
         return {
           createPaymentElement: function () {
